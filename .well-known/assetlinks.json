@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.amanyu.flapengine",
+    "sha256_cert_fingerprints": [
+      "9D:1E:D6:5A:AF:29:58:F7:1B:C3:65:05:D6:98:E4:26:27:F4:22:46:95:1F:C0:7E:8C:F1:94:B7:5F:84:7F:6F"
+    ]
+  }
+}]
