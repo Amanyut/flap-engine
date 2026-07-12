@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#1e293b">
+  <title>Flap Atlas & Reference</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    :root {
+      --bg-main: #f8fafc; --panel-dark: #1e293b; --panel-light: #ffffff;
+      --accent-blue: #3b82f6; --text-dark: #0f172a; --text-muted: #64748b;
+      --border-color: #e2e8f0; --matrix-bg: #cbd5e1; --matrix-card: #ffffff;
+    }
+
+    body.dark-theme {
+      --bg-main: #0f172a; --panel-dark: #020617; --panel-light: #1e293b;
+      --text-dark: #f1f5f9; --text-muted: #94a3b8;
+      --border-color: #334155; --matrix-bg: #020617; --matrix-card: #1e293b;
+    }
+
+    body { user-select: none; -webkit-user-select: none; font-family: -apple-system, sans-serif; margin: 0; background: var(--bg-main); color: var(--text-dark); overflow: hidden; height: 100vh; overscroll-behavior: none; transition: background 0.3s, color 0.3s; }
+    ::-webkit-scrollbar { width: 0px; }
+    
+    .app-container { display: flex; height: 100vh; width: 100vw; }
+
+    .sidebar { width: 260px; background: var(--panel-dark); color: white; display: flex; flex-direction: column; flex-shrink: 0; z-index: 40; transition: background 0.3s; }
+    .sidebar-brand { padding: 24px 20px; font-size: 1.15rem; font-weight: 700; border-bottom: 1px solid #334155; }
+    
+    .sidebar-menu { flex: 1; padding: 20px 12px; overflow-y: auto; }
+    .menu-item { padding: 12px 16px; margin-bottom: 4px; border-radius: 8px; cursor: pointer; font-weight: 500; color: #94a3b8; transition: 0.2s; }
+    .menu-item:hover, .menu-item.active { color: white; background: #334155; }
+    .menu-item.active { background: var(--accent-blue); }
+    .system-divider { margin: 5px 12px 10px 12px; font-size: 0.7rem; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 1px; }
+
+    .sidebar-system { padding: 10px 12px; border-top: 1px solid #334155; display: none; }
+    .sidebar-profile { padding: 20px; border-top: 1px solid #334155; display: none; flex-direction: column; gap: 12px; background: rgba(0,0,0,0.1); }
+    .profile-email { font-size: 0.8rem; font-weight: 600; color: #cbd5e1; word-break: break-all; }
+    .profile-controls { display: flex; gap: 10px; }
+    .btn-sidebar { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #475569; background: transparent; color: #cbd5e1; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: 0.2s; text-align: center; }
+    .btn-sidebar:hover { background: #334155; color: white; }
+    .btn-logout { border-color: #7f1d1d; color: #fca5a5; }
+    .btn-logout:hover { background: #7f1d1d; color: white; }
+
+    .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .navbar { height: 70px; background: var(--panel-light); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: env(safe-area-inset-top) 30px 0 30px; flex-shrink: 0; gap: 20px; transition: background 0.3s, border-color 0.3s;}
+    
+    .search-bar { flex: 1; max-width: 400px; padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; background: var(--bg-main); color: var(--text-dark); transition: 0.2s; }
+    .search-bar:focus { border-color: var(--accent-blue); }
+    
+    .control-group { display: flex; gap: 10px; align-items: center; }
+    select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); outline: none; cursor: pointer; background: var(--panel-light); color: var(--text-dark); font-weight: 500; font-size: 0.85rem;}
+    .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: 0.2s; }
+    .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-dark); }
+    .btn-outline:hover { background: var(--bg-main); }
+    .btn-primary { background: var(--accent-blue); color: white; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2); display: none; }
+    .btn-primary.visible { display: block; }
+
+    .workspace { flex: 1; padding: 30px; overflow-y: auto; position: relative; }
+    .grid-layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+    
+    .system-page-view { display: none; max-width: 800px; margin: 0 auto; background: var(--panel-light); padding: 40px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+    .system-page-view h2 { margin-top: 0; color: var(--accent-blue); font-size: 1.8rem; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+    .system-page-view div { font-size: 1.05rem; line-height: 1.7; white-space: pre-wrap; }
+
+    .flap-card { background: var(--panel-light); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 10px;}
+    .flap-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: var(--accent-blue); }
+    .card-meta { font-size: 0.75rem; color: var(--accent-blue); font-weight: 700; }
+    .card-title { font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-dark); }
+    .preview-text { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 5px;}
+    .preview-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px; opacity: 0.7; }
+    .search-highlight { background: #fef08a; color: #854d0e; padding: 2px 4px; border-radius: 3px; font-weight: 600; }
+    
+    .card-actions { margin-top: auto; border-top: 1px solid var(--border-color); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;}
+    .compare-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+
+    .matrix-fab { position: fixed; bottom: 30px; right: 30px; background: var(--accent-blue); color: white; padding: 12px 24px; border-radius: 30px; box-shadow: 0 10px 20px rgba(59, 130, 246, 0.4); display: none; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; z-index: 90; transition: transform 0.2s; }
+    .matrix-fab:hover { transform: scale(1.05); }
+
+    .comparison-dock { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--matrix-bg); z-index: 100; display: flex; flex-direction: column; clip-path: circle(0% at calc(100% - 100px) calc(100% - 50px)); opacity: 0; pointer-events: none; transition: clip-path 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s, background 0.3s; }
+    .comparison-dock.open { clip-path: circle(150% at calc(100% - 100px) calc(100% - 50px)); opacity: 1; pointer-events: auto; }
+    .dock-header { height: 70px; background: var(--panel-dark); border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; color: white; flex-shrink: 0; }
+    
+    .matrix-container { flex: 1; padding: 24px; overflow: auto; }
+    .matrix-table { width: 100%; border-collapse: separate; border-spacing: 24px 0; table-layout: fixed; min-width: max-content; }
+    .matrix-table th { position: sticky; top: 0; background: var(--matrix-card); color: var(--text-dark); padding: 20px; font-size: 1.25rem; font-weight: 700; z-index: 2; border-radius: 12px 12px 0 0; border-bottom: 2px solid var(--border-color); transition: 0.3s; }
+    .matrix-table td { background: var(--matrix-card); color: var(--text-dark); padding: 15px 20px; vertical-align: top; transition: 0.3s; }
+    .matrix-table tr:last-child td { border-radius: 0 0 12px 12px; padding-bottom: 30px; }
+    .row-label { font-size: 0.75rem; text-transform: uppercase; color: #f43f5e; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; }
+    .cell-data { font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap; }
+
+    .login-container { max-width: 400px; margin: 100px auto; padding: 40px; background: var(--panel-light); border-radius: 16px; text-align: center; border: 1px solid var(--border-color); color: var(--text-dark); }
+    .login-container input { width: 90%; padding: 12px; margin: 20px 0; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-main); color: var(--text-dark); }
+    .login-container button { width: 96%; background: var(--accent-blue); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    #app-shell, .paywall { display: none; }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+
+  <div class="login-container" id="login-screen">
+    <h2 style="margin-top: 0;">Flap Reference Engine</h2>
+    <p id="login-desc" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">Enter credential email to synchronize verification token.</p>
+    
+    <input type="email" id="email-input" placeholder="doctor@hospital.com">
+    <input type="number" id="pin-input" placeholder="Enter 4-Digit PIN" style="display: none;">
+    <button id="action-btn" onclick="requestPin()">Generate Access Token</button>
+
+    <div id="paywall-message" class="paywall">
+      <strong>Authorization Token Required</strong><br><br>
+      No active subscription found. Get full access to the flap reference engine.<br><br>
+      <a href="https://razorpay.com" target="_blank"><button style="background: #3399cc; width: 100%; margin-top: 10px;">Subscribe via Razorpay</button></a>
+    </div>
+  </div>
+
+  <div class="app-container" id="app-shell">
+    
+    <div class="sidebar">
+      <div class="sidebar-brand">Flap Chapters</div>
+      <div class="sidebar-menu" id="chapter-menu"></div>
+      
+      <div class="sidebar-system" id="system-menu"></div>
+
+      <div class="sidebar-profile" id="user-profile-section">
+        <div class="profile-email" id="display-user-email"></div>
+        <div class="profile-controls">
+          <button class="btn-sidebar" onclick="toggleTheme()" title="Toggle Dark Mode">🌓 Theme</button>
+          <button class="btn-sidebar btn-logout" onclick="logOut()">Log Out</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="navbar">
+        <input type="text" class="search-bar" id="search-input" oninput="renderWorkspaceGrid()" placeholder="Search anatomy, pedicles, classifications...">
+        
+        <div class="control-group">
+          <select id="subregion-dropdown" onchange="renderWorkspaceGrid()" style="display: none;">
+            <option value="ALL">All Sub-Regions</option>
+          </select>
+
+          <select id="sort-dropdown" onchange="renderWorkspaceGrid()">
+            <option value="default">Default Order</option>
+            <option value="asc">Alphabetical (A-Z)</option>
+            <option value="desc">Alphabetical (Z-A)</option>
+          </select>
+          
+          <button class="btn btn-outline" id="select-all-btn" onclick="selectAllInView()">Select All</button>
+          <button class="btn btn-outline" id="clear-btn" onclick="deselectAll()" style="display: none;">Clear</button>
+          <button class="btn btn-primary" id="launch-matrix-btn" onclick="openMatrix()">Compare (0)</button>
+        </div>
+      </div>
+
+      <div class="workspace">
+        <div class="grid-layout" id="flap-grid-canvas"></div>
+        <div class="system-page-view" id="system-page-view"></div>
+      </div>
+    </div> 
+
+    <div class="matrix-fab" id="matrix-fab" onclick="openMatrix()">
+      <span style="font-size: 1.2rem;">◱</span> Expand Matrix (<span id="fab-count">0</span>)
+    </div>
+
+    <div class="comparison-dock" id="matrix-dock">
+      <div class="dock-header">
+        <h2 style="margin:0;">Analytical Matrix Core</h2>
+        <div style="display: flex; gap: 15px;">
+          <button class="btn btn-outline" style="color:white; border-color:#334155;" onclick="minimizeMatrix()">↙ Minimize to Tab</button>
+          <button class="btn btn-outline" style="color:#f87171; border-color:#7f1d1d;" onclick="closeMatrix()">✕ Close & Clear</button>
+        </div>
+      </div>
+      <div class="matrix-container" id="matrix-container"></div>
+    </div>
+
+  </div> 
+
+  <script>
+    // PASTE YOUR LATEST DEPLOYMENT WEB APP URL MATRIX HERE
+    const API_URL = "https://script.google.com/macros/s/AKfycbxvOBWU04kKiodMadYSpewnQz9xokfiwGW_krSjQNeSOYp00crRHTTTKd1rOSYWp78x/exec";
+
+    let datasetMaster = [];
+    let originalOrderMap = new Map();
+    let activeCategoryFilter = "ALL";
+    let selectedFlaps = new Set();
+    let currentUserEmail = "";
+    let isMatrixMinimized = false;
+
+    const PREVIEW_KEYS = ["Introduction", "Arterial Anatomy", "Flap markings", "Flap dimensions"];
+
+    // NEW HELPER: Instantly strips all hidden formatting tags to prevent UI breakage
+    function stripHTML(text) {
+      if (!text) return "";
+      return text.toString().replace(/<[^>]*>?/gm, '').trim();
+    }
+
+    function toggleTheme() {
+      const isDark = document.body.classList.toggle('dark-theme');
+      localStorage.setItem('flap_theme', isDark ? 'dark' : 'light');
+    }
+
+    window.onload = function() {
+      if (localStorage.getItem('flap_theme') === 'dark') { document.body.classList.add('dark-theme'); }
+      const savedEmail = localStorage.getItem('flap_email');
+      const savedToken = localStorage.getItem('flap_token');
+      const cachedFlaps = localStorage.getItem('flap_data_cache');
+
+      if (savedEmail && savedToken) {
+        currentUserEmail = savedEmail;
+        document.getElementById('email-input').style.display = 'none';
+        document.getElementById('action-btn').style.display = 'none';
+        document.getElementById('login-desc').innerText = "Validating secure session...";
+
+        if (cachedFlaps) { initializeSystem(JSON.parse(cachedFlaps)); }
+
+        fetch(API_URL + "?action=auto_login&email=" + encodeURIComponent(savedEmail) + "&token=" + encodeURIComponent(savedToken))
+          .then(res => res.json())
+          .then(data => { 
+            if (data.flaps && !data.locked) {
+                localStorage.setItem('flap_data_cache', JSON.stringify(data.flaps));
+                initializeSystem(data.flaps); 
+            } else { logOut(); } 
+          })
+          .catch(() => {
+              if(!cachedFlaps) {
+                 document.getElementById('login-desc').innerText = "Network timeout. Please confirm email to re-verify.";
+                 const emailBox = document.getElementById('email-input');
+                 emailBox.style.display = 'inline-block';
+                 emailBox.value = savedEmail; 
+                 const actionBtn = document.getElementById('action-btn');
+                 actionBtn.style.display = 'block';
+                 actionBtn.innerText = "Generate Access Token";
+              }
+          });
+      }
+    };
+
+    function requestPin() {
+      const emailInput = document.getElementById('email-input');
+      currentUserEmail = emailInput.value.trim();
+      if (!currentUserEmail) return alert("Please enter an email");
+      
+      const btn = document.getElementById('action-btn');
+      btn.innerText = "Transmitting...";
+      btn.disabled = true;
+      document.getElementById('paywall-message').style.display = 'none';
+
+      fetch(API_URL + "?action=request_pin&email=" + encodeURIComponent(currentUserEmail))
+        .then(res => res.json())
+        .then(data => {
+          btn.disabled = false;
+          if (data.error) {
+            alert(data.error);
+            btn.innerText = "Generate Access Token";
+          } else if (data.locked) {
+            document.getElementById('paywall-message').style.display = 'block';
+            btn.innerText = "Generate Access Token";
+          } else if (data.step === "pin_sent") {
+            emailInput.style.display = "none";
+            document.getElementById('pin-input').style.display = "inline-block"; 
+            btn.innerText = "Validate Key";
+            btn.onclick = verifyPin;
+          }
+        }).catch(() => {
+          btn.disabled = false;
+          alert("Network Timeout. Please check your connection.");
+          btn.innerText = "Generate Access Token";
+        });
+    }
+
+    function verifyPin() {
+      const pin = document.getElementById('pin-input').value;
+      if (!pin) return alert("Please enter the PIN");
+      const btn = document.getElementById('action-btn');
+      btn.innerText = "Verifying...";
+      btn.disabled = true;
+
+      fetch(API_URL + "?action=verify_pin&email=" + encodeURIComponent(currentUserEmail) + "&pin=" + encodeURIComponent(pin))
+        .then(res => res.json())
+        .then(data => {
+          btn.disabled = false;
+          if (data.error) {
+            alert("Incorrect PIN.");
+            btn.innerText = "Validate Key";
+          } else if (data.flaps) {
+            localStorage.setItem('flap_email', currentUserEmail);
+            localStorage.setItem('flap_token', data.token);
+            localStorage.setItem('flap_data_cache', JSON.stringify(data.flaps));
+            initializeSystem(data.flaps);
+          }
+        });
+    }
+
+    function logOut() {
+        localStorage.removeItem('flap_email');
+        localStorage.removeItem('flap_token');
+        localStorage.removeItem('flap_data_cache');
+        location.reload();
+    }
+
+    function initializeSystem(flaps) {
+      datasetMaster = flaps;
+      datasetMaster.forEach((f, i) => originalOrderMap.set(f.name, i));
+      
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app-shell').style.display = 'flex';
+      
+      document.getElementById('user-profile-section').style.display = 'flex';
+      document.getElementById('display-user-email').innerText = currentUserEmail;
+      
+      const chapterMenu = document.getElementById('chapter-menu');
+      const systemMenu = document.getElementById('system-menu');
+      
+      chapterMenu.innerHTML = '<div class="menu-item active" onclick="filterCategory(\'ALL\', this)">All References</div>';
+      systemMenu.innerHTML = '';
+      
+      let systemPages = [];
+      const uniqueCategories = [...new Set(flaps.map(f => f.category))];
+
+      uniqueCategories.forEach(cat => {
+        if (cat === 'System') {
+          systemPages = datasetMaster.filter(f => f.category === 'System');
+        } else {
+          const div = document.createElement('div');
+          div.className = "menu-item"; div.innerText = stripHTML(cat); // Sanitized
+          div.onclick = function() { filterCategory(cat, div); };
+          chapterMenu.appendChild(div);
+        }
+      });
+
+      if (systemPages.length > 0) {
+        systemMenu.style.display = 'block';
+        const divider = document.createElement('div');
+        divider.className = "system-divider";
+        divider.innerText = "System";
+        systemMenu.appendChild(divider);
+
+        systemPages.forEach(page => {
+           const cleanName = stripHTML(page.name).toLowerCase();
+           // FIX: Bulletproof check that ignores hidden formatting when hiding the Order tab
+           if (cleanName.includes('order')) return; 
+
+           const div = document.createElement('div');
+           div.className = "menu-item"; div.innerText = stripHTML(page.name);
+           div.onclick = function() { viewSystemPage(page.name, div); };
+           systemMenu.appendChild(div);
+        });
+      }
+
+      renderWorkspaceGrid();
+    }
+
+    function viewSystemPage(pageName, element) {
+      document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+      element.classList.add('active');
+      
+      document.getElementById('flap-grid-canvas').style.display = 'none';
+      document.getElementById('subregion-dropdown').style.display = 'none';
+      document.getElementById('sort-dropdown').style.display = 'none';
+      document.getElementById('select-all-btn').style.display = 'none';
+      document.getElementById('clear-btn').style.display = 'none';
+      document.getElementById('launch-matrix-btn').style.display = 'none';
+      document.getElementById('search-input').style.display = 'none';
+      
+      document.getElementById('system-page-view').style.display = 'block';
+
+      const pageData = datasetMaster.find(f => f.name === pageName && f.category === 'System');
+      
+      const contentKey = Object.keys(pageData).find(k => stripHTML(k).toLowerCase() === 'content');
+      const contentBody = contentKey ? pageData[contentKey] : "<p style='color:var(--text-muted); font-style:italic;'>Data missing.</p>";
+      
+      document.getElementById('system-page-view').innerHTML = `<h2>${stripHTML(pageData.name)}</h2><div>${contentBody}</div>`;
+    }
+
+    function filterCategory(cat, element) {
+      document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+      element.classList.add('active');
+      activeCategoryFilter = cat;
+
+      document.getElementById('system-page-view').style.display = 'none';
+      document.getElementById('flap-grid-canvas').style.display = 'grid';
+      document.getElementById('sort-dropdown').style.display = 'inline-block';
+      document.getElementById('select-all-btn').style.display = 'inline-block';
+      document.getElementById('search-input').style.display = 'block';
+
+      const subDropdown = document.getElementById('subregion-dropdown');
+      if (cat === 'ALL') {
+         subDropdown.style.display = 'none';
+      } else {
+         subDropdown.style.display = 'inline-block';
+         let subTags = new Set();
+         datasetMaster.forEach(f => {
+            if(f.category === cat && f['Sub-Region Tag']) {
+                // FIX: Strip HTML before breaking tags apart
+                const rawTagString = stripHTML(f['Sub-Region Tag']);
+                rawTagString.split(',').forEach(tag => {
+                    const cleanTag = tag.trim();
+                    if(cleanTag) subTags.add(cleanTag);
+                });
+            }
+         });
+
+         let orderedTagsArray = [];
+         // FIX: Use stripHTML to find the exact configuration column safely
+         const orderConfig = datasetMaster.find(f => stripHTML(f.name).toLowerCase().includes('order') && f.category === 'System');
+         if (orderConfig) {
+             const contentKey = Object.keys(orderConfig).find(k => stripHTML(k).toLowerCase() === 'content');
+             if (contentKey && orderConfig[contentKey]) {
+                 const cleanContent = stripHTML(orderConfig[contentKey]);
+                 orderedTagsArray = cleanContent.split(',').map(t => t.trim());
+             }
+         }
+
+         let finalTags = Array.from(subTags);
+         finalTags.sort((a, b) => {
+             let indexA = orderedTagsArray.indexOf(a);
+             let indexB = orderedTagsArray.indexOf(b);
+             if (indexA === -1) indexA = 9999;
+             if (indexB === -1) indexB = 9999;
+             if (indexA === 9999 && indexB === 9999) return a.localeCompare(b);
+             return indexA - indexB;
+         });
+
+         subDropdown.innerHTML = '<option value="ALL">All Sub-Regions</option>';
+         finalTags.forEach(tag => {
+            // Dropdown HTML injection fixed!
+            if(tag) subDropdown.innerHTML += `<option value="${tag}">${tag}</option>`;
+         });
+      }
+
+      subDropdown.value = 'ALL';
+      renderWorkspaceGrid();
+    }
+
+    function getSearchSnippet(text, query) {
+      if (!text || !query) return "";
+      const strippedText = stripHTML(text); 
+      const regex = new RegExp(`(.{0,40})(${query})(.{0,40})`, 'gi');
+      const match = regex.exec(strippedText);
+      if (match) return `...${match[1]}<span class="search-highlight">${match[2]}</span>${match[3]}...`;
+      return "";
+    }
+
+    function renderWorkspaceGrid() {
+      const canvas = document.getElementById('flap-grid-canvas');
+      canvas.innerHTML = '';
+      const searchQuery = document.getElementById('search-input').value.toLowerCase();
+      const sortMode = document.getElementById('sort-dropdown').value;
+      
+      const subDropdown = document.getElementById('subregion-dropdown');
+      const subDropdownValue = subDropdown ? subDropdown.value : 'ALL';
+
+      let viewData = datasetMaster.filter(flap => {
+        if (flap.category === 'System') return false; 
+        if (activeCategoryFilter !== "ALL" && flap.category !== activeCategoryFilter) return false;
+        
+        if (activeCategoryFilter !== "ALL" && subDropdownValue !== "ALL") {
+            const rawTagString = stripHTML(flap['Sub-Region Tag']);
+            const tags = rawTagString ? rawTagString.split(',').map(t=>t.trim()) : [];
+            if (!tags.includes(subDropdownValue)) return false;
+        }
+
+        if (searchQuery) {
+          let matches = stripHTML(flap.name).toLowerCase().includes(searchQuery);
+          for (let v of Object.values(flap)) { if (stripHTML(v).toLowerCase().includes(searchQuery)) matches = true; }
+          if (!matches) return false;
+        }
+        return true;
+      });
+
+      viewData.sort((a, b) => {
+        const aSel = selectedFlaps.has(a.name);
+        const bSel = selectedFlaps.has(b.name);
+        if (aSel && !bSel) return -1;
+        if (!aSel && bSel) return 1;
+
+        if (searchQuery) {
+            const aTitleMatch = stripHTML(a.name).toLowerCase().includes(searchQuery);
+            const bTitleMatch = stripHTML(b.name).toLowerCase().includes(searchQuery);
+            if (aTitleMatch && !bTitleMatch) return -1;
+            if (!aTitleMatch && bTitleMatch) return 1;
+        }
+
+        if (sortMode === 'asc') return stripHTML(a.name).localeCompare(stripHTML(b.name));
+        if (sortMode === 'desc') return stripHTML(b.name).localeCompare(stripHTML(a.name));
+        
+        return originalOrderMap.get(a.name) - originalOrderMap.get(b.name); 
+      });
+
+      viewData.forEach(flap => {
+        const card = document.createElement('div');
+        card.className = 'flap-card';
+        card.onclick = () => viewSingleFlap(flap.name);
+
+        let previewHtml = '';
+        if (searchQuery && !stripHTML(flap.name).toLowerCase().includes(searchQuery)) {
+            for (let [k, v] of Object.entries(flap)) {
+                if (k !== 'name' && k !== 'category' && k !== 'Sub-Region Tag' && stripHTML(v).toLowerCase().includes(searchQuery)) {
+                    previewHtml += `<div class="preview-label">Matched in ${stripHTML(k)}</div><div class="preview-text">${getSearchSnippet(v, searchQuery)}</div>`;
+                    break; 
+                }
+            }
+        } else {
+            PREVIEW_KEYS.forEach(key => {
+                if (flap[key]) {
+                    const cleanText = stripHTML(flap[key]);
+                    previewHtml += `<div class="preview-label">${key}</div><div class="preview-text">${cleanText}</div>`;
+                }
+            });
+        }
+
+        card.innerHTML = `
+          <div>
+            <div class="card-meta">${stripHTML(flap.category)}</div>
+            <h4 class="card-title">${stripHTML(flap.name)}</h4>
+            <div style="margin-top:12px;">${previewHtml}</div>
+          </div>
+          <div class="card-actions">
+            <label class="compare-toggle" onclick="event.stopPropagation()">
+              <input type="checkbox" onchange="toggleSelection('${flap.name}', this)" ${selectedFlaps.has(flap.name) ? 'checked' : ''}>
+              Select for Matrix
+            </label>
+          </div>
+        `;
+        canvas.appendChild(card);
+      });
+      updateCompareButton();
+    }
+
+    function toggleSelection(flapName, checkbox) {
+      if (checkbox.checked) selectedFlaps.add(flapName);
+      else selectedFlaps.delete(flapName);
+      updateCompareButton();
+    }
+
+    function selectAllInView() {
+      const searchQuery = document.getElementById('search-input').value.toLowerCase();
+      const subDropdown = document.getElementById('subregion-dropdown');
+      const subDropdownValue = subDropdown ? subDropdown.value : 'ALL';
+      
+      datasetMaster.forEach(flap => {
+        if (flap.category === 'System') return;
+        if (activeCategoryFilter !== "ALL" && flap.category !== activeCategoryFilter) return;
+        if (activeCategoryFilter !== "ALL" && subDropdownValue !== "ALL") {
+            const rawTagString = stripHTML(flap['Sub-Region Tag']);
+            const tags = rawTagString ? rawTagString.split(',').map(t=>t.trim()) : [];
+            if (!tags.includes(subDropdownValue)) return;
+        }
+        if (searchQuery) {
+          let matches = false;
+          for (let v of Object.values(flap)) { if (stripHTML(v).toLowerCase().includes(searchQuery)) matches = true; }
+          if (!matches) return;
+        }
+        selectedFlaps.add(flap.name);
+      });
+      renderWorkspaceGrid();
+    }
+
+    function deselectAll() {
+      selectedFlaps.clear();
+      renderWorkspaceGrid();
+    }
+
+    function updateCompareButton() {
+      const btn = document.getElementById('launch-matrix-btn');
+      const clearBtn = document.getElementById('clear-btn');
+      const count = selectedFlaps.size;
+      
+      if (count > 0) {
+        btn.innerText = `Compare Core (${count})`;
+        btn.classList.add('visible');
+        clearBtn.style.display = 'inline-block'; 
+        document.getElementById('fab-count').innerText = count;
+        if (isMatrixMinimized) document.getElementById('matrix-fab').style.display = 'flex';
+      } else {
+        btn.classList.remove('visible');
+        clearBtn.style.display = 'none'; 
+        document.getElementById('matrix-fab').style.display = 'none';
+        isMatrixMinimized = false;
+        document.getElementById('matrix-dock').classList.remove('open');
+      }
+    }
+
+    function viewSingleFlap(flapName) {
+      selectedFlaps.add(flapName);
+      openMatrix();
+    }
+
+    function openMatrix() {
+      if (selectedFlaps.size === 0) return;
+      buildMatrix(Array.from(selectedFlaps));
+      document.getElementById('matrix-dock').classList.add('open');
+      document.getElementById('matrix-fab').style.display = 'none';
+      isMatrixMinimized = false;
+      renderWorkspaceGrid();
+    }
+
+    function minimizeMatrix() {
+      document.getElementById('matrix-dock').classList.remove('open');
+      document.getElementById('matrix-fab').style.display = 'flex';
+      isMatrixMinimized = true;
+    }
+
+    function closeMatrix() {
+      document.getElementById('matrix-dock').classList.remove('open');
+      document.getElementById('matrix-fab').style.display = 'none';
+      isMatrixMinimized = false;
+      deselectAll(); 
+    }
+
+    function buildMatrix(flapNamesToCompare) {
+      const container = document.getElementById('matrix-container');
+      const flaps = flapNamesToCompare.map(name => datasetMaster.find(f => f.name === name));
+      
+      let attributeSet = new Set();
+      flaps.forEach(f => Object.keys(f).forEach(k => { 
+          if (stripHTML(k) !== 'name' && stripHTML(k) !== 'category' && stripHTML(k) !== 'Sub-Region Tag' && f[k].trim() !== '') attributeSet.add(k); 
+      }));
+      const attributes = Array.from(attributeSet);
+
+      let tableHtml = `<table class="matrix-table"><thead><tr>`;
+      flaps.forEach(f => tableHtml += `<th>${stripHTML(f.name)}</th>`);
+      tableHtml += `</tr></thead><tbody>`;
+
+      attributes.forEach(attr => {
+        tableHtml += `<tr>`;
+        flaps.forEach(f => {
+          const val = f[attr] ? f[attr].trim() : '';
+          if (val) {
+             tableHtml += `<td><div class="row-label">${stripHTML(attr)}</div><div class="cell-data">${val}</div></td>`;
+          } else {
+             tableHtml += `<td></td>`;
+          }
+        });
+        tableHtml += `</tr>`;
+      });
+      
+      tableHtml += `</tbody></table>`;
+      container.innerHTML = tableHtml;
+    }
+  </script>
+</body>
+</html>
