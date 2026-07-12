@@ -29,7 +29,7 @@
     /* OFFSET EVERYTHING DOWN BY 25PX */
     .app-container { display: flex; height: calc(100vh - 25px); width: 100vw; margin-top: 25px; }
 
-    /* OVERLAY FOR SIDEBAR */
+    /* OVERLAY FOR SIDEBAR (NOW GLOBAL) */
     .sidebar-overlay { display: none; position: fixed; top: 25px; left: 0; width: 100vw; height: calc(100vh - 25px); background: rgba(0,0,0,0.5); z-index: 899; opacity: 0; transition: opacity 0.3s; }
     .sidebar-overlay.active { opacity: 1; }
 
@@ -56,9 +56,10 @@
 
     .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; width: 100%; }
     
+    /* MODIFIED NAVBAR: Allows wrapping so the Compare button is never hidden */
     .navbar { min-height: 70px; height: auto; background: var(--panel-light); border-bottom: 1px solid var(--border-color); display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; padding: 10px 20px; gap: 15px; transition: background 0.3s, border-color 0.3s;}
     
-    /* HAMBURGER BUTTON */
+    /* HAMBURGER BUTTON (NOW VISIBLE GLOBALLY) */
     .hamburger-btn { display: block; background: transparent; border: none; font-size: 1.8rem; color: var(--text-dark); cursor: pointer; padding: 0; margin-right: 5px; }
 
     .search-bar { flex: 1; min-width: 200px; max-width: 400px; padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; background: var(--bg-main); color: var(--text-dark); transition: 0.2s; }
@@ -99,9 +100,13 @@
     
     .matrix-container { flex: 1; padding: 24px; overflow-x: auto; overflow-y: auto; }
     
-    .matrix-table { width: max-content; border-collapse: separate; border-spacing: 24px 0; table-layout: fixed; }
-    .matrix-table th { position: sticky; top: 0; background: var(--matrix-card); color: var(--text-dark); padding: 20px; font-size: 1.25rem; font-weight: 700; z-index: 2; border-radius: 12px 12px 0 0; border-bottom: 2px solid var(--border-color); transition: 0.3s; min-width: 280px; width: 280px; }
-    .matrix-table td { background: var(--matrix-card); color: var(--text-dark); padding: 15px 20px; vertical-align: top; transition: 0.3s; min-width: 280px; width: 280px; }
+    /* DYNAMIC MATRIX SIZING (Responsive to count & screen size) */
+    .matrix-table { min-width: 100%; width: max-content; border-collapse: separate; border-spacing: 24px 0; table-layout: fixed; }
+    .matrix-table th { position: sticky; top: 0; background: var(--matrix-card); color: var(--text-dark); padding: 20px; font-size: 1.25rem; font-weight: 700; z-index: 2; border-radius: 12px 12px 0 0; border-bottom: 2px solid var(--border-color); transition: 0.3s; 
+      /* Formula: 100vw minus padding (48px) minus total gap width, divided equally. Caps at 4 on desktop. */
+      width: calc((100vw - 48px - ((min(var(--col-count), 4) - 1) * 24px)) / min(var(--col-count), 4)); }
+    .matrix-table td { background: var(--matrix-card); color: var(--text-dark); padding: 15px 20px; vertical-align: top; transition: 0.3s; 
+      width: calc((100vw - 48px - ((min(var(--col-count), 4) - 1) * 24px)) / min(var(--col-count), 4)); }
     .matrix-table tr:last-child td { border-radius: 0 0 12px 12px; padding-bottom: 30px; }
     .row-label { font-size: 0.75rem; text-transform: uppercase; color: #f43f5e; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; }
     .cell-data { font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap; }
@@ -111,20 +116,21 @@
     .login-container button { width: 90%; background: var(--accent-blue); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; box-sizing: border-box; margin-top: 10px; }
     #app-shell, .paywall { display: none; }
 
-    /* OTP STYLES (NEW) */
+    /* OTP STYLES */
     .otp-container { display: none; gap: 12px; justify-content: center; margin: 20px 0; }
-    .login-container input.otp-box { width: 60px; height: 70px; font-size: 2rem; font-weight: 700; text-align: center; padding: 0; margin: 0; border-radius: 12px; border: 2px solid var(--border-color); background: var(--bg-main); color: var(--text-dark); }
+    .login-container input.otp-box { width: 60px; height: 70px; font-size: 2rem; font-weight: 700; text-align: center; padding: 0; margin: 0; border-radius: 12px; border: 2px solid var(--border-color); background: var(--bg-main); color: var(--text-dark); box-sizing: border-box; }
     .login-container input.otp-box:focus { border-color: var(--accent-blue); outline: none; }
 
     /* MOBILE RESPONSIVE QUERIES */
     @media (max-width: 768px) {
-      /* Login Screen Overrides for Mobile (LARGER) */
-      .login-container { width: 85%; max-width: none; margin: 40px auto; padding: 40px 20px; }
+      /* ENLARGED MOBILE LOGIN SCREEN */
+      .login-container { width: 90%; max-width: none; margin: 60px auto; padding: 40px 25px; }
       .login-container h2 { font-size: 2.2rem; }
       .login-container p { font-size: 1.15rem; }
       .login-container input[type="email"] { width: 100%; font-size: 1.2rem; padding: 18px; border-radius: 10px; }
-      .login-container button { width: 100%; font-size: 1.2rem; padding: 18px; border-radius: 10px; margin-top: 15px; }
-      .login-container input.otp-box { width: 55px; height: 65px; font-size: 1.8rem; }
+      .login-container button { width: 100%; font-size: 1.3rem; padding: 18px; border-radius: 10px; margin-top: 15px; }
+      .otp-container { gap: 15px; }
+      .login-container input.otp-box { width: 65px; height: 80px; font-size: 2.5rem; }
 
       .navbar { padding: 10px; gap: 8px; }
       .workspace { padding: 10px; }
@@ -137,11 +143,14 @@
       .compare-toggle { font-size: 0.65rem; text-align: center; }
       .card-actions { padding-top: 8px; flex-direction: column; }
       
-      /* Perfect 3-Flap Screen Matrix Sizing */
+      /* Dynamic Matrix Capping for Mobile (Max 3 Flaps) */
       .matrix-table { border-spacing: 12px 0; }
-      /* Viewport Width (100vw) minus paddings/gaps (72px) divided perfectly by 3 */
-      .matrix-table th { min-width: calc((100vw - 72px) / 3); width: calc((100vw - 72px) / 3); padding: 15px 10px; font-size: 1rem; }
-      .matrix-table td { min-width: calc((100vw - 72px) / 3); width: calc((100vw - 72px) / 3); padding: 10px; font-size: 0.85rem; }
+      .matrix-table th, .matrix-table td {
+        /* Cap width at 3 on mobile. Forces perfectly even division. */
+        width: calc((100vw - 48px - ((min(var(--col-count), 3) - 1) * 12px)) / min(var(--col-count), 3));
+      }
+      .matrix-table th { padding: 15px 10px; font-size: 1rem; }
+      .matrix-table td { padding: 10px; font-size: 0.85rem; }
     }
   </style>
 </head>
@@ -156,7 +165,7 @@
     
     <input type="email" id="email-input" placeholder="doctor@hospital.com">
     
-    <!-- NEW 4-BOX OTP INPUT -->
+    <!-- OTP PIN ENTRY BLOCKS -->
     <div id="otp-container" class="otp-container">
       <input type="text" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" onkeyup="handleOtp(this, event)" onfocus="this.select()">
       <input type="text" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" onkeyup="handleOtp(this, event)" onfocus="this.select()">
@@ -252,7 +261,7 @@
 
     const PREVIEW_KEYS = ["Introduction", "Arterial Anatomy", "Flap markings", "Flap dimensions"];
 
-    // NEW LOGIC: OTP PIN BOX NAVIGATION
+    // OTP BOX NAVIGATION HANDLER
     function handleOtp(current, event) {
         if (event.key === 'Backspace') {
             if (current.previousElementSibling) current.previousElementSibling.focus();
@@ -350,9 +359,10 @@
             btn.innerText = "Generate Access Token";
           } else if (data.step === "pin_sent") {
             emailInput.style.display = "none";
-            // Show new OTP Container
+            
+            // Unhide OTP Container
             document.getElementById('otp-container').style.display = "flex"; 
-            document.querySelectorAll('.otp-box').forEach(b => b.value = ''); // Clear old inputs
+            document.querySelectorAll('.otp-box').forEach(b => b.value = ''); 
             
             btn.innerText = "Validate Key";
             btn.onclick = verifyPin;
@@ -365,7 +375,7 @@
     }
 
     function verifyPin() {
-      // Gather PIN from the 4 boxes
+      // Concatenate values from the 4 boxes
       const pin = Array.from(document.querySelectorAll('.otp-box')).map(i => i.value).join('');
       
       if (pin.length !== 4) return alert("Please enter the complete 4-digit PIN.");
@@ -724,7 +734,8 @@
       }));
       const attributes = Array.from(attributeSet);
 
-      let tableHtml = `<table class="matrix-table"><thead><tr>`;
+      // INJECT COLUMN COUNT AS CSS VARIABLE FOR DYNAMIC SIZING
+      let tableHtml = `<table class="matrix-table" style="--col-count: ${flaps.length}"><thead><tr>`;
       flaps.forEach(f => tableHtml += `<th>${stripHTML(f.name)}</th>`);
       tableHtml += `</tr></thead><tbody>`;
 
