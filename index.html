@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, interactive-widget=resizes-content">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
   <meta name="theme-color" content="#1e293b">
   <title>Flap Atlas & Reference</title>
   <link rel="manifest" href="manifest.json">
@@ -57,7 +57,7 @@
     .btn-primary { background: var(--accent-blue); color: white; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2); display: none; }
     .btn-primary.visible { display: block; }
 
-    .workspace { flex: 1; padding: 30px; overflow-y: auto; position: relative; }
+    .workspace { flex: 1; padding: 30px; overflow-x: hidden; overflow-y: auto; position: relative; }
     .grid-layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
     
     .system-page-view { display: none; max-width: 800px; margin: 0 auto; background: var(--panel-light); padding: 40px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
@@ -82,7 +82,7 @@
     .comparison-dock.open { clip-path: circle(150% at calc(100% - 100px) calc(100% - 50px)); opacity: 1; pointer-events: auto; }
     .dock-header { height: 70px; background: var(--panel-dark); border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; color: white; flex-shrink: 0; }
     
-    .matrix-container { flex: 1; padding: 24px; overflow: auto; }
+    .matrix-container { flex: 1; padding: 24px; overflow-x: auto; overflow-y: auto; }
     .matrix-table { width: 100%; border-collapse: separate; border-spacing: 24px 0; table-layout: fixed; min-width: max-content; }
     .matrix-table th { position: sticky; top: 0; background: var(--matrix-card); color: var(--text-dark); padding: 20px; font-size: 1.25rem; font-weight: 700; z-index: 2; border-radius: 12px 12px 0 0; border-bottom: 2px solid var(--border-color); transition: 0.3s; }
     .matrix-table td { background: var(--matrix-card); color: var(--text-dark); padding: 15px 20px; vertical-align: top; transition: 0.3s; }
@@ -587,6 +587,8 @@
 
     function openMatrix() {
       if (selectedFlaps.size === 0) return;
+      // ADD THIS LINE
+      history.pushState({ view: 'matrix' }, "Matrix", "#matrix");
       buildMatrix(Array.from(selectedFlaps));
       document.getElementById('matrix-dock').classList.add('open');
       document.getElementById('matrix-fab').style.display = 'none';
@@ -637,6 +639,15 @@
       tableHtml += `</tbody></table>`;
       container.innerHTML = tableHtml;
     }
+
+// Add the listener right here:
+    window.addEventListener('popstate', function(event) {
+        // If the matrix is currently open, minimize it instead of closing the app
+        if (document.getElementById('matrix-dock').classList.contains('open')) {
+            minimizeMatrix();
+        }
+    });
+    
   </script>
 </body>
 </html>
