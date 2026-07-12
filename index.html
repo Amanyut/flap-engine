@@ -23,13 +23,20 @@
     body { user-select: none; -webkit-user-select: none; font-family: -apple-system, sans-serif; margin: 0; background: var(--bg-main); color: var(--text-dark); overflow: hidden; height: 100vh; overscroll-behavior: none; transition: background 0.3s, color 0.3s; }
     ::-webkit-scrollbar { width: 0px; }
     
-    .app-container { display: flex; height: 100vh; width: 100vw; }
+    /* 1. TOP CONSTANT STATUS BAR */
+    .top-status-bar { position: fixed; top: 0; left: 0; right: 0; height: 25px; background: var(--accent-blue); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; z-index: 1000; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
-    /* OVERLAY FOR MOBILE SIDEBAR */
-    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 104; opacity: 0; transition: opacity 0.3s; }
+    /* OFFSET EVERYTHING DOWN BY 25PX */
+    .app-container { display: flex; height: calc(100vh - 25px); width: 100vw; margin-top: 25px; }
+
+    /* OVERLAY FOR SIDEBAR (NOW GLOBAL) */
+    .sidebar-overlay { display: none; position: fixed; top: 25px; left: 0; width: 100vw; height: calc(100vh - 25px); background: rgba(0,0,0,0.5); z-index: 899; opacity: 0; transition: opacity 0.3s; }
     .sidebar-overlay.active { opacity: 1; }
 
-    .sidebar { width: 260px; background: var(--panel-dark); color: white; display: flex; flex-direction: column; flex-shrink: 0; z-index: 105; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s; }
+    /* 4 & 5. SIDEBAR IS NOW A HIDDEN DRAWER GLOBALLY (PC & MOBILE) */
+    .sidebar { position: fixed; left: 0; top: 25px; height: calc(100vh - 25px); width: 260px; background: var(--panel-dark); color: white; display: flex; flex-direction: column; z-index: 900; transform: translateX(-100%); touch-action: pan-y; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s; }
+    .sidebar.open { transform: translateX(0); }
+    
     .sidebar-brand { padding: 24px 20px; font-size: 1.15rem; font-weight: 700; border-bottom: 1px solid #334155; }
     
     .sidebar-menu { flex: 1; padding: 20px 12px; overflow-y: auto; }
@@ -47,16 +54,18 @@
     .btn-logout { border-color: #7f1d1d; color: #fca5a5; }
     .btn-logout:hover { background: #7f1d1d; color: white; }
 
-    .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-    .navbar { height: 70px; background: var(--panel-light); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: env(safe-area-inset-top) 30px 0 30px; flex-shrink: 0; gap: 20px; transition: background 0.3s, border-color 0.3s;}
+    .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; width: 100%; }
     
-    /* HAMBURGER BUTTON */
-    .hamburger-btn { display: none; background: transparent; border: none; font-size: 1.8rem; color: var(--text-dark); cursor: pointer; padding: 0; margin-right: 10px; }
+    /* MODIFIED NAVBAR: Allows wrapping so the Compare button is never hidden */
+    .navbar { min-height: 70px; height: auto; background: var(--panel-light); border-bottom: 1px solid var(--border-color); display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; padding: 10px 20px; gap: 15px; transition: background 0.3s, border-color 0.3s;}
+    
+    /* HAMBURGER BUTTON (NOW VISIBLE GLOBALLY) */
+    .hamburger-btn { display: block; background: transparent; border: none; font-size: 1.8rem; color: var(--text-dark); cursor: pointer; padding: 0; margin-right: 5px; }
 
-    .search-bar { flex: 1; max-width: 400px; padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; background: var(--bg-main); color: var(--text-dark); transition: 0.2s; }
+    .search-bar { flex: 1; min-width: 200px; max-width: 400px; padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; background: var(--bg-main); color: var(--text-dark); transition: 0.2s; }
     .search-bar:focus { border-color: var(--accent-blue); }
     
-    .control-group { display: flex; gap: 10px; align-items: center; }
+    .control-group { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-left: auto; }
     select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); outline: none; cursor: pointer; background: var(--panel-light); color: var(--text-dark); font-weight: 500; font-size: 0.85rem;}
     .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: 0.2s; }
     .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-dark); }
@@ -64,7 +73,7 @@
     .btn-primary { background: var(--accent-blue); color: white; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2); display: none; }
     .btn-primary.visible { display: block; }
 
-    .workspace { flex: 1; padding: 30px; overflow-x: hidden; overflow-y: auto; position: relative; }
+    .workspace { flex: 1; padding: 20px 30px; overflow-x: hidden; overflow-y: auto; position: relative; }
     .grid-layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
     
     .system-page-view { display: none; max-width: 800px; margin: 0 auto; background: var(--panel-light); padding: 40px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
@@ -85,42 +94,50 @@
     .matrix-fab { position: fixed; bottom: 30px; right: 30px; background: var(--accent-blue); color: white; padding: 12px 24px; border-radius: 30px; box-shadow: 0 10px 20px rgba(59, 130, 246, 0.4); display: none; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; z-index: 90; transition: transform 0.2s; }
     .matrix-fab:hover { transform: scale(1.05); }
 
-    .comparison-dock { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--matrix-bg); z-index: 100; display: flex; flex-direction: column; clip-path: circle(0% at calc(100% - 100px) calc(100% - 50px)); opacity: 0; pointer-events: none; transition: clip-path 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s, background 0.3s; }
+    .comparison-dock { position: fixed; top: 25px; left: 0; width: 100vw; height: calc(100vh - 25px); background: var(--matrix-bg); z-index: 800; display: flex; flex-direction: column; clip-path: circle(0% at calc(100% - 100px) calc(100% - 50px)); opacity: 0; pointer-events: none; transition: clip-path 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s, background 0.3s; }
     .comparison-dock.open { clip-path: circle(150% at calc(100% - 100px) calc(100% - 50px)); opacity: 1; pointer-events: auto; }
     .dock-header { height: 70px; background: var(--panel-dark); border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; color: white; flex-shrink: 0; }
     
     .matrix-container { flex: 1; padding: 24px; overflow-x: auto; overflow-y: auto; }
-    .matrix-table { width: 100%; border-collapse: separate; border-spacing: 24px 0; table-layout: fixed; min-width: max-content; }
-    .matrix-table th { position: sticky; top: 0; background: var(--matrix-card); color: var(--text-dark); padding: 20px; font-size: 1.25rem; font-weight: 700; z-index: 2; border-radius: 12px 12px 0 0; border-bottom: 2px solid var(--border-color); transition: 0.3s; }
-    .matrix-table td { background: var(--matrix-card); color: var(--text-dark); padding: 15px 20px; vertical-align: top; transition: 0.3s; }
+    
+    /* 3. MATRIX WIDTH CAPPING (Prevents Squeezing) */
+    .matrix-table { width: max-content; border-collapse: separate; border-spacing: 24px 0; table-layout: fixed; }
+    .matrix-table th { position: sticky; top: 0; background: var(--matrix-card); color: var(--text-dark); padding: 20px; font-size: 1.25rem; font-weight: 700; z-index: 2; border-radius: 12px 12px 0 0; border-bottom: 2px solid var(--border-color); transition: 0.3s; min-width: 280px; width: 280px; }
+    .matrix-table td { background: var(--matrix-card); color: var(--text-dark); padding: 15px 20px; vertical-align: top; transition: 0.3s; min-width: 280px; width: 280px; }
     .matrix-table tr:last-child td { border-radius: 0 0 12px 12px; padding-bottom: 30px; }
     .row-label { font-size: 0.75rem; text-transform: uppercase; color: #f43f5e; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; }
     .cell-data { font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap; }
 
-    .login-container { max-width: 400px; margin: 100px auto; padding: 40px; background: var(--panel-light); border-radius: 16px; text-align: center; border: 1px solid var(--border-color); color: var(--text-dark); }
+    .login-container { max-width: 400px; margin: 100px auto; padding: 40px; background: var(--panel-light); border-radius: 16px; text-align: center; border: 1px solid var(--border-color); color: var(--text-dark); z-index: 10; position: relative;}
     .login-container input { width: 90%; padding: 12px; margin: 20px 0; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-main); color: var(--text-dark); }
     .login-container button { width: 96%; background: var(--accent-blue); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; }
     #app-shell, .paywall { display: none; }
 
     /* MOBILE RESPONSIVE QUERIES */
     @media (max-width: 768px) {
-      .hamburger-btn { display: block; }
-      .sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        height: 100vh;
-        transform: translateX(-100%);
-        touch-action: pan-y; /* Allows vertical scrolling inside sidebar, disables zoom */
-      }
-      .sidebar.open { transform: translateX(0); }
-      .navbar { padding: env(safe-area-inset-top) 15px 0 15px; }
-      .workspace { padding: 15px; }
-      .grid-layout { grid-template-columns: 1fr; }
+      .navbar { padding: 10px; gap: 8px; }
+      .workspace { padding: 10px; }
+      
+      /* 2. GRID ON MOBILE: Forces 3 columns */
+      .grid-layout { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .flap-card { padding: 10px; gap: 6px; }
+      .card-title { font-size: 0.85rem; }
+      .preview-text { font-size: 0.65rem; }
+      .card-meta { font-size: 0.65rem; }
+      .compare-toggle { font-size: 0.65rem; text-align: center; }
+      .card-actions { padding-top: 8px; flex-direction: column; }
+      
+      /* Matrix Width Capping for Mobile */
+      .matrix-table { border-spacing: 12px 0; }
+      .matrix-table th { min-width: 130px; width: 130px; padding: 15px 10px; font-size: 1rem; }
+      .matrix-table td { min-width: 130px; width: 130px; padding: 10px; font-size: 0.85rem; }
     }
   </style>
 </head>
 <body oncontextmenu="return false;">
+
+  <!-- TOP CONSTANT BAR -->
+  <div class="top-status-bar">Amanyu's Flap References</div>
 
   <div class="login-container" id="login-screen">
     <h2 style="margin-top: 0;">Flap Reference Engine</h2>
@@ -138,7 +155,7 @@
   </div>
 
   <!-- DIMMING OVERLAY -->
-  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebarMobile()"></div>
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebarDrawer()"></div>
 
   <div class="app-container" id="app-shell">
     
@@ -159,8 +176,7 @@
 
     <div class="main-content">
       <div class="navbar">
-        <!-- ADDED HAMBURGER BUTTON -->
-        <button class="hamburger-btn" onclick="toggleSidebar()">☰</button>
+        <button class="hamburger-btn" onclick="toggleSidebarDrawer()">☰</button>
         
         <input type="text" class="search-bar" id="search-input" oninput="renderWorkspaceGrid()" placeholder="Search anatomy, pedicles, classifications...">
         
@@ -217,27 +233,25 @@
 
     const PREVIEW_KEYS = ["Introduction", "Arterial Anatomy", "Flap markings", "Flap dimensions"];
 
-    // NEW MOBILE LOGIC FUNCTIONS
-    function toggleSidebar() {
+    // GLOBAL SIDEBAR FUNCTIONS
+    function toggleSidebarDrawer() {
       const sidebar = document.querySelector('.sidebar');
       const overlay = document.getElementById('sidebar-overlay');
       sidebar.classList.toggle('open');
       
       if (sidebar.classList.contains('open')) {
         overlay.style.display = 'block';
-        setTimeout(() => overlay.classList.add('active'), 10); // small delay to trigger transition
+        setTimeout(() => overlay.classList.add('active'), 10); 
       } else {
-        closeSidebarMobile();
+        closeSidebarDrawer();
       }
     }
 
-    function closeSidebarMobile() {
-      if (window.innerWidth <= 768) {
-        document.querySelector('.sidebar').classList.remove('open');
-        const overlay = document.getElementById('sidebar-overlay');
-        overlay.classList.remove('active');
-        setTimeout(() => overlay.style.display = 'none', 300);
-      }
+    function closeSidebarDrawer() {
+      document.querySelector('.sidebar').classList.remove('open');
+      const overlay = document.getElementById('sidebar-overlay');
+      overlay.classList.remove('active');
+      setTimeout(() => overlay.style.display = 'none', 300);
     }
 
     function stripHTML(text) {
@@ -373,7 +387,7 @@
           systemPages = datasetMaster.filter(f => f.category === 'System');
         } else {
           const div = document.createElement('div');
-          div.className = "menu-item"; div.innerText = stripHTML(cat); // Sanitized
+          div.className = "menu-item"; div.innerText = stripHTML(cat); 
           div.onclick = function() { filterCategory(cat, div); };
           chapterMenu.appendChild(div);
         }
@@ -421,7 +435,7 @@
       
       document.getElementById('system-page-view').innerHTML = `<h2>${stripHTML(pageData.name)}</h2><div>${contentBody}</div>`;
       
-      closeSidebarMobile(); // Auto-close sidebar on mobile
+      closeSidebarDrawer(); // Auto-close global sidebar drawer
     }
 
     function filterCategory(cat, element) {
@@ -479,7 +493,7 @@
 
       subDropdown.value = 'ALL';
       renderWorkspaceGrid();
-      closeSidebarMobile(); // Auto-close sidebar on mobile
+      closeSidebarDrawer(); // Auto-close global sidebar drawer
     }
 
     function getSearchSnippet(text, query) {
@@ -631,9 +645,19 @@
       }
     }
 
+    // 5. ISOLATED SINGLE CLICK LOGIC RESTORED
     function viewSingleFlap(flapName) {
-      selectedFlaps.add(flapName);
-      openMatrix();
+      if (selectedFlaps.has(flapName)) {
+        // If they click a flap that IS selected in the checkboxes, open normal comparison matrix
+        openMatrix();
+      } else {
+        // Generate a temporary isolated view of ONLY this flap without adding it to the background checkboxes
+        history.pushState({ view: 'matrix' }, "Matrix", "#matrix");
+        buildMatrix([flapName]);
+        document.getElementById('matrix-dock').classList.add('open');
+        document.getElementById('matrix-fab').style.display = 'none';
+        isMatrixMinimized = false;
+      }
     }
 
     function openMatrix() {
@@ -643,7 +667,7 @@
       document.getElementById('matrix-dock').classList.add('open');
       document.getElementById('matrix-fab').style.display = 'none';
       isMatrixMinimized = false;
-      renderWorkspaceGrid();
+      renderWorkspaceGrid(); // Re-render grid to update checked states visually
     }
 
     function minimizeMatrix() {
