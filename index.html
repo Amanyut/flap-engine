@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
   <meta name="theme-color" content="#1e293b">
   <title>Flap Atlas & Reference</title>
   <link rel="manifest" href="manifest.json">
@@ -25,7 +25,11 @@
     
     .app-container { display: flex; height: 100vh; width: 100vw; }
 
-    .sidebar { width: 260px; background: var(--panel-dark); color: white; display: flex; flex-direction: column; flex-shrink: 0; z-index: 40; transition: background 0.3s; }
+    /* OVERLAY FOR MOBILE SIDEBAR */
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 104; opacity: 0; transition: opacity 0.3s; }
+    .sidebar-overlay.active { opacity: 1; }
+
+    .sidebar { width: 260px; background: var(--panel-dark); color: white; display: flex; flex-direction: column; flex-shrink: 0; z-index: 105; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s; }
     .sidebar-brand { padding: 24px 20px; font-size: 1.15rem; font-weight: 700; border-bottom: 1px solid #334155; }
     
     .sidebar-menu { flex: 1; padding: 20px 12px; overflow-y: auto; }
@@ -46,6 +50,9 @@
     .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
     .navbar { height: 70px; background: var(--panel-light); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: env(safe-area-inset-top) 30px 0 30px; flex-shrink: 0; gap: 20px; transition: background 0.3s, border-color 0.3s;}
     
+    /* HAMBURGER BUTTON */
+    .hamburger-btn { display: none; background: transparent; border: none; font-size: 1.8rem; color: var(--text-dark); cursor: pointer; padding: 0; margin-right: 10px; }
+
     .search-bar { flex: 1; max-width: 400px; padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; background: var(--bg-main); color: var(--text-dark); transition: 0.2s; }
     .search-bar:focus { border-color: var(--accent-blue); }
     
@@ -94,6 +101,23 @@
     .login-container input { width: 90%; padding: 12px; margin: 20px 0; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-main); color: var(--text-dark); }
     .login-container button { width: 96%; background: var(--accent-blue); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; }
     #app-shell, .paywall { display: none; }
+
+    /* MOBILE RESPONSIVE QUERIES */
+    @media (max-width: 768px) {
+      .hamburger-btn { display: block; }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        transform: translateX(-100%);
+        touch-action: pan-y; /* Allows vertical scrolling inside sidebar, disables zoom */
+      }
+      .sidebar.open { transform: translateX(0); }
+      .navbar { padding: env(safe-area-inset-top) 15px 0 15px; }
+      .workspace { padding: 15px; }
+      .grid-layout { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body oncontextmenu="return false;">
@@ -112,6 +136,9 @@
       <a href="https://razorpay.com" target="_blank"><button style="background: #3399cc; width: 100%; margin-top: 10px;">Subscribe via Razorpay</button></a>
     </div>
   </div>
+
+  <!-- DIMMING OVERLAY -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebarMobile()"></div>
 
   <div class="app-container" id="app-shell">
     
@@ -132,6 +159,9 @@
 
     <div class="main-content">
       <div class="navbar">
+        <!-- ADDED HAMBURGER BUTTON -->
+        <button class="hamburger-btn" onclick="toggleSidebar()">☰</button>
+        
         <input type="text" class="search-bar" id="search-input" oninput="renderWorkspaceGrid()" placeholder="Search anatomy, pedicles, classifications...">
         
         <div class="control-group">
@@ -187,7 +217,29 @@
 
     const PREVIEW_KEYS = ["Introduction", "Arterial Anatomy", "Flap markings", "Flap dimensions"];
 
-    // NEW HELPER: Instantly strips all hidden formatting tags to prevent UI breakage
+    // NEW MOBILE LOGIC FUNCTIONS
+    function toggleSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      sidebar.classList.toggle('open');
+      
+      if (sidebar.classList.contains('open')) {
+        overlay.style.display = 'block';
+        setTimeout(() => overlay.classList.add('active'), 10); // small delay to trigger transition
+      } else {
+        closeSidebarMobile();
+      }
+    }
+
+    function closeSidebarMobile() {
+      if (window.innerWidth <= 768) {
+        document.querySelector('.sidebar').classList.remove('open');
+        const overlay = document.getElementById('sidebar-overlay');
+        overlay.classList.remove('active');
+        setTimeout(() => overlay.style.display = 'none', 300);
+      }
+    }
+
     function stripHTML(text) {
       if (!text) return "";
       return text.toString().replace(/<[^>]*>?/gm, '').trim();
@@ -336,7 +388,6 @@
 
         systemPages.forEach(page => {
            const cleanName = stripHTML(page.name).toLowerCase();
-           // FIX: Bulletproof check that ignores hidden formatting when hiding the Order tab
            if (cleanName.includes('order')) return; 
 
            const div = document.createElement('div');
@@ -369,6 +420,8 @@
       const contentBody = contentKey ? pageData[contentKey] : "<p style='color:var(--text-muted); font-style:italic;'>Data missing.</p>";
       
       document.getElementById('system-page-view').innerHTML = `<h2>${stripHTML(pageData.name)}</h2><div>${contentBody}</div>`;
+      
+      closeSidebarMobile(); // Auto-close sidebar on mobile
     }
 
     function filterCategory(cat, element) {
@@ -390,7 +443,6 @@
          let subTags = new Set();
          datasetMaster.forEach(f => {
             if(f.category === cat && f['Sub-Region Tag']) {
-                // FIX: Strip HTML before breaking tags apart
                 const rawTagString = stripHTML(f['Sub-Region Tag']);
                 rawTagString.split(',').forEach(tag => {
                     const cleanTag = tag.trim();
@@ -400,7 +452,6 @@
          });
 
          let orderedTagsArray = [];
-         // FIX: Use stripHTML to find the exact configuration column safely
          const orderConfig = datasetMaster.find(f => stripHTML(f.name).toLowerCase().includes('order') && f.category === 'System');
          if (orderConfig) {
              const contentKey = Object.keys(orderConfig).find(k => stripHTML(k).toLowerCase() === 'content');
@@ -422,13 +473,13 @@
 
          subDropdown.innerHTML = '<option value="ALL">All Sub-Regions</option>';
          finalTags.forEach(tag => {
-            // Dropdown HTML injection fixed!
             if(tag) subDropdown.innerHTML += `<option value="${tag}">${tag}</option>`;
          });
       }
 
       subDropdown.value = 'ALL';
       renderWorkspaceGrid();
+      closeSidebarMobile(); // Auto-close sidebar on mobile
     }
 
     function getSearchSnippet(text, query) {
@@ -587,7 +638,6 @@
 
     function openMatrix() {
       if (selectedFlaps.size === 0) return;
-      // ADD THIS LINE
       history.pushState({ view: 'matrix' }, "Matrix", "#matrix");
       buildMatrix(Array.from(selectedFlaps));
       document.getElementById('matrix-dock').classList.add('open');
@@ -640,9 +690,7 @@
       container.innerHTML = tableHtml;
     }
 
-// Add the listener right here:
     window.addEventListener('popstate', function(event) {
-        // If the matrix is currently open, minimize it instead of closing the app
         if (document.getElementById('matrix-dock').classList.contains('open')) {
             minimizeMatrix();
         }
