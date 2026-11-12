@@ -43,19 +43,43 @@
     .menu-item { padding: 12px 16px; margin-bottom: 4px; border-radius: 8px; cursor: pointer; font-weight: 500; color: #94a3b8; transition: 0.2s; }
     .menu-item:hover, .menu-item.active { color: white; background: #334155; }
     .menu-item.active { background: var(--accent-blue); }
-    /* REGION TILES (icon + name) IN THE SIDEBAR */
-    .sidebar-menu.region-grid { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: max-content; gap: 8px; align-content: start; padding-top: 14px; padding-bottom: 14px; }
-    .menu-item.region-tile { margin: 0; padding: 10px 6px 9px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; border-radius: 14px; background: rgba(148, 163, 184, 0.07); border: 1px solid #334155; color: #cbd5e1; font-size: 0.86rem; font-weight: 600; line-height: 1.2; min-height: 88px; box-sizing: border-box; }
-    .menu-item.region-tile.wide { grid-column: 1 / -1; flex-direction: row; justify-content: flex-start; gap: 14px; min-height: 56px; padding: 7px 16px; text-align: left; font-size: 0.95rem; }
-    /* About / Help sit side by side to leave room for the region blocks */
+    /* REGION TILES: 2 x 4 grid of square frosted-glass tiles that fill the menu height.
+       The drawing is the hero; the name is a small caption underneath. */
+    .sidebar { width: 316px; max-width: 88vw; }
+    .sidebar .sidebar-brand { padding: 14px 20px; }
+    .sidebar-menu.region-grid { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: minmax(112px, 1fr); gap: 9px; padding: 10px 12px; }
+    .sidebar .sidebar-system { padding: 6px 12px 4px; }
+    .sidebar .system-divider { margin: 2px 12px 4px; }
+    .sidebar .sidebar-profile { padding: 12px 20px; gap: 10px; }
+    /* Glass tiles: the face is a picture of a thick glass slab (icons/tile/glass.webp), so every
+       reflection is real; the selected tile uses the same glass recoloured royal blue */
+    .menu-item.region-tile {
+      position: relative; margin: 0; padding: 14px 11px 18px; box-sizing: border-box; min-height: 0;
+      display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+      border: none; border-radius: 20px;
+      color: #06112e; font-size: 0.76rem; font-weight: 700; letter-spacing: 0; line-height: 1.15; text-align: center;
+      background: url('icons/tile/glass.webp') center / 100% 100% no-repeat;
+      box-shadow: none;
+      filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.45));
+      transition: transform 0.15s, filter 0.2s;
+    }
+    .menu-item.region-tile:hover { color: #06112e; background-color: transparent; filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.45)) brightness(1.06); }
+    .menu-item.region-tile:active { transform: scale(0.97); }
+    .menu-item.region-tile.active {
+      color: #ffffff; background-color: transparent;
+      background-image: url('icons/tile/glass-active.webp');
+      filter: drop-shadow(0 4px 10px rgba(37, 99, 235, 0.65));
+    }
+    /* load the blue glass up front so the first tap does not flash */
+    .sidebar-menu.region-grid::after { content: ''; position: absolute; width: 0; height: 0; overflow: hidden; background: url('icons/tile/glass-active.webp'); }
+    /* The drawing takes all the space above the caption; light lines on the blue glass */
+    .region-icon { display: block; flex: 1 1 0; min-height: 0; width: 100%; background-color: #06112e; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; transition: background-color 0.2s; }
+    .region-tile.active .region-icon { background-color: #ffffff; }
+    .region-label { flex-shrink: 0; padding: 0 2px; white-space: nowrap; }
+    .region-icon.no-icon { -webkit-mask: none; mask: none; flex: 1 1 0; width: auto; background: transparent; color: #06112e; display: flex; align-items: center; justify-content: center; font-size: 2.4rem; font-weight: 700; }
+    .region-tile.active .region-icon.no-icon { color: white; }
+    /* About / Help sit side by side */
     .sidebar-system .menu-item { display: inline-block; padding: 8px 14px; margin: 0 6px 2px 0; font-size: 0.9rem; }
-    .menu-item.region-tile:hover { background: #334155; color: white; }
-    .menu-item.region-tile.active { background: var(--accent-blue); border-color: var(--accent-blue); color: white; box-shadow: 0 6px 14px rgba(59, 130, 246, 0.35); }
-    .region-icon { width: 48px; height: 48px; flex-shrink: 0; background-color: #93c5fd; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; transition: background-color 0.2s; }
-    .region-tile.wide .region-icon { width: 42px; height: 42px; }
-    .region-tile:hover .region-icon, .region-tile.active .region-icon { background-color: #ffffff; }
-    .region-icon.no-icon { -webkit-mask: none; mask: none; background: rgba(147, 197, 253, 0.18); border-radius: 50%; color: #93c5fd; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 700; }
-    .region-tile.active .region-icon.no-icon { background: rgba(255,255,255,0.25); color: white; }
     /* FAVOURITES (star buttons) */
     .fav-btn { background: transparent; border: none; padding: 0; cursor: pointer; color: var(--text-muted); line-height: 1; font-size: 1.35rem; opacity: 0.75; transition: color 0.15s, transform 0.15s, opacity 0.15s; -webkit-tap-highlight-color: transparent; }
     .fav-btn:hover { opacity: 1; }
