@@ -8,6 +8,7 @@
   <meta name="application-name" content="Flapendium">
   <meta name="apple-mobile-web-app-title" content="Flapendium">
   <link rel="manifest" href="manifest.json">
+  <link rel="preload" as="image" href="icons/splash.webp">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -272,9 +273,21 @@
       .system-page-view { padding: 24px 18px; }
       .system-page-view div { font-size: 1.1rem; }
     }
+    /* Opening animation (intro.js): this plain launch screen shows until the animation takes over */
+    #intro { position: fixed; inset: 0; z-index: 99999; background: #042551; display: flex; align-items: center; justify-content: center; touch-action: none; }
+    #intro-logo { width: min(44vw, 220px); height: auto; aspect-ratio: 1; border-radius: 22%; }
+    #intro canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   </style>
 </head>
 <body oncontextmenu="return false;">
+
+  <!-- OPENING ANIMATION -->
+  <div id="intro"><img id="intro-logo" src="icons/splash.webp" alt=""></div>
+  <script src="intro.js" defer></script>
+  <script>
+    // Never leave the launch screen covering the app if the animation script fails to load
+    setTimeout(function () { var el = document.getElementById('intro'); if (el && !window.__introRunning) el.remove(); }, 4000);
+  </script>
 
   <!-- TOP CONSTANT BAR -->
   <div class="top-status-bar"><img class="brand-logo" src="icons/logo-96.png" alt=""><span class="brand-name">Amanyu’s <span class="brand-flap">Flap</span>endium</span></div>
