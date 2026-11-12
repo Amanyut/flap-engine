@@ -20,7 +20,7 @@
       --bg-main: #f8fafc; --panel-dark: #1e293b; --panel-light: #ffffff;
       --accent-blue: #3b82f6; --text-dark: #0f172a; --text-muted: #64748b;
       --border-color: #e2e8f0; --matrix-bg: #cbd5e1; --matrix-card: #ffffff;
-      --topbar-h: 50px; --brand-navy: #042551; --brand-flap: #2dd4bf; --brand-flap-on-light: #0d9488;
+      --topbar-h: 50px; --brand-navy: #042551; --brand-flap: #f5c451; --brand-flap-on-light: #b7791f;
       --brand-font: 'Cinzel', Georgia, 'Times New Roman', serif;
     }
 
@@ -209,6 +209,9 @@
     .otp-container { display: none; gap: 12px; justify-content: center; margin: 20px 0; }
     .login-container input.otp-box { width: 60px; height: 70px; font-size: 2rem; font-weight: 700; text-align: center; padding: 0; margin: 0; border-radius: 12px; border: 2px solid var(--border-color); background: var(--bg-main); color: var(--text-dark); box-sizing: border-box; }
     .login-container input.otp-box:focus { border-color: var(--accent-blue); outline: none; }
+    .pin-links { display: none; flex-direction: column; align-items: center; gap: 2px; margin: 14px auto 0; }
+    .login-container button.link-btn { width: auto; background: none; border: none; padding: 6px 2px; margin: 0; color: var(--accent-blue); font-weight: 600; font-size: 0.95rem; cursor: pointer; }
+    .login-container button.link-btn:disabled { color: var(--text-muted); cursor: default; }
 
     /* MOBILE RESPONSIVE QUERIES */
     @media (max-width: 768px) {
@@ -307,7 +310,7 @@
   <div class="login-container" id="login-screen">
     <img class="login-logo" src="icons/logo-96.png" alt="">
     <h2 class="brand-name" style="margin-top: 0;">Amanyu’s <span class="brand-flap">Flap</span>endium</h2>
-    <p id="login-desc" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">Enter credential email to synchronize verification token.</p>
+    <p id="login-desc" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">Enter your registered email and we'll send you a login PIN.</p>
     
     <input type="email" id="email-input" placeholder="doctor@hospital.com">
     
@@ -319,11 +322,15 @@
       <input type="text" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" onkeyup="handleOtp(this, event)" onfocus="this.select()">
     </div>
 
-    <button id="action-btn" onclick="requestPin()">Generate Access Token</button>
+    <button id="action-btn" onclick="requestPin()">Send Login PIN</button>
+    <div id="pin-links" class="pin-links">
+      <button type="button" id="resend-btn" class="link-btn" onclick="resendPin()" disabled>Resend PIN</button>
+      <button type="button" class="link-btn" onclick="changeEmail()">Use a different email</button>
+    </div>
 
     <div id="paywall-message" class="paywall">
-      <strong>Authorization Token Required</strong><br><br>
-      No active subscription found. Get full access to the flap reference engine.<br><br>
+      <strong>No access for this email</strong><br><br>
+      This email does not have an active subscription. Get full access to Amanyu’s Flapendium.<br><br>
       <a href="https://razorpay.com" target="_blank"><button style="background: #3399cc; width: 100%; margin-top: 10px;">Subscribe via Razorpay</button></a>
     </div>
   </div>
@@ -643,7 +650,7 @@
         currentUserEmail = savedEmail;
         document.getElementById('email-input').style.display = 'none';
         document.getElementById('action-btn').style.display = 'none';
-        document.getElementById('login-desc').innerText = "Validating secure session...";
+        document.getElementById('login-desc').innerText = "Signing you in...";
 
         if (cachedFlaps) { initializeSystem(JSON.parse(cachedFlaps)); }
 
@@ -658,63 +665,102 @@
           })
           .catch(() => {
               if(!cachedFlaps) {
-                 document.getElementById('login-desc').innerText = "Network timeout. Please confirm email to re-verify.";
+                 document.getElementById('login-desc').innerText = "Couldn't reach the server. Enter your email to get a new login PIN.";
                  const emailBox = document.getElementById('email-input');
                  emailBox.style.display = 'inline-block';
                  emailBox.value = savedEmail; 
                  const actionBtn = document.getElementById('action-btn');
                  actionBtn.style.display = 'block';
-                 actionBtn.innerText = "Generate Access Token";
+                 actionBtn.innerText = "Send Login PIN";
               }
           });
       }
     };
 
-    function requestPin() {
+    const PIN_VALID_MINUTES = 3;     // must match PIN_TTL_SECONDS in the backend
+    const RESEND_AFTER_SECONDS = 30; // wait before another PIN can be requested
+    let resendTimer = null;
+
+    function setLoginText(text) { document.getElementById('login-desc').innerText = text; }
+
+    function startResendCountdown() {
+      const rb = document.getElementById('resend-btn');
+      let left = RESEND_AFTER_SECONDS;
+      clearInterval(resendTimer);
+      rb.disabled = true; rb.innerText = 'Resend PIN in ' + left + 's';
+      resendTimer = setInterval(() => {
+        left--;
+        if (left <= 0) { clearInterval(resendTimer); rb.disabled = false; rb.innerText = 'Resend PIN'; }
+        else rb.innerText = 'Resend PIN in ' + left + 's';
+      }, 1000);
+    }
+
+    // Back to the email step
+    function changeEmail() {
+      clearInterval(resendTimer);
+      document.getElementById('otp-container').style.display = 'none';
+      document.getElementById('pin-links').style.display = 'none';
       const emailInput = document.getElementById('email-input');
-      currentUserEmail = emailInput.value.trim();
-      if (!currentUserEmail) return alert("Please enter an email");
-      
+      emailInput.style.display = 'inline-block';
       const btn = document.getElementById('action-btn');
-      btn.innerText = "Transmitting...";
-      btn.disabled = true;
+      btn.innerText = 'Send Login PIN'; btn.onclick = requestPin; btn.disabled = false;
+      setLoginText("Enter your registered email and we'll send you a login PIN.");
+      emailInput.focus();
+    }
+
+    function sendPin(isResend) {
+      const btn = document.getElementById('action-btn');
+      const rb = document.getElementById('resend-btn');
+      if (isResend) { rb.disabled = true; rb.innerText = 'Sending...'; }
+      else { btn.innerText = 'Sending PIN...'; btn.disabled = true; }
       document.getElementById('paywall-message').style.display = 'none';
 
-      fetch(API_URL + "?action=request_pin&email=" + encodeURIComponent(currentUserEmail))
+      return fetch(API_URL + "?action=request_pin&email=" + encodeURIComponent(currentUserEmail))
         .then(res => res.json())
         .then(data => {
           btn.disabled = false;
           if (data.error) {
             alert(data.error);
-            btn.innerText = "Generate Access Token";
+            if (isResend) startResendCountdown(); else btn.innerText = 'Send Login PIN';
           } else if (data.locked) {
             document.getElementById('paywall-message').style.display = 'block';
-            btn.innerText = "Generate Access Token";
+            if (!isResend) btn.innerText = 'Send Login PIN';
           } else if (data.step === "pin_sent") {
-            emailInput.style.display = "none";
-            
-            // Unhide OTP Container
-            document.getElementById('otp-container').style.display = "flex"; 
-            document.querySelectorAll('.otp-box').forEach(b => b.value = ''); 
-            
-            btn.innerText = "Validate Key";
+            document.getElementById('email-input').style.display = "none";
+            document.getElementById('otp-container').style.display = "flex";
+            document.getElementById('pin-links').style.display = "flex";
+            document.querySelectorAll('.otp-box').forEach(b => b.value = '');
+            setLoginText((isResend ? 'A new login PIN has been sent to ' : 'We have emailed a 4-digit login PIN to ') + currentUserEmail +
+              '. It is valid for ' + PIN_VALID_MINUTES + ' minutes.' + (isResend ? ' The earlier PIN no longer works.' : ''));
+            btn.innerText = "Verify PIN";
             btn.onclick = verifyPin;
+            startResendCountdown();
+            document.querySelector('.otp-box').focus();
           }
         }).catch(() => {
           btn.disabled = false;
-          alert("Network Timeout. Please check your connection.");
-          btn.innerText = "Generate Access Token";
+          alert("Couldn't reach the server. Please check your connection.");
+          if (isResend) startResendCountdown(); else btn.innerText = 'Send Login PIN';
         });
     }
+
+    function requestPin() {
+      const emailInput = document.getElementById('email-input');
+      currentUserEmail = emailInput.value.trim();
+      if (!currentUserEmail) return alert("Please enter your email.");
+      sendPin(false);
+    }
+
+    function resendPin() { if (currentUserEmail) sendPin(true); }
 
     function verifyPin() {
       // Concatenate values from the 4 boxes
       const pin = Array.from(document.querySelectorAll('.otp-box')).map(i => i.value).join('');
-      
+
       if (pin.length !== 4) return alert("Please enter the complete 4-digit PIN.");
-      
+
       const btn = document.getElementById('action-btn');
-      btn.innerText = "Verifying...";
+      btn.innerText = "Verifying PIN...";
       btn.disabled = true;
 
       fetch(API_URL + "?action=verify_pin&email=" + encodeURIComponent(currentUserEmail) + "&pin=" + encodeURIComponent(pin))
@@ -724,17 +770,17 @@
           if (data.error) {
             alert(data.error);
             document.querySelectorAll('.otp-box').forEach(b => b.value = '');
+            btn.innerText = "Verify PIN";
             if (data.restart) {
-              // PIN expired or too many wrong tries: go back to the email step
-              document.getElementById('otp-container').style.display = "none";
-              document.getElementById('email-input').style.display = "inline-block";
-              btn.innerText = "Generate Access Token";
-              btn.onclick = requestPin;
+              // PIN expired or too many wrong tries: a new one is needed
+              setLoginText('That PIN can no longer be used. Tap "Resend PIN" to get a new one.');
+              clearInterval(resendTimer);
+              const rb = document.getElementById('resend-btn'); rb.disabled = false; rb.innerText = 'Resend PIN';
             } else {
-              btn.innerText = "Validate Key";
               document.querySelector('.otp-box').focus();
             }
           } else if (data.flaps) {
+            clearInterval(resendTimer);
             localStorage.setItem('flap_email', currentUserEmail);
             localStorage.setItem('flap_token', data.token);
             localStorage.setItem('flap_data_cache', JSON.stringify(data.flaps));
@@ -743,14 +789,14 @@
           }
         }).catch(() => {
           btn.disabled = false;
-          alert("Network Timeout. Please check your connection.");
-          btn.innerText = "Validate Key";
+          alert("Couldn't reach the server. Please check your connection.");
+          btn.innerText = "Verify PIN";
         });
     }
 
     function logOut() {
         const finish = () => {
-            ['flap_email', 'flap_token', 'flap_data_cache', 'flap_favs', 'flap_favs_dirty'].forEach(k => localStorage.removeItem(k));
+            ['flap_email', 'flap_token', 'flap_data_cache', 'flap_favs', 'flap_favs_dirty', 'flap_state'].forEach(k => localStorage.removeItem(k));
             location.reload();
         };
         // Save any unsaved favourites first (waits at most 3 seconds)
@@ -787,6 +833,8 @@
     }
 
     function initializeSystem(flaps) {
+      // first start: the screen saved when the app was last closed; later refreshes: keep the current screen
+      const screenToShow = stateRestored ? captureState() : loadSavedState();
       datasetMaster = flaps;
       datasetMaster.forEach((f, i) => originalOrderMap.set(f.name, i));
       
@@ -804,6 +852,7 @@
       const allTile = makeRegionTile('All References', true);
       allTile.classList.add('active');
       allTile.onclick = function() { filterCategory('ALL', allTile); };
+      allTile.dataset.cat = 'ALL';
       chapterMenu.appendChild(allTile);
       systemMenu.innerHTML = '';
 
@@ -816,6 +865,7 @@
         } else {
           const div = makeRegionTile(stripHTML(cat), false);
           div.onclick = function() { filterCategory(cat, div); };
+          div.dataset.cat = cat;
           chapterMenu.appendChild(div);
         }
       });
@@ -824,6 +874,7 @@
       const favTile = makeRegionTile('Favourites', true);
       favTile.classList.add('fav-tile');
       favTile.onclick = function() { filterCategory('FAVOURITES', favTile); };
+      favTile.dataset.cat = 'FAVOURITES';
       chapterMenu.appendChild(favTile);
       if (activeCategoryFilter === 'FAVOURITES') {
         document.querySelectorAll('#chapter-menu .menu-item').forEach(el => el.classList.remove('active'));
@@ -849,7 +900,71 @@
       }
 
       renderWorkspaceGrid();
+      applyState(screenToShow);
+      stateRestored = true;
     }
+
+    // ---- REMEMBER THE SCREEN ----
+    // A small record (a few hundred characters) of what is on screen is kept on this device, so the app reopens
+    // where the user left it: region, sub-region, sort order, ticked flaps, an open or minimised matrix, scroll position.
+    let stateRestored = false;
+    let matrixSingleFlap = null; // the flap shown when the matrix was opened for one flap
+    function captureState() {
+      const dock = document.getElementById('matrix-dock'), mc = document.getElementById('matrix-container');
+      const open = dock && dock.classList.contains('open');
+      return {
+        cat: activeCategoryFilter,
+        sub: document.getElementById('subregion-dropdown').value,
+        sort: document.getElementById('sort-dropdown').value,
+        sel: Array.from(selectedFlaps),
+        matrix: open ? (matrixSingleFlap ? 'single' : 'open') : (isMatrixMinimized ? 'min' : ''),
+        single: matrixSingleFlap,
+        scroll: document.querySelector('.workspace').scrollTop,
+        mTop: open && mc ? mc.scrollTop : 0, mLeft: open && mc ? mc.scrollLeft : 0
+      };
+    }
+    function saveState() {
+      if (!stateRestored || !datasetMaster.length) return;
+      try { localStorage.setItem('flap_state', JSON.stringify(captureState())); } catch (e) {}
+    }
+    function loadSavedState() {
+      try { return JSON.parse(localStorage.getItem('flap_state') || 'null'); } catch (e) { return null; }
+    }
+    function applyState(s) {
+      if (!s) return;
+      try {
+        const exists = name => datasetMaster.some(f => f.name === name);
+        const tile = Array.from(document.querySelectorAll('#chapter-menu .menu-item')).find(el => el.dataset.cat === s.cat);
+        if (tile && s.cat !== 'ALL') { filterCategory(s.cat, tile); closeSidebarDrawer(); }
+        const sub = document.getElementById('subregion-dropdown');
+        if (s.sub && Array.from(sub.options).some(o => o.value === s.sub)) sub.value = s.sub;
+        const sort = document.getElementById('sort-dropdown');
+        if (s.sort && Array.from(sort.options).some(o => o.value === s.sort)) sort.value = s.sort;
+        selectedFlaps = new Set((s.sel || []).filter(exists));
+        renderWorkspaceGrid();
+        const dock = document.getElementById('matrix-dock');
+        if (s.matrix === 'open' && selectedFlaps.size) {
+          if (dock.classList.contains('open')) buildMatrix(Array.from(selectedFlaps)); else openMatrix();
+        } else if (s.matrix === 'single' && s.single && exists(s.single)) {
+          if (dock.classList.contains('open')) buildMatrix([s.single]); else viewSingleFlap(s.single);
+        } else if (s.matrix === 'min' && selectedFlaps.size) {
+          isMatrixMinimized = true; updateCompareButton();
+        }
+        requestAnimationFrame(() => {
+          document.querySelector('.workspace').scrollTop = s.scroll || 0;
+          const mc = document.getElementById('matrix-container');
+          if (mc && dock.classList.contains('open')) { mc.scrollTop = s.mTop || 0; mc.scrollLeft = s.mLeft || 0; }
+        });
+      } catch (e) { console.warn('Could not restore the last screen', e); }
+    }
+    // Saved whenever the app is hidden or closed, and shortly after anything changes
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveState(); });
+    window.addEventListener('pagehide', saveState);
+    let saveStateTimer = null;
+    function saveStateSoon() { clearTimeout(saveStateTimer); saveStateTimer = setTimeout(saveState, 400); }
+    document.addEventListener('scroll', saveStateSoon, true);
+    document.addEventListener('click', saveStateSoon, true);
+    document.addEventListener('change', saveStateSoon, true);
 
     // WhatsApp chat with the app's author, shown on the Help page
     const SUPPORT_WHATSAPP = '916282437283';
@@ -1231,6 +1346,7 @@
         openMatrix();
       } else {
         history.pushState({ view: 'matrix' }, "Matrix", "#matrix");
+        matrixSingleFlap = flapName;
         buildMatrix([flapName]);
         document.getElementById('matrix-dock').classList.add('open');
         document.getElementById('matrix-fab').style.display = 'none';
@@ -1241,6 +1357,7 @@
     function openMatrix() {
       if (selectedFlaps.size === 0) return;
       history.pushState({ view: 'matrix' }, "Matrix", "#matrix");
+      matrixSingleFlap = null;
       buildMatrix(Array.from(selectedFlaps));
       document.getElementById('matrix-dock').classList.add('open');
       document.getElementById('matrix-fab').style.display = 'none';
@@ -1255,6 +1372,7 @@
     }
 
     function closeMatrix() {
+      matrixSingleFlap = null;
       document.getElementById('matrix-dock').classList.remove('open');
       document.getElementById('matrix-fab').style.display = 'none';
       isMatrixMinimized = false;
