@@ -467,9 +467,54 @@
     function isImageKey(k) { return /image/i.test(stripHTML(k)); }
     function isHiddenKey(k) { const s = stripHTML(k); return s === 'name' || s === 'category' || s === 'Sub-Region Tag' || isImageKey(s); }
 
-    function matchesSearch(flap, query) {
-      if (stripHTML(flap.name).toLowerCase().includes(query)) return true;
-      return Object.entries(flap).some(([k, v]) => !isImageKey(k) && k !== 'category' && stripHTML(v).toLowerCase().includes(query));
+    // ---- SEARCH ----
+    // What the user types is split into fragments ("rev sur fla" -> rev, sur, fla). A flap matches when every
+    // fragment appears somewhere in it, in any order and not necessarily next to each other. Results are ranked:
+    //   tier 0 - all fragments are in the flap's name
+    //   tier 1 - all fragments are in its name plus its "Also Known As" names
+    //   tier 2 - all fragments are somewhere in its content
+    // Within a tier, fragments that start a word (Rev-erse Sur-al) and the whole query typed as one phrase rank higher.
+    // Each flap's lower-case text is prepared once and reused on every keystroke.
+    const searchTextCache = new WeakMap();
+    // Plain text of a field; line breaks become " · " so separate lines do not run together into one word
+    function searchPlain(v) { return stripHTML(String(v || '').replace(/<br\s*\/?>/gi, ' · ')); }
+    let searchRanks = new Map(); // flap -> { tier, score } for the current search, filled by getFilteredFlaps
+    function searchText(flap) {
+      let c = searchTextCache.get(flap);
+      if (!c) {
+        const name = stripHTML(flap.name).toLowerCase();
+        const aka = searchPlain(getField(flap, 'Also Known As')).toLowerCase();
+        const fields = [];
+        Object.entries(flap).forEach(([k, v]) => {
+          if (k === 'name' || k === 'category' || isImageKey(k)) return;
+          const text = searchPlain(v);
+          if (text) fields.push({ key: k, text: text, lower: text.toLowerCase() });
+        });
+        c = { name: name, nameAka: name + ' | ' + aka, all: name + ' | ' + fields.map(f => f.lower).join(' | '), fields: fields };
+        searchTextCache.set(flap, c);
+      }
+      return c;
+    }
+    function searchTokens(query) { return String(query || '').toLowerCase().split(/\s+/).filter(Boolean); }
+    // true when the fragment begins a word somewhere in the text
+    function startsWord(text, token) {
+      for (let i = text.indexOf(token); i !== -1; i = text.indexOf(token, i + 1)) {
+        if (i === 0 || !/[a-z0-9]/.test(text[i - 1])) return true;
+      }
+      return false;
+    }
+    // null when the flap does not match; otherwise { tier, score } (lower tier first, then higher score)
+    function searchRank(flap, tokens) {
+      const t = searchText(flap);
+      const hasAll = text => tokens.every(tok => text.includes(tok));
+      let tier, text;
+      if (hasAll(t.name)) { tier = 0; text = t.name; }
+      else if (hasAll(t.nameAka)) { tier = 1; text = t.nameAka; }
+      else if (hasAll(t.all)) { tier = 2; text = t.all; }
+      else return null;
+      let score = tokens.filter(tok => startsWord(text, tok)).length;
+      if (tokens.length > 1 && text.includes(tokens.join(' '))) score += tokens.length;
+      return { tier: tier, score: score };
     }
 
     // First line of a field (lines are separated by <br> or new lines)
@@ -839,19 +884,25 @@
       closeSidebarDrawer(); // Auto-close global sidebar drawer
     }
 
-    function getSearchSnippet(text, query) {
-      if (!text || !query) return "";
-      const strippedText = stripHTML(text); 
-      const regex = new RegExp(`(.{0,40})(${escapeRegExp(query)})(.{0,40})`, 'gi');
-      const match = regex.exec(strippedText);
-      if (match) return `...${match[1]}<span class="search-highlight">${match[2]}</span>${match[3]}...`;
-      return "";
+    // A short piece of text around the longest search fragment it contains, with every fragment highlighted
+    function getSearchSnippet(text, tokens) {
+      if (!text || !tokens.length) return "";
+      const lower = text.toLowerCase();
+      const present = tokens.filter(tok => lower.includes(tok)).sort((a, b) => b.length - a.length);
+      if (!present.length) return "";
+      const at = lower.indexOf(present[0]);
+      // only a little text before the match, so the highlight stays inside the two lines a preview shows
+      const start = Math.max(0, at - 14), end = Math.min(text.length, at + present[0].length + 80);
+      const re = new RegExp(present.map(escapeRegExp).join('|'), 'gi');
+      const piece = text.slice(start, end).replace(re, m => `<span class="search-highlight">${m}</span>`);
+      return (start > 0 ? '...' : '') + piece + (end < text.length ? '...' : '');
     }
 
     function getFilteredFlaps() {
-      const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+      const tokens = searchTokens(document.getElementById('search-input').value);
       const subDropdown = document.getElementById('subregion-dropdown');
       const subDropdownValue = subDropdown ? subDropdown.value : 'ALL';
+      searchRanks = new Map();
 
       return datasetMaster.filter(flap => {
         if (flap.category === 'System') return false;
@@ -865,7 +916,11 @@
             if (!tags.includes(subDropdownValue)) return false;
         }
 
-        if (searchQuery && !matchesSearch(flap, searchQuery)) return false;
+        if (tokens.length) {
+          const rank = searchRank(flap, tokens);
+          if (!rank) return false;
+          searchRanks.set(flap, rank);
+        }
         return true;
       });
     }
@@ -895,11 +950,11 @@
           if (!aSel && bSel) return 1;
         }
 
+        // Best search matches first: name matches, then "Also Known As" matches, then content matches
         if (searchQuery) {
-            const aTitleMatch = stripHTML(a.name).toLowerCase().includes(searchQuery);
-            const bTitleMatch = stripHTML(b.name).toLowerCase().includes(searchQuery);
-            if (aTitleMatch && !bTitleMatch) return -1;
-            if (!aTitleMatch && bTitleMatch) return 1;
+            const ra = searchRanks.get(a), rb = searchRanks.get(b);
+            if (ra.tier !== rb.tier) return ra.tier - rb.tier;
+            if (ra.score !== rb.score) return rb.score - ra.score;
         }
 
         if (sortMode === 'asc') return stripHTML(a.name).localeCompare(stripHTML(b.name));
@@ -908,14 +963,16 @@
         return originalOrderMap.get(a.name) - originalOrderMap.get(b.name);
       });
 
-      // Short "why this matched" text for search results
+      // Short "why this matched" text for search results: the field holding the most search fragments
+      const queryTokens = searchTokens(searchQuery);
       function searchMatchHtml(flap) {
-        for (let [k, v] of Object.entries(flap)) {
-          if (k !== 'name' && k !== 'category' && k !== 'Sub-Region Tag' && !isImageKey(k) && stripHTML(v).toLowerCase().includes(searchQuery)) {
-            return { label: stripHTML(k), snippet: getSearchSnippet(v, searchQuery) };
-          }
-        }
-        return null;
+        let best = null, bestCount = 0;
+        searchText(flap).fields.forEach(f => {
+          if (f.key === 'Sub-Region Tag') return;
+          const count = queryTokens.filter(tok => f.lower.includes(tok)).length;
+          if (count > bestCount) { best = f; bestCount = count; }
+        });
+        return best ? { label: stripHTML(best.key), snippet: getSearchSnippet(best.text, queryTokens) } : null;
       }
 
       if (activeCategoryFilter === 'FAVOURITES' && viewData.length === 0) {
@@ -939,7 +996,7 @@
         card.onclick = () => viewSingleFlap(flap.name);
 
         let previewHtml = '';
-        if (searchQuery && !stripHTML(flap.name).toLowerCase().includes(searchQuery)) {
+        if (searchQuery && searchRanks.get(flap).tier > 0) {
             const hit = searchMatchHtml(flap);
             if (hit) previewHtml += `<div class="preview-label">Matched in ${hit.label}</div><div class="preview-text">${hit.snippet}</div>`;
         } else {
@@ -1017,8 +1074,7 @@
           row.onclick = () => viewSingleFlap(flap.name);
 
           let sub = '';
-          const titleMatches = stripHTML(flap.name).toLowerCase().includes(searchQuery);
-          if (searchQuery && !titleMatches) {
+          if (searchQuery && searchRanks.get(flap).tier > 0) {
             const hit = searchMatchHtml(flap);
             if (hit) sub = `<b>${hit.label}:</b> ${hit.snippet}`;
           } else {
