@@ -19,7 +19,7 @@
   const T_OPEN = T_CUT_END + 0.12;  // flaps start lifting
   const T_END = T_OPEN + 1.68;      // flaps have cleared the screen
   const T_FADE = 0.22;              // final fade of anything left (droplets, shadow)
-  const T_DRIP_END = T_END + 0.45;  // blood trickling down the app has faded by now
+  const T_DRIP_END = T_END + 0.8;   // blood trickling down the app has faded by now
 
   // The two flaps are deliberately different so the opening looks organic, not mirrored.
   // side +1 = right flap (hinged on the right edge), -1 = left flap.
@@ -150,9 +150,23 @@
     '  float sp = pow(max(dot(n, normalize(L + V)), 0.0), shin)*spec;',
     '  return base*(0.32 + 0.78*diff) + vec3(sp);',
     '}',
-    'vec3 bloodCol(float d){ return mix(vec3(0.36,0.01,0.03), vec3(0.62,0.04,0.06), clamp(d/6.0, 0.0, 1.0)); }',
+    // wet blood over a surface: thin films stay translucent, pools are deep crimson, with a darker rim and glossy glints
+    'vec3 wetBlood(vec3 under, float m, float thick, float d, float v, vec3 n){',
+    '  float Hs = uScreen.y;',
+    '  float cl = noise2(vec2(d*0.35, v*Hs*0.18));',
+    '  float th = clamp(thick*1.4 + 0.3*(cl - 0.5), 0.0, 1.0);',
+    '  vec3 thin = mix(under, vec3(0.60, 0.02, 0.05), 0.8);',
+    '  vec3 c = mix(thin, vec3(0.25, 0.0, 0.015), smoothstep(0.05, 0.9, th));',
+    '  c *= 0.9 + 0.2*cl;',
+    '  c *= 1.0 - 0.3*smoothstep(0.35, 0.0, thick);',
+    '  vec3 V = normalize(vec3(uScreen.x*0.5, uScreen.y*0.5, uScreen.z) - vPos);',
+    '  float sheen = pow(max(dot(n, normalize(L + V)), 0.0), 60.0)*0.35;',
+    '  float glint = pow(noise2(vec2(d*0.9 + 3.0, v*Hs*0.45)), 14.0)*1.6*smoothstep(0.15, 0.6, th);',
+    '  c = c*(0.55 + 0.5*max(dot(n, L), 0.0)) + vec3(sheen + glint);',
+    '  return mix(under, c, m);',
+    '}',
     // blood along the cut margin of the skin surface, d = pixels from the cut edge
-    'float marginBlood(float d, float v){',
+    'float marginBlood(float d, float v, out float thick){',
     '  float Hs = uScreen.y;',
     '  float behind = clamp((uCutV - v)*6.0, 0.0, 1.0);',
     '  float grow = clamp((uCutV - v)*1.5, 0.0, 1.0);',
@@ -160,13 +174,16 @@
     '  float w = behind*1.8 + grow*(2.3 + 4.2*noise(v*Hs/16.0 + uSide*9.0)) + 6.0*spurt*grow;',
     '  w += grow*3.2*pow(0.5 + 0.5*sin(v*Hs/7.0 + 4.0*noise(v*Hs/40.0 + 3.0)), 3.0);',
     '  float m = smoothstep(w + 0.7, w - 0.7, d);',
+    '  thick = clamp((w - d)/max(w, 1.0), 0.0, 1.0);',
     '  for (int k = 0; k < 2; k++) {', // drips running down from the margin
     '    float v0 = k == 0 ? uDrips.x : uDrips.z; float len = k == 0 ? uDrips.y : uDrips.w;',
     '    if (len > 0.0) {',
     '      float c = length(vec2(d - 3.0, (v - clamp(v, v0, v0 + len))*Hs));',
-    '      m = max(m, smoothstep(2.0, 0.9, c));',
+    '      float cm = smoothstep(2.0, 0.9, c); if (cm > m) thick = max(thick, 1.0 - c/2.2);',
+    '      m = max(m, cm);',
     '      float e = length(vec2(d - 3.0, (v - v0 - len)*Hs));',
-    '      m = max(m, smoothstep(2.9, 1.8, e));',
+    '      float em = smoothstep(2.9, 1.8, e); if (em > m) thick = max(thick, 1.0 - e/3.0);',
+    '      m = max(m, em);',
     '    }',
     '  }',
     '  return m;',
@@ -200,13 +217,14 @@
     '  if (dot(n, V) > 0.0) {', // skin side: the launch screen
     '    vec3 tex = texture2D(uFront, vUV.zw).rgb;',
     '    col = tex*(0.3 + 0.7*max(dot(n, L), 0.0))/(0.3 + 0.7*L.z);',
-    '    col = mix(col, shade(bloodCol(d), n, 0.7, 50.0), marginBlood(d, vUV.y));',
+    '    float thk; float m = marginBlood(d, vUV.y, thk);',
+    '    col = wetBlood(col, m, thk, d, vUV.y, n);',
     '  } else {', // raw underside of the flap
     '    n = -n;',
     '    col = shade(texture2D(uBack, vUV.xy).rgb, n, 0.3, 22.0);',
     '    float behind = clamp((uCutV - vUV.y)*6.0, 0.0, 1.0);',
     '    float w = (2.0 + 4.0*noise(vUV.y*uScreen.y/12.0 + 5.0))*behind;',
-    '    col = mix(col, shade(bloodCol(d), n, 0.7, 50.0), smoothstep(w + 0.7, w - 0.7, d));',
+    '    col = wetBlood(col, smoothstep(w + 0.7, w - 0.7, d), clamp((w - d)/max(w, 1.0), 0.0, 1.0), d, vUV.y, n);',
     '  }',
     '  gl_FragColor = vec4(col, 1.0);',
     '}'].join('\n');
@@ -249,7 +267,7 @@
     const f = fc.getContext('2d'); f.fillStyle = NAVY; f.fillRect(0, 0, fc.width, fc.height);
     if (logo && logo.naturalWidth) {
       const r = logo.getBoundingClientRect();
-      f.save(); f.scale(dpr, dpr); roundRectPath(f, r.left, r.top, r.width, r.height, r.width * 0.22); f.clip();
+      f.save(); f.scale(dpr, dpr); roundRectPath(f, r.left, r.top, r.width, r.height, r.width * 0.08); f.clip();
       f.drawImage(logo, r.left, r.top, r.width, r.height); f.restore();
     }
     texture(gl, fc, 0);
@@ -367,15 +385,15 @@
     const parts = [], R = rng(7);
     for (let n = 0; n < 26; n++) { // ooze along the incision
       const v = 0.03 + R() * 0.94;
-      parts.push({ t0: tCutOf(v) + 0.05 + R() * 0.25, life: 0.35 + R() * 0.3, x: W / 2 + (R() - 0.5) * 3, y: v * H, vx: (R() - 0.5) * 40, vy: -20 + R() * 30, r: 0.8 + R() * 1.2, g: 900 });
+      parts.push({ t0: tCutOf(v) + 0.05 + R() * 0.25, life: 0.35 + R() * 0.3, x: W / 2 + (R() - 0.5) * 3, y: v * H, vx: (R() - 0.5) * 40, vy: -20 + R() * 30, r: 0.8 + R() * 1.2, g: 900, dark: R() < 0.4 });
     }
     FLAPS.forEach(F => { // pulsatile spurts where the big vessels are cut
       for (let p = 0; p < F.pulses; p++) {
         const strength = [1, 0.7, 0.45][p], tp = F.tSpurt + 0.03 + p * 0.31;
-        for (let n = 0; n < Math.round(26 * strength); n++) {
+        for (let n = 0; n < Math.round(36 * strength); n++) {
           const dt = R() * 0.09, ang = (F.side > 0 ? -1.15 : -1.99) + (R() - 0.5) * 0.35;
           const sp = H * (0.75 + R() * 0.6) * (0.55 + 0.45 * strength) * (1 - dt * 3);
-          parts.push({ t0: tp + dt, life: 0.55 + R() * 0.35, x: W / 2 + F.side * (1 + R() * 2), y: F.spurtV * H + (R() - 0.5) * 4, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, r: (1.3 + R() * 2.2) * (0.6 + 0.4 * strength), g: H * 2.8 });
+          parts.push({ t0: tp + dt, life: 0.55 + R() * 0.35, x: W / 2 + F.side * (1 + R() * 2), y: F.spurtV * H + (R() - 0.5) * 4, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, r: (1.0 + R() * 1.8) * (0.6 + 0.4 * strength), g: H * 2.8, dark: R() < 0.35 });
         }
       }
     });
@@ -383,11 +401,16 @@
       for (const p of parts) {
         const a = t - p.t0; if (a < 0 || a > p.life) continue;
         const x = p.x + p.vx * a, y = p.y + p.vy * a + 0.5 * p.g * a * a, vy = p.vy + p.g * a, sp = Math.hypot(p.vx, vy);
-        ctx.globalAlpha = 0.95 * (1 - smooth(p.life * 0.6, p.life, a));
-        ctx.fillStyle = '#7d0a10';
-        ctx.beginPath(); ctx.ellipse(x, y, p.r + sp * 0.012, p.r, Math.atan2(vy, p.vx), 0, 6.2832); ctx.fill();
-        ctx.fillStyle = 'rgba(255,140,140,0.55)';
-        ctx.beginPath(); ctx.arc(x - p.r * 0.3, y - p.r * 0.3, p.r * 0.35, 0, 6.2832); ctx.fill();
+        const s0 = Math.max(0, a - 0.016), px = p.x + p.vx * s0, py = p.y + p.vy * s0 + 0.5 * p.g * s0 * s0; // motion streak
+        const al = 0.92 * (1 - smooth(p.life * 0.55, p.life, a));
+        ctx.globalAlpha = al; ctx.lineCap = 'round';
+        ctx.strokeStyle = p.dark ? '#43000a' : '#6e0210'; ctx.lineWidth = p.r * 2;
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(x, y); ctx.stroke();
+        ctx.strokeStyle = p.dark ? '#650412' : '#9c0618'; ctx.lineWidth = p.r * 1.1;
+        ctx.beginPath(); ctx.moveTo(px - 0.3 * p.r, py - 0.3 * p.r); ctx.lineTo(x - 0.3 * p.r, y - 0.3 * p.r); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.beginPath(); ctx.arc(x - p.r * 0.35, y - p.r * 0.4, p.r * 0.26, 0, 6.2832); ctx.fill();
+        void sp;
       }
       ctx.globalAlpha = 1;
     }
@@ -398,15 +421,21 @@
     c3.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:99998;pointer-events:none;';
     document.body.appendChild(c3);
     const dctx = c3.getContext('2d');
-    const DR = rng(31);
-    const drips = [
-      { t0: T_OPEN + 0.38, x: 0.57 * W, y: 0.31 * H, len: 0.24 * H, r: 5.2 },
-      { t0: T_OPEN + 0.62, x: 0.40 * W, y: 0.55 * H, len: 0.17 * H, r: 4.6 }
-    ].map(d => {
+    const DR = rng((Math.random() * 1e9) | 0); // a different pattern on every launch
+    const drips = [];
+    for (let i = 0, nd = 3 + Math.floor(DR() * 3); i < nd; i++) {
+      drips.push({ t0: T_OPEN + 0.3 + i * 0.17 + DR() * 0.1, x: (0.3 + 0.4 * DR()) * W, y: (0.2 + 0.45 * DR()) * H, len: (0.12 + 0.1 * DR()) * H, r: 3.6 + DR() * 1.8 });
+    }
+    drips.forEach(d => {
       d.fall = 0.26; d.wob = DR() * 10;
       d.sats = [0, 1, 2, 3].map(() => { const a = DR() * 6.28, r = 5 + DR() * 7; return [Math.cos(a) * r, Math.sin(a) * r * 0.8, 0.6 + DR() * 0.9]; });
-      return d;
     });
+    function bloodBead(g, x, y, rx, ry, alpha) { // a glossy drop of blood
+      const gr = g.createRadialGradient(x - rx * 0.3, y - ry * 0.3, 0, x, y, Math.max(rx, ry) * 1.25);
+      gr.addColorStop(0, '#b10f20'); gr.addColorStop(0.55, '#760211'); gr.addColorStop(1, '#3a0006');
+      g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, 6.2832); g.fill();
+      g.fillStyle = 'rgba(255,255,255,' + 0.55 * alpha + ')'; g.beginPath(); g.ellipse(x - rx * 0.35, y - ry * 0.38, rx * 0.26, ry * 0.18, -0.5, 0, 6.2832); g.fill();
+    }
     const trickleY = (d, a) => d.y + d.len * (1 - Math.exp(-a / 0.75));
     const trickleX = (d, y) => { const q = (y - d.y) / d.len; return d.x + 2.2 * Math.sin(q * 7 + d.wob) + 1.2 * Math.sin(q * 17 + d.wob * 2); };
     function renderDrips(t) {
@@ -417,8 +446,7 @@
         const a = t - d.t0; if (a < 0) return;
         if (a < d.fall) { // falling towards the screen: shrinks as it moves away from the viewer
           const q = a / d.fall, r = d.r * (2.3 - 1.3 * q * q), y = d.y - (1 - q) * 18;
-          dctx.fillStyle = 'rgba(125,10,16,0.95)'; dctx.beginPath(); dctx.ellipse(d.x, y, r, r * 1.15, 0, 0, 6.2832); dctx.fill();
-          dctx.fillStyle = 'rgba(255,150,150,0.55)'; dctx.beginPath(); dctx.arc(d.x - r * 0.3, y - r * 0.35, r * 0.3, 0, 6.2832); dctx.fill();
+          bloodBead(dctx, d.x, y, r, r * 1.15, 1);
           return;
         }
         const b = a - d.fall;
@@ -426,24 +454,25 @@
         if (dctx.globalAlpha <= 0) return;
         if (b < 0.18) { // splash ring
           const rr = d.r + b * 60;
-          dctx.strokeStyle = 'rgba(140,12,18,' + (0.6 * (1 - b / 0.18)) + ')'; dctx.lineWidth = 1.5;
+          dctx.strokeStyle = 'rgba(110,2,14,' + (0.55 * (1 - b / 0.18)) + ')'; dctx.lineWidth = 1.5;
           dctx.beginPath(); dctx.ellipse(d.x, d.y, rr, rr * 0.8, 0, 0, 6.2832); dctx.stroke();
         }
-        dctx.fillStyle = '#7d0a10'; // small pool where it landed, and satellite spots around it
-        dctx.beginPath(); dctx.ellipse(d.x, d.y, d.r * 0.95 * smooth(0, 0.06, b), d.r * 0.8 * smooth(0, 0.06, b), 0, 0, 6.2832); dctx.fill();
-        d.sats.forEach(s => { dctx.beginPath(); dctx.arc(d.x + s[0], d.y + s[1], s[2] * smooth(0, 0.08, b), 0, 6.2832); dctx.fill(); });
+        const sg = smooth(0, 0.07, b); // small pool where it landed, and satellite spots around it
+        if (sg > 0) {
+          bloodBead(dctx, d.x, d.y, d.r * 0.95 * sg, d.r * 0.8 * sg, dctx.globalAlpha);
+          d.sats.forEach(s => bloodBead(dctx, d.x + s[0], d.y + s[1], s[2] * sg, s[2] * sg, dctx.globalAlpha));
+        }
         // the trail left behind as it runs down
         const yh = trickleY(d, b), n = Math.max(2, Math.ceil((yh - d.y) / 3));
         dctx.lineCap = 'round'; dctx.lineJoin = 'round';
-        [['#5c0710', 3.0, 0], ['#9a0e17', 2.2, 0], ['rgba(255,140,140,0.4)', 0.6, -0.8]].forEach(L => {
+        [['rgba(62,0,8,0.92)', 2.8, 0], ['rgba(128,3,18,0.95)', 1.9, 0], ['rgba(255,255,255,0.22)', 0.45, -0.7]].forEach(L => {
           dctx.strokeStyle = L[0]; dctx.lineWidth = L[1] * d.r / 3; dctx.beginPath();
           for (let i = 0; i <= n; i++) { const y = d.y + (yh - d.y) * i / n, x = trickleX(d, y) + L[2]; if (i) dctx.lineTo(x, y); else dctx.moveTo(x, y); }
           dctx.stroke();
         });
         // the bead at its front, slowly shrinking as blood is left behind
         const hr = d.r * (1 - 0.35 * smooth(0, 1.5, b)), hx = trickleX(d, yh);
-        dctx.fillStyle = '#8a0b13'; dctx.beginPath(); dctx.ellipse(hx, yh, hr, hr * 1.25, 0, 0, 6.2832); dctx.fill();
-        dctx.fillStyle = 'rgba(255,160,160,0.6)'; dctx.beginPath(); dctx.arc(hx - hr * 0.35, yh - hr * 0.3, hr * 0.32, 0, 6.2832); dctx.fill();
+        bloodBead(dctx, hx, yh, hr, hr * 1.25, dctx.globalAlpha);
       });
       dctx.globalAlpha = 1;
     }
@@ -514,7 +543,7 @@
         const dl = F.drips.map(v0 => clamp((cutV - v0 - 0.12) * 0.11, 0, 0.07));
         gl.uniform4f(U.uDrips, F.drips[0], dl[0], F.drips[1], dl[1]);
         gl.uniform1i(U.uMode, 0); draw(F.surfB, F.uvB, IB.surf, surfIdx.length);
-        gl.uniform1i(U.uMode, 1); draw(F.edgeB, F.euvB, IB.edge, edgeIdx.length);
+        if (t > T_OPEN - 0.1) { gl.uniform1i(U.uMode, 1); draw(F.edgeB, F.euvB, IB.edge, edgeIdx.length); }
       });
 
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, c2.width, c2.height);
@@ -528,7 +557,7 @@
       const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext();
       glc.remove(); c2.remove();
     }
-    return { render: render, renderDrips: renderDrips, destroy: destroy, removeDrips: () => c3.remove() };
+    return { W: W, H: H, render: render, renderDrips: renderDrips, destroy: destroy, removeDrips: () => c3.remove() };
   }
 
   // ---------- running it ----------
@@ -554,14 +583,25 @@
   }
 
   function play() {
-    if (current) { current.finish(true); current.stopDrips(); }
+    if (current) { current.finish(true, true); current.stopDrips(); }
     const overlay = getOverlay(), logo = document.getElementById('intro-logo');
     overlay.style.opacity = '1'; overlay.style.background = NAVY; if (logo) logo.style.visibility = 'visible';
     window.__introRunning = true;
-    let scene = null, raf = 0, dripRaf = 0, done = false, t0 = null;
+    let scene = null, raf = 0, dripRaf = 0, done = false, t0 = null, backPressed = false;
+    // Back button / swipe-back skips the intro (the extra history step stops it from closing the app)
+    const onBack = () => { backPressed = true; me.finish(true); };
+    const onKey = e => { if (e.key === 'Escape') me.finish(true); };
+    // If the screen is rotated or resized while it plays (e.g. an iPad settling into landscape), redraw at the new size
+    const onResize = () => {
+      if (!scene || done) return;
+      if (overlay.clientWidth === scene.W && overlay.clientHeight === scene.H) return;
+      try { scene.destroy(); scene.removeDrips(); scene = createScene(overlay, logo); } catch (err) { scene = null; me.finish(true); }
+    };
     const me = {
-      finish(fast) {
+      finish(fast, replaying) {
         if (done) return; done = true; cancelAnimationFrame(raf); clearTimeout(failsafe);
+        window.removeEventListener('popstate', onBack); window.removeEventListener('keydown', onKey); window.removeEventListener('resize', onResize);
+        if (!backPressed && !replaying && history.state && history.state.flapIntro) history.back(); // drop the history step the intro added
         const ms = fast ? 180 : T_FADE / SPEED * 1000;
         overlay.style.transition = 'opacity ' + ms + 'ms ease-out'; overlay.style.opacity = '0';
         setTimeout(() => { if (scene) scene.destroy(); overlay.remove(); if (current === me) { current = null; window.__introRunning = false; } }, ms + 60);
@@ -585,7 +625,10 @@
     };
     current = me;
     const failsafe = setTimeout(() => me.finish(true), 9000);
-    overlay.addEventListener('pointerdown', () => me.finish(true), { once: true });
+    if (!(history.state && history.state.flapIntro)) history.pushState({ flapIntro: true }, '');
+    window.addEventListener('popstate', onBack);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('resize', onResize);
     me.stopDrips = () => { cancelAnimationFrame(dripRaf); if (scene) scene.removeDrips(); };
 
     imageReady(logo).then(() => {
