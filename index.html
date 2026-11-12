@@ -43,43 +43,23 @@
     .menu-item { padding: 12px 16px; margin-bottom: 4px; border-radius: 8px; cursor: pointer; font-weight: 500; color: #94a3b8; transition: 0.2s; }
     .menu-item:hover, .menu-item.active { color: white; background: #334155; }
     .menu-item.active { background: var(--accent-blue); }
-    /* REGION TILES: 2 x 4 grid of square frosted-glass tiles that fill the menu height.
-       The drawing is the hero; the name is a small caption underneath. */
-    .sidebar { width: 316px; max-width: 88vw; }
-    .sidebar .sidebar-brand { padding: 14px 20px; }
-    .sidebar-menu.region-grid { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: minmax(112px, 1fr); gap: 9px; padding: 10px 12px; }
-    .sidebar .sidebar-system { padding: 6px 12px 4px; }
-    .sidebar .system-divider { margin: 2px 12px 4px; }
-    .sidebar .sidebar-profile { padding: 12px 20px; gap: 10px; }
-    /* Glass tiles: the face is a picture of a thick glass slab (icons/tile/glass.webp), so every
-       reflection is real; the selected tile uses the same glass recoloured royal blue */
-    .menu-item.region-tile {
-      position: relative; margin: 0; padding: 14px 11px 18px; box-sizing: border-box; min-height: 0;
-      display: flex; flex-direction: column; align-items: stretch; gap: 2px;
-      border: none; border-radius: 20px;
-      color: #06112e; font-size: 0.76rem; font-weight: 700; letter-spacing: 0; line-height: 1.15; text-align: center;
-      background: url('icons/tile/glass.webp') center / 100% 100% no-repeat;
-      box-shadow: none;
-      filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.45));
-      transition: transform 0.15s, filter 0.2s;
-    }
-    .menu-item.region-tile:hover { color: #06112e; background-color: transparent; filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.45)) brightness(1.06); }
-    .menu-item.region-tile:active { transform: scale(0.97); }
-    .menu-item.region-tile.active {
-      color: #ffffff; background-color: transparent;
-      background-image: url('icons/tile/glass-active.webp');
-      filter: drop-shadow(0 4px 10px rgba(37, 99, 235, 0.65));
-    }
-    /* load the blue glass up front so the first tap does not flash */
-    .sidebar-menu.region-grid::after { content: ''; position: absolute; width: 0; height: 0; overflow: hidden; background: url('icons/tile/glass-active.webp'); }
-    /* The drawing takes all the space above the caption; light lines on the blue glass */
-    .region-icon { display: block; flex: 1 1 0; min-height: 0; width: 100%; background-color: #06112e; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; transition: background-color 0.2s; }
-    .region-tile.active .region-icon { background-color: #ffffff; }
-    .region-label { flex-shrink: 0; padding: 0 2px; white-space: nowrap; }
-    .region-icon.no-icon { -webkit-mask: none; mask: none; flex: 1 1 0; width: auto; background: transparent; color: #06112e; display: flex; align-items: center; justify-content: center; font-size: 2.4rem; font-weight: 700; }
-    .region-tile.active .region-icon.no-icon { color: white; }
-    /* About / Help sit side by side */
+    /* REGION TILES (icon + name) IN THE SIDEBAR: big tiles that share the menu's full height */
+    .sidebar { width: 296px; max-width: 86vw; }
+    .sidebar .sidebar-brand { padding: 16px 20px; }
+    .sidebar-menu.region-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: minmax(50px, 0.55fr) repeat(3, minmax(86px, 1fr)) minmax(50px, 0.55fr); grid-auto-rows: minmax(86px, 1fr); gap: 9px; align-content: stretch; padding: 12px 11px; }
+    .menu-item.region-tile { margin: 0; padding: 4px 4px 6px; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; text-align: center; border-radius: 16px; background: rgba(148, 163, 184, 0.07); border: 1px solid #334155; color: #cbd5e1; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.2px; line-height: 1.15; box-sizing: border-box; overflow: hidden; }
+    .menu-item.region-tile.wide { grid-column: 1 / -1; flex-direction: row; justify-content: flex-start; gap: 14px; padding: 4px 18px 4px 10px; text-align: left; font-size: 0.85rem; }
+    /* About / Help sit side by side to leave room for the region blocks */
     .sidebar-system .menu-item { display: inline-block; padding: 8px 14px; margin: 0 6px 2px 0; font-size: 0.9rem; }
+    .menu-item.region-tile:hover { background: #334155; color: white; }
+    .menu-item.region-tile.active { background: var(--accent-blue); border-color: var(--accent-blue); color: white; box-shadow: 0 6px 14px rgba(59, 130, 246, 0.35); }
+    /* the drawing takes all the room above the name */
+    .region-icon { flex: 1 1 0; min-height: 0; width: 100%; background-color: #93c5fd; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; transition: background-color 0.2s; }
+    .region-label { flex-shrink: 0; white-space: nowrap; }
+    .region-tile.wide .region-icon { flex: 0 0 auto; width: 76px; height: 100%; }
+    .region-tile:hover .region-icon, .region-tile.active .region-icon { background-color: #ffffff; }
+    .region-icon.no-icon { -webkit-mask: none; mask: none; background: rgba(147, 197, 253, 0.18); border-radius: 50%; color: #93c5fd; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 700; }
+    .region-tile.active .region-icon.no-icon { background: rgba(255,255,255,0.25); color: white; }
     /* FAVOURITES (star buttons) */
     .fav-btn { background: transparent; border: none; padding: 0; cursor: pointer; color: var(--text-muted); line-height: 1; font-size: 1.35rem; opacity: 0.75; transition: color 0.15s, transform 0.15s, opacity 0.15s; -webkit-tap-highlight-color: transparent; }
     .fav-btn:hover { opacity: 1; }
@@ -237,27 +217,35 @@
       .matrix-table th { padding: 15px 10px; font-size: 1rem; }
       .matrix-table td { padding: 10px; font-size: 0.85rem; }
 
-      /* SLIGHTLY LARGER TOUCH TARGETS ON PHONES (about 42px tall) */
-      .top-status-bar { font-size: 0.8rem; }
-      .hamburger-btn { font-size: 2rem; padding: 2px 6px; }
-      .search-bar { padding: 11px 42px 11px 16px; }
-      .search-clear { width: 30px; height: 30px; line-height: 30px; font-size: 16px; }
-      .btn { font-size: 0.95rem; padding: 10px 14px; min-height: 42px; }
-      select { font-size: 0.95rem; padding: 10px 10px; min-height: 42px; }
-      .list-check { width: 20px; height: 20px; }
+      /* LARGER TOUCH TARGETS ON PHONES (about 48px tall); card and matrix-table sizes are left as they are */
+      .top-status-bar { font-size: 0.85rem; }
+      .hamburger-btn { font-size: 2.3rem; padding: 2px 8px; }
+      .search-bar { font-size: 1.08rem; padding: 13px 46px 13px 18px; }
+      .search-clear { width: 34px; height: 34px; line-height: 34px; font-size: 18px; }
+      .btn { font-size: 1.05rem; padding: 12px 16px; min-height: 48px; }
+      select { font-size: 1.05rem; padding: 12px 10px; min-height: 48px; }
+      /* the dropdowns share the spare width of their row; the buttons wrap underneath when there is no room */
+      .control-group { width: 100%; margin-left: 0; gap: 8px; }
+      .control-group select { flex: 1 1 135px; min-width: 0; text-overflow: ellipsis; }
+      .control-group .btn { flex: 0 0 auto; padding: 12px 13px; }
+      .list-check { width: 26px; height: 26px; }
       .fav-btn.card-fav { top: 4px; right: 4px; width: 22px; height: 22px; font-size: 1rem; }
-      .list-heading { font-size: 0.8rem; padding: 11px 14px; }
-      .list-row { padding: 12px 14px; }
-      .list-title { font-size: 1.05rem; }
-      .list-sub { font-size: 0.82rem; }
-      .menu-item { font-size: 1.05rem; padding: 14px 16px; }
-      .system-divider { font-size: 0.78rem; }
-      .btn-sidebar { font-size: 0.9rem; padding: 10px; }
-      .profile-email { font-size: 0.88rem; }
-      .matrix-fab { font-size: 1.05rem; padding: 14px 24px; bottom: 22px; right: 18px; }
+      .fav-btn.list-fav { width: 42px; height: 42px; font-size: 1.8rem; }
+      .list-heading { font-size: 0.88rem; padding: 12px 14px; }
+      .list-row { padding: 14px 14px; gap: 12px; }
+      .list-num { font-size: 1.05rem; }
+      .list-title { font-size: 1.15rem; }
+      .list-sub { font-size: 0.92rem; }
+      .menu-item { font-size: 1.1rem; padding: 14px 16px; }
+      .sidebar-brand { font-size: 1.3rem; }
+      .sidebar-system .menu-item { font-size: 1.05rem; padding: 10px 14px; }
+      .system-divider { font-size: 0.85rem; }
+      .btn-sidebar { font-size: 1.05rem; padding: 13px 10px; }
+      .profile-email { font-size: 0.98rem; }
+      .matrix-fab { font-size: 1.15rem; padding: 16px 26px; bottom: 22px; right: 18px; }
       .dock-header { height: auto; min-height: 64px; padding: 10px 12px; gap: 10px; }
-      .dock-header h2 { font-size: 1.2rem; }
-      .dock-header .btn { font-size: 0.9rem; padding: 10px 12px; }
+      .dock-header h2 { font-size: 1.25rem; }
+      .dock-header .btn { font-size: 1rem; padding: 12px 14px; }
       .row-label { font-size: 0.8rem; }
       .system-page-view { padding: 24px 18px; }
       .system-page-view div { font-size: 1.1rem; }
