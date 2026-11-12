@@ -43,6 +43,17 @@
     .menu-item { padding: 12px 16px; margin-bottom: 4px; border-radius: 8px; cursor: pointer; font-weight: 500; color: #94a3b8; transition: 0.2s; }
     .menu-item:hover, .menu-item.active { color: white; background: #334155; }
     .menu-item.active { background: var(--accent-blue); }
+    /* REGION TILES (icon + name) IN THE SIDEBAR */
+    .sidebar-menu.region-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: start; }
+    .menu-item.region-tile { margin: 0; padding: 14px 8px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; border-radius: 14px; background: rgba(148, 163, 184, 0.07); border: 1px solid #334155; color: #cbd5e1; font-size: 0.86rem; font-weight: 600; line-height: 1.2; min-height: 104px; box-sizing: border-box; }
+    .menu-item.region-tile.wide { grid-column: 1 / -1; flex-direction: row; justify-content: flex-start; gap: 14px; min-height: 0; padding: 12px 16px; text-align: left; font-size: 0.95rem; }
+    .menu-item.region-tile:hover { background: #334155; color: white; }
+    .menu-item.region-tile.active { background: var(--accent-blue); border-color: var(--accent-blue); color: white; box-shadow: 0 6px 14px rgba(59, 130, 246, 0.35); }
+    .region-icon { width: 54px; height: 54px; flex-shrink: 0; background-color: #93c5fd; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; transition: background-color 0.2s; }
+    .region-tile.wide .region-icon { width: 42px; height: 42px; }
+    .region-tile:hover .region-icon, .region-tile.active .region-icon { background-color: #ffffff; }
+    .region-icon.no-icon { -webkit-mask: none; mask: none; background: rgba(147, 197, 253, 0.18); border-radius: 50%; color: #93c5fd; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 700; }
+    .region-tile.active .region-icon.no-icon { background: rgba(255,255,255,0.25); color: white; }
     .system-divider { margin: 5px 12px 10px 12px; font-size: 0.7rem; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 1px; }
 
     .sidebar-system { padding: 10px 12px; border-top: 1px solid #334155; display: none; }
@@ -543,6 +554,31 @@
         location.reload();
     }
 
+    // Region icons live in icons/regions/<slug>.png (white lines on transparent).
+    // They are used as a CSS mask, so the app colours them to match the theme.
+    const REGION_ICONS = ['all-references', 'head-neck', 'upper-extremity', 'trunk', 'groin-perineum', 'lower-extremity', 'local-flaps', 'favourites'];
+    function regionSlug(name) { return String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+
+    function makeRegionTile(label, wide) {
+      const div = document.createElement('div');
+      div.className = 'menu-item region-tile' + (wide ? ' wide' : '');
+      const icon = document.createElement('span');
+      icon.className = 'region-icon';
+      const slug = regionSlug(label);
+      if (REGION_ICONS.includes(slug)) {
+        icon.style.setProperty('--icon', "url('icons/regions/" + slug + ".png')");
+      } else {
+        icon.classList.add('no-icon');
+        icon.textContent = label.charAt(0).toUpperCase();
+      }
+      const text = document.createElement('span');
+      text.className = 'region-label';
+      text.textContent = label;
+      div.appendChild(icon);
+      div.appendChild(text);
+      return div;
+    }
+
     function initializeSystem(flaps) {
       datasetMaster = flaps;
       datasetMaster.forEach((f, i) => originalOrderMap.set(f.name, i));
@@ -556,9 +592,14 @@
       const chapterMenu = document.getElementById('chapter-menu');
       const systemMenu = document.getElementById('system-menu');
       
-      chapterMenu.innerHTML = '<div class="menu-item active" onclick="filterCategory(\'ALL\', this)">All References</div>';
+      chapterMenu.innerHTML = '';
+      chapterMenu.classList.add('region-grid');
+      const allTile = makeRegionTile('All References', true);
+      allTile.classList.add('active');
+      allTile.onclick = function() { filterCategory('ALL', allTile); };
+      chapterMenu.appendChild(allTile);
       systemMenu.innerHTML = '';
-      
+
       let systemPages = [];
       const uniqueCategories = [...new Set(flaps.map(f => f.category))];
 
@@ -566,8 +607,7 @@
         if (cat === 'System') {
           systemPages = datasetMaster.filter(f => f.category === 'System');
         } else {
-          const div = document.createElement('div');
-          div.className = "menu-item"; div.innerText = stripHTML(cat); 
+          const div = makeRegionTile(stripHTML(cat), false);
           div.onclick = function() { filterCategory(cat, div); };
           chapterMenu.appendChild(div);
         }
