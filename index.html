@@ -296,6 +296,17 @@
       return text.toString().replace(/<[^>]*>?/gm, '').trim();
     }
 
+    // Field names in the sheet may differ in capitals from the names used here ("Flap Markings" vs "Flap markings")
+    function getField(flap, key) {
+      const wanted = key.toLowerCase();
+      const realKey = Object.keys(flap).find(k => stripHTML(k).toLowerCase() === wanted);
+      return realKey ? flap[realKey] : "";
+    }
+
+    function escapeRegExp(text) {
+      return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
     function toggleTheme() {
       const isDark = document.body.classList.toggle('dark-theme');
       localStorage.setItem('flap_theme', isDark ? 'dark' : 'light');
@@ -389,14 +400,28 @@
         .then(data => {
           btn.disabled = false;
           if (data.error) {
-            alert("Incorrect PIN.");
-            btn.innerText = "Validate Key";
+            alert(data.error);
+            document.querySelectorAll('.otp-box').forEach(b => b.value = '');
+            if (data.restart) {
+              // PIN expired or too many wrong tries: go back to the email step
+              document.getElementById('otp-container').style.display = "none";
+              document.getElementById('email-input').style.display = "inline-block";
+              btn.innerText = "Generate Access Token";
+              btn.onclick = requestPin;
+            } else {
+              btn.innerText = "Validate Key";
+              document.querySelector('.otp-box').focus();
+            }
           } else if (data.flaps) {
             localStorage.setItem('flap_email', currentUserEmail);
             localStorage.setItem('flap_token', data.token);
             localStorage.setItem('flap_data_cache', JSON.stringify(data.flaps));
             initializeSystem(data.flaps);
           }
+        }).catch(() => {
+          btn.disabled = false;
+          alert("Network Timeout. Please check your connection.");
+          btn.innerText = "Validate Key";
         });
     }
 
@@ -514,8 +539,9 @@
          if (orderConfig) {
              const contentKey = Object.keys(orderConfig).find(k => stripHTML(k).toLowerCase() === 'content');
              if (contentKey && orderConfig[contentKey]) {
-                 const cleanContent = stripHTML(orderConfig[contentKey]);
-                 orderedTagsArray = cleanContent.split(',').map(t => t.trim());
+                 // The order can be typed as "Thigh, Leg" in one cell or one name per row (arrives as line breaks)
+                 const cleanContent = stripHTML(orderConfig[contentKey].replace(/<br\s*\/?>/gi, ','));
+                 orderedTagsArray = cleanContent.split(/[,\n]/).map(t => t.trim()).filter(Boolean);
              }
          }
 
@@ -543,7 +569,7 @@
     function getSearchSnippet(text, query) {
       if (!text || !query) return "";
       const strippedText = stripHTML(text); 
-      const regex = new RegExp(`(.{0,40})(${query})(.{0,40})`, 'gi');
+      const regex = new RegExp(`(.{0,40})(${escapeRegExp(query)})(.{0,40})`, 'gi');
       const match = regex.exec(strippedText);
       if (match) return `...${match[1]}<span class="search-highlight">${match[2]}</span>${match[3]}...`;
       return "";
@@ -610,8 +636,9 @@
             }
         } else {
             PREVIEW_KEYS.forEach(key => {
-                if (flap[key]) {
-                    const cleanText = stripHTML(flap[key]);
+                const value = getField(flap, key);
+                if (value) {
+                    const cleanText = stripHTML(value);
                     previewHtml += `<div class="preview-label">${key}</div><div class="preview-text">${cleanText}</div>`;
                 }
             });
@@ -625,11 +652,13 @@
           </div>
           <div class="card-actions">
             <label class="compare-toggle" onclick="event.stopPropagation()">
-              <input type="checkbox" onchange="toggleSelection('${flap.name}', this)" ${selectedFlaps.has(flap.name) ? 'checked' : ''}>
+              <input type="checkbox" ${selectedFlaps.has(flap.name) ? 'checked' : ''}>
               Select for Matrix
             </label>
           </div>
         `;
+        // Attached here rather than inline, so names with apostrophes (e.g. "Limberg's") work
+        card.querySelector('.compare-toggle input').onchange = function() { toggleSelection(flap.name, this); };
         canvas.appendChild(card);
       });
       updateCompareButton();
