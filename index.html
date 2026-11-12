@@ -62,8 +62,43 @@
     /* HAMBURGER BUTTON (NOW VISIBLE GLOBALLY) */
     .hamburger-btn { display: block; background: transparent; border: none; font-size: 1.8rem; color: var(--text-dark); cursor: pointer; padding: 0; margin-right: 5px; }
 
-    .search-bar { flex: 1; min-width: 200px; max-width: 400px; padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; background: var(--bg-main); color: var(--text-dark); transition: 0.2s; }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 400px; display: flex; }
+    .search-bar { flex: 1; min-width: 0; width: 100%; padding: 10px 40px 10px 16px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; background: var(--bg-main); color: var(--text-dark); transition: 0.2s; box-sizing: border-box; font-size: 1rem; }
     .search-bar:focus { border-color: var(--accent-blue); }
+    .search-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; border-radius: 50%; border: none; padding: 0; background: var(--border-color); color: var(--text-dark); font-size: 15px; line-height: 26px; text-align: center; cursor: pointer; display: none; }
+    .search-clear:hover { background: var(--text-muted); color: white; }
+    .search-clear.visible { display: block; }
+
+    /* LIST (CONTENTS PAGE) VIEW */
+    .list-layout { display: flex; flex-direction: column; max-width: 900px; margin: 0 auto; background: var(--panel-light); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; }
+    .list-heading { padding: 10px 16px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-blue); background: var(--bg-main); border-bottom: 1px solid var(--border-color); }
+    .list-row { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.15s; }
+    .list-row:last-child { border-bottom: none; }
+    .list-row:hover { background: var(--bg-main); }
+    .list-num { min-width: 2.2em; text-align: right; font-weight: 700; color: var(--text-muted); font-variant-numeric: tabular-nums; align-self: flex-start; padding-top: 1px; }
+    .list-body { flex: 1; min-width: 0; }
+    .list-title { font-weight: 600; font-size: 0.98rem; color: var(--text-dark); }
+    .list-sub { font-size: 0.75rem; color: var(--text-muted); line-height: 1.35; margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .list-check { width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; }
+
+    /* IMAGE GALLERY (inside a flap) */
+    .img-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+    .img-thumb { margin: 0; cursor: zoom-in; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); background: var(--bg-main); }
+    .img-thumb img { display: block; width: 100%; height: 130px; object-fit: cover; }
+    .img-thumb figcaption { font-size: 0.72rem; color: var(--text-muted); padding: 4px 6px; line-height: 1.3; white-space: normal; }
+
+    /* FULL-SCREEN IMAGE VIEWER */
+    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 2000; display: none; flex-direction: column; }
+    .lightbox.open { display: flex; }
+    .lb-stage { flex: 1; overflow: hidden; touch-action: none; display: flex; align-items: center; justify-content: center; cursor: grab; }
+    .lb-stage img { max-width: 100%; max-height: 100%; object-fit: contain; transform-origin: 0 0; user-select: none; -webkit-user-drag: none; will-change: transform; }
+    .lb-btn { position: absolute; background: rgba(255,255,255,0.15); color: white; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 22px; cursor: pointer; z-index: 2; }
+    .lb-btn:hover { background: rgba(255,255,255,0.3); }
+    .lb-close { top: 12px; right: 12px; }
+    .lb-prev { left: 12px; top: 50%; transform: translateY(-50%); }
+    .lb-next { right: 12px; top: 50%; transform: translateY(-50%); }
+    .lb-footer { color: #e2e8f0; text-align: center; padding: 10px 16px 16px; font-size: 0.9rem; }
+    .lb-count { font-size: 0.75rem; color: #94a3b8; margin-top: 4px; }
     
     .control-group { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-left: auto; }
     select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); outline: none; cursor: pointer; background: var(--panel-light); color: var(--text-dark); font-weight: 500; font-size: 0.85rem;}
@@ -206,7 +241,10 @@
       <div class="navbar">
         <button class="hamburger-btn" onclick="toggleSidebarDrawer()">☰</button>
         
-        <input type="text" class="search-bar" id="search-input" oninput="renderWorkspaceGrid()" placeholder="Search anatomy, pedicles, classifications...">
+        <div class="search-wrap" id="search-wrap">
+          <input type="text" class="search-bar" id="search-input" oninput="onSearchInput()" onkeydown="if (event.key === 'Escape') clearSearch()" placeholder="Search anatomy, pedicles, classifications..." autocomplete="off">
+          <button class="search-clear" id="search-clear" onclick="clearSearch(); document.getElementById('search-input').focus();" title="Clear search" aria-label="Clear search">✕</button>
+        </div>
         
         <div class="control-group">
           <select id="subregion-dropdown" onchange="renderWorkspaceGrid()" style="display: none;">
@@ -219,6 +257,7 @@
             <option value="desc">Alphabetical (Z-A)</option>
           </select>
           
+          <button class="btn btn-outline" id="view-toggle-btn" onclick="toggleViewMode()" title="Switch between cards and a numbered list">☰ List</button>
           <button class="btn btn-outline" id="select-all-btn" onclick="selectAllInView()">Select All</button>
           <button class="btn btn-outline" id="clear-btn" onclick="deselectAll()" style="display: none;">Clear</button>
           <button class="btn btn-primary" id="launch-matrix-btn" onclick="openMatrix()">Compare (0)</button>
@@ -246,7 +285,16 @@
       <div class="matrix-container" id="matrix-container"></div>
     </div>
 
-  </div> 
+  </div>
+
+  <!-- FULL-SCREEN IMAGE VIEWER -->
+  <div class="lightbox" id="lightbox">
+    <button class="lb-btn lb-close" onclick="closeLightbox()" aria-label="Close">✕</button>
+    <button class="lb-btn lb-prev" id="lb-prev" onclick="stepLightbox(-1)" aria-label="Previous image">‹</button>
+    <button class="lb-btn lb-next" id="lb-next" onclick="stepLightbox(1)" aria-label="Next image">›</button>
+    <div class="lb-stage" id="lb-stage"><img id="lb-img" alt="" referrerpolicy="no-referrer"></div>
+    <div class="lb-footer"><div id="lb-caption"></div><div class="lb-count" id="lb-count"></div></div>
+  </div>
 
   <script>
     // PASTE YOUR LATEST DEPLOYMENT WEB APP URL MATRIX HERE
@@ -260,6 +308,45 @@
     let isMatrixMinimized = false;
 
     const PREVIEW_KEYS = ["Introduction", "Arterial Anatomy", "Flap markings", "Flap dimensions"];
+
+    // "cards" (default) or "list" (numbered contents page); remembered on this device
+    let viewMode = (function () { try { return localStorage.getItem('flap_view') === 'list' ? 'list' : 'cards'; } catch (e) { return 'cards'; } })();
+
+    // Search + phone back button: while a search is active we keep one extra history entry,
+    // so pressing back clears the search instead of closing the app
+    let searchHistoryPushed = false;
+    let scrollBeforeSearch = 0;
+
+    // Rows named "Images" (or containing "image") hold picture links, not text
+    function isImageKey(k) { return /image/i.test(stripHTML(k)); }
+    function isHiddenKey(k) { const s = stripHTML(k); return s === 'name' || s === 'category' || s === 'Sub-Region Tag' || isImageKey(s); }
+
+    function matchesSearch(flap, query) {
+      if (stripHTML(flap.name).toLowerCase().includes(query)) return true;
+      return Object.entries(flap).some(([k, v]) => !isImageKey(k) && k !== 'category' && stripHTML(v).toLowerCase().includes(query));
+    }
+
+    // First line of a field (lines are separated by <br> or new lines)
+    function firstLine(html) {
+      if (!html) return '';
+      const parts = String(html).split(/<br\s*\/?>|\n/i).map(p => stripHTML(p)).filter(Boolean);
+      return parts[0] || '';
+    }
+
+    function getSubRegionOrder() {
+      const orderConfig = datasetMaster.find(f => stripHTML(f.name).toLowerCase().includes('order') && f.category === 'System');
+      if (!orderConfig) return [];
+      const contentKey = Object.keys(orderConfig).find(k => stripHTML(k).toLowerCase() === 'content');
+      if (!contentKey || !orderConfig[contentKey]) return [];
+      // The order can be typed as "Thigh, Leg" in one cell or one name per row (arrives as line breaks)
+      const cleanContent = stripHTML(orderConfig[contentKey].replace(/<br\s*\/?>/gi, ','));
+      return cleanContent.split(/[,\n]/).map(t => t.trim()).filter(Boolean);
+    }
+
+    function firstTag(flap) {
+      const raw = stripHTML(flap['Sub-Region Tag']);
+      return raw ? raw.split(',')[0].trim() : '';
+    }
 
     // OTP BOX NAVIGATION HANDLER
     function handleOtp(current, event) {
@@ -493,7 +580,8 @@
       document.getElementById('select-all-btn').style.display = 'none';
       document.getElementById('clear-btn').style.display = 'none';
       document.getElementById('launch-matrix-btn').style.display = 'none';
-      document.getElementById('search-input').style.display = 'none';
+      document.getElementById('view-toggle-btn').style.display = 'none';
+      document.getElementById('search-wrap').style.display = 'none';
       
       document.getElementById('system-page-view').style.display = 'block';
 
@@ -513,10 +601,11 @@
       activeCategoryFilter = cat;
 
       document.getElementById('system-page-view').style.display = 'none';
-      document.getElementById('flap-grid-canvas').style.display = 'grid';
+      document.getElementById('flap-grid-canvas').style.display = '';
       document.getElementById('sort-dropdown').style.display = 'inline-block';
       document.getElementById('select-all-btn').style.display = 'inline-block';
-      document.getElementById('search-input').style.display = 'block';
+      document.getElementById('view-toggle-btn').style.display = 'inline-block';
+      document.getElementById('search-wrap').style.display = 'flex';
 
       const subDropdown = document.getElementById('subregion-dropdown');
       if (cat === 'ALL') {
@@ -534,16 +623,7 @@
             }
          });
 
-         let orderedTagsArray = [];
-         const orderConfig = datasetMaster.find(f => stripHTML(f.name).toLowerCase().includes('order') && f.category === 'System');
-         if (orderConfig) {
-             const contentKey = Object.keys(orderConfig).find(k => stripHTML(k).toLowerCase() === 'content');
-             if (contentKey && orderConfig[contentKey]) {
-                 // The order can be typed as "Thigh, Leg" in one cell or one name per row (arrives as line breaks)
-                 const cleanContent = stripHTML(orderConfig[contentKey].replace(/<br\s*\/?>/gi, ','));
-                 orderedTagsArray = cleanContent.split(/[,\n]/).map(t => t.trim()).filter(Boolean);
-             }
-         }
+         const orderedTagsArray = getSubRegionOrder();
 
          let finalTags = Array.from(subTags);
          finalTags.sort((a, b) => {
@@ -575,38 +655,50 @@
       return "";
     }
 
-    function renderWorkspaceGrid() {
-      const canvas = document.getElementById('flap-grid-canvas');
-      canvas.innerHTML = '';
-      const searchQuery = document.getElementById('search-input').value.toLowerCase();
-      const sortMode = document.getElementById('sort-dropdown').value;
-      
+    function getFilteredFlaps() {
+      const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
       const subDropdown = document.getElementById('subregion-dropdown');
       const subDropdownValue = subDropdown ? subDropdown.value : 'ALL';
 
-      let viewData = datasetMaster.filter(flap => {
-        if (flap.category === 'System') return false; 
+      return datasetMaster.filter(flap => {
+        if (flap.category === 'System') return false;
         if (activeCategoryFilter !== "ALL" && flap.category !== activeCategoryFilter) return false;
-        
+
         if (activeCategoryFilter !== "ALL" && subDropdownValue !== "ALL") {
             const rawTagString = stripHTML(flap['Sub-Region Tag']);
             const tags = rawTagString ? rawTagString.split(',').map(t=>t.trim()) : [];
             if (!tags.includes(subDropdownValue)) return false;
         }
 
-        if (searchQuery) {
-          let matches = stripHTML(flap.name).toLowerCase().includes(searchQuery);
-          for (let v of Object.values(flap)) { if (stripHTML(v).toLowerCase().includes(searchQuery)) matches = true; }
-          if (!matches) return false;
-        }
+        if (searchQuery && !matchesSearch(flap, searchQuery)) return false;
         return true;
       });
+    }
+
+    function renderWorkspaceGrid() {
+      const canvas = document.getElementById('flap-grid-canvas');
+      canvas.innerHTML = '';
+      const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+      const sortMode = document.getElementById('sort-dropdown').value;
+      const subDropdown = document.getElementById('subregion-dropdown');
+      const subDropdownValue = subDropdown ? subDropdown.value : 'ALL';
+      const isList = viewMode === 'list';
+
+      canvas.className = isList ? 'list-layout' : 'grid-layout';
+      const toggleBtn = document.getElementById('view-toggle-btn');
+      if (toggleBtn) toggleBtn.innerHTML = isList ? '▦ Cards' : '☰ List';
+      document.getElementById('search-clear').classList.toggle('visible', searchQuery !== '');
+
+      let viewData = getFilteredFlaps();
 
       viewData.sort((a, b) => {
-        const aSel = selectedFlaps.has(a.name);
-        const bSel = selectedFlaps.has(b.name);
-        if (aSel && !bSel) return -1;
-        if (!aSel && bSel) return 1;
+        // In card view, flaps ticked for the matrix float to the top; a contents list keeps its order
+        if (!isList) {
+          const aSel = selectedFlaps.has(a.name);
+          const bSel = selectedFlaps.has(b.name);
+          if (aSel && !bSel) return -1;
+          if (!aSel && bSel) return 1;
+        }
 
         if (searchQuery) {
             const aTitleMatch = stripHTML(a.name).toLowerCase().includes(searchQuery);
@@ -617,9 +709,25 @@
 
         if (sortMode === 'asc') return stripHTML(a.name).localeCompare(stripHTML(b.name));
         if (sortMode === 'desc') return stripHTML(b.name).localeCompare(stripHTML(a.name));
-        
-        return originalOrderMap.get(a.name) - originalOrderMap.get(b.name); 
+
+        return originalOrderMap.get(a.name) - originalOrderMap.get(b.name);
       });
+
+      // Short "why this matched" text for search results
+      function searchMatchHtml(flap) {
+        for (let [k, v] of Object.entries(flap)) {
+          if (k !== 'name' && k !== 'category' && k !== 'Sub-Region Tag' && !isImageKey(k) && stripHTML(v).toLowerCase().includes(searchQuery)) {
+            return { label: stripHTML(k), snippet: getSearchSnippet(v, searchQuery) };
+          }
+        }
+        return null;
+      }
+
+      if (isList) {
+        renderListView(canvas, viewData, searchQuery, sortMode, subDropdownValue, searchMatchHtml);
+        updateCompareButton();
+        return;
+      }
 
       viewData.forEach(flap => {
         const card = document.createElement('div');
@@ -628,12 +736,8 @@
 
         let previewHtml = '';
         if (searchQuery && !stripHTML(flap.name).toLowerCase().includes(searchQuery)) {
-            for (let [k, v] of Object.entries(flap)) {
-                if (k !== 'name' && k !== 'category' && k !== 'Sub-Region Tag' && stripHTML(v).toLowerCase().includes(searchQuery)) {
-                    previewHtml += `<div class="preview-label">Matched in ${stripHTML(k)}</div><div class="preview-text">${getSearchSnippet(v, searchQuery)}</div>`;
-                    break; 
-                }
-            }
+            const hit = searchMatchHtml(flap);
+            if (hit) previewHtml += `<div class="preview-label">Matched in ${hit.label}</div><div class="preview-text">${hit.snippet}</div>`;
         } else {
             PREVIEW_KEYS.forEach(key => {
                 const value = getField(flap, key);
@@ -664,6 +768,115 @@
       updateCompareButton();
     }
 
+    // Numbered contents-page view. Numbers are worked out every time from what is on screen,
+    // so they always run 1, 2, 3... for the current chapter, sub-region or search.
+    function renderListView(canvas, viewData, searchQuery, sortMode, subDropdownValue, searchMatchHtml) {
+      if (viewData.length === 0) {
+        canvas.innerHTML = '<div class="list-heading" style="border:none;">No flaps found</div>';
+        return;
+      }
+
+      // Group under headings (like a book's contents) when showing a whole chapter or everything in default order
+      let groups = null;
+      if (!searchQuery && sortMode === 'default') {
+        if (activeCategoryFilter === 'ALL') {
+          const cats = [];
+          viewData.forEach(f => { if (!cats.includes(f.category)) cats.push(f.category); });
+          groups = cats.map(c => ({ title: stripHTML(c), items: viewData.filter(f => f.category === c) }));
+        } else if (subDropdownValue === 'ALL') {
+          const order = getSubRegionOrder();
+          const tags = [];
+          viewData.forEach(f => { const t = firstTag(f) || 'Other'; if (!tags.includes(t)) tags.push(t); });
+          tags.sort((a, b) => {
+            let ia = order.indexOf(a), ib = order.indexOf(b);
+            if (ia === -1) ia = 9999; if (ib === -1) ib = 9999;
+            return ia === ib ? a.localeCompare(b) : ia - ib;
+          });
+          groups = tags.map(t => ({ title: t, items: viewData.filter(f => (firstTag(f) || 'Other') === t) }));
+        }
+      }
+      if (!groups) groups = [{ title: '', items: viewData }];
+
+      let n = 0;
+      groups.forEach(group => {
+        if (group.title) {
+          const h = document.createElement('div');
+          h.className = 'list-heading';
+          h.innerText = group.title;
+          canvas.appendChild(h);
+        }
+        group.items.forEach(flap => {
+          n += 1;
+          const row = document.createElement('div');
+          row.className = 'list-row';
+          row.onclick = () => viewSingleFlap(flap.name);
+
+          let sub = '';
+          const titleMatches = stripHTML(flap.name).toLowerCase().includes(searchQuery);
+          if (searchQuery && !titleMatches) {
+            const hit = searchMatchHtml(flap);
+            if (hit) sub = `<b>${hit.label}:</b> ${hit.snippet}`;
+          } else {
+            const aka = firstLine(getField(flap, 'Also Known As'));
+            const artery = firstLine(getField(flap, 'Arterial Anatomy'));
+            const bits = [aka, artery].filter(Boolean);
+            sub = bits.join(' &middot; ');
+          }
+          const meta = activeCategoryFilter === 'ALL' && !groups[0].title ? `<span style="color:var(--accent-blue);font-weight:700;">${stripHTML(flap.category)}</span> &middot; ` : '';
+
+          row.innerHTML = `
+            <div class="list-num">${n}.</div>
+            <div class="list-body">
+              <div class="list-title">${stripHTML(flap.name)}</div>
+              ${sub || meta ? `<div class="list-sub">${meta}${sub}</div>` : ''}
+            </div>
+            <input type="checkbox" class="list-check" title="Select for Matrix" ${selectedFlaps.has(flap.name) ? 'checked' : ''}>
+          `;
+          const cb = row.querySelector('.list-check');
+          cb.onclick = (e) => e.stopPropagation();
+          cb.onchange = function() { toggleSelection(flap.name, this); };
+          canvas.appendChild(row);
+        });
+      });
+    }
+
+    function toggleViewMode() {
+      viewMode = viewMode === 'list' ? 'cards' : 'list';
+      try { localStorage.setItem('flap_view', viewMode); } catch (e) {}
+      renderWorkspaceGrid();
+      document.querySelector('.workspace').scrollTop = 0;
+    }
+
+    // ---- SEARCH: clear button and phone back button ----
+    function onSearchInput() {
+      const input = document.getElementById('search-input');
+      const hasText = input.value.trim() !== '';
+      if (hasText && !searchHistoryPushed) {
+        // Remember where the user was, and add a history step that "back" can undo
+        scrollBeforeSearch = document.querySelector('.workspace').scrollTop;
+        history.pushState({ view: 'search' }, '', '#search');
+        searchHistoryPushed = true;
+      } else if (!hasText && searchHistoryPushed) {
+        searchHistoryPushed = false;
+        history.back(); // removes the extra history step; the popstate handler then has nothing to do
+      }
+      renderWorkspaceGrid();
+    }
+
+    // Clears the search and returns to the list the user was on before searching
+    function clearSearch(fromBackButton) {
+      const input = document.getElementById('search-input');
+      const hadSearch = input.value !== '';
+      input.value = '';
+      renderWorkspaceGrid();
+      if (hadSearch) document.querySelector('.workspace').scrollTop = scrollBeforeSearch;
+      if (searchHistoryPushed && !fromBackButton) {
+        searchHistoryPushed = false;
+        history.back();
+      }
+      searchHistoryPushed = false;
+    }
+
     function toggleSelection(flapName, checkbox) {
       if (checkbox.checked) selectedFlaps.add(flapName);
       else selectedFlaps.delete(flapName);
@@ -671,25 +884,7 @@
     }
 
     function selectAllInView() {
-      const searchQuery = document.getElementById('search-input').value.toLowerCase();
-      const subDropdown = document.getElementById('subregion-dropdown');
-      const subDropdownValue = subDropdown ? subDropdown.value : 'ALL';
-      
-      datasetMaster.forEach(flap => {
-        if (flap.category === 'System') return;
-        if (activeCategoryFilter !== "ALL" && flap.category !== activeCategoryFilter) return;
-        if (activeCategoryFilter !== "ALL" && subDropdownValue !== "ALL") {
-            const rawTagString = stripHTML(flap['Sub-Region Tag']);
-            const tags = rawTagString ? rawTagString.split(',').map(t=>t.trim()) : [];
-            if (!tags.includes(subDropdownValue)) return;
-        }
-        if (searchQuery) {
-          let matches = false;
-          for (let v of Object.values(flap)) { if (stripHTML(v).toLowerCase().includes(searchQuery)) matches = true; }
-          if (!matches) return;
-        }
-        selectedFlaps.add(flap.name);
-      });
+      getFilteredFlaps().forEach(flap => selectedFlaps.add(flap.name));
       renderWorkspaceGrid();
     }
 
@@ -768,11 +963,14 @@
       flaps.forEach(f => tableHtml += `<th>${stripHTML(f.name)}</th>`);
       tableHtml += `</tr></thead><tbody>`;
 
+      galleryStore = [];
       attributes.forEach(attr => {
         tableHtml += `<tr>`;
         flaps.forEach(f => {
           const val = f[attr] ? f[attr].trim() : '';
-          if (val) {
+          if (val && isImageKey(attr)) {
+             tableHtml += `<td><div class="row-label">${stripHTML(attr)}</div>${buildGalleryHtml(val, stripHTML(f.name))}</td>`;
+          } else if (val) {
              tableHtml += `<td><div class="row-label">${stripHTML(attr)}</div><div class="cell-data">${val}</div></td>`;
           } else {
              tableHtml += `<td></td>`;
@@ -780,14 +978,177 @@
         });
         tableHtml += `</tr>`;
       });
-      
+
       tableHtml += `</tbody></table>`;
       container.innerHTML = tableHtml;
     }
 
+    // ---- IMAGES ----
+    // The "Images" row holds one picture link per line, optionally followed by " | caption".
+    // Google Drive share links are converted to direct image addresses (the file must be shared
+    // as "Anyone with the link"). Any other https image link is used as it is.
+    let galleryStore = [];
+
+    function driveFileId(url) {
+      const m = url.match(/\/d\/([\w-]{20,})/) || url.match(/[?&]id=([\w-]{20,})/);
+      return m ? m[1] : null;
+    }
+
+    function parseImageField(html) {
+      // Turn <a href="..."> into the bare address, then split into lines
+      const flat = String(html).replace(/<a\s[^>]*href="([^"]+)"[^>]*>[\s\S]*?<\/a>/gi, ' $1 ');
+      const lines = flat.split(/<br\s*\/?>|\n/i).map(l => stripHTML(l).replace(/&amp;/g, '&').trim()).filter(Boolean);
+      const images = [];
+      lines.forEach(line => {
+        const m = line.match(/https?:\/\/[^\s|]+/);
+        if (!m) return;
+        const url = m[0];
+        const caption = line.replace(url, '').replace(/^[\s|:\-–—]+/, '').trim();
+        const id = driveFileId(url);
+        images.push(id ? {
+          thumb: `https://drive.google.com/thumbnail?id=${id}&sz=w600`,
+          full: `https://drive.google.com/thumbnail?id=${id}&sz=w2400`,
+          fallback: `https://lh3.googleusercontent.com/d/${id}=w2400`,
+          caption
+        } : { thumb: url, full: url, fallback: '', caption });
+      });
+      return images;
+    }
+
+    function escapeAttr(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+
+    function buildGalleryHtml(html, flapName) {
+      const images = parseImageField(html);
+      if (images.length === 0) return `<div class="cell-data">${html}</div>`;
+      const g = galleryStore.length;
+      galleryStore.push({ name: flapName, images });
+      return `<div class="img-gallery">${images.map((im, i) => `
+        <figure class="img-thumb" onclick="openLightbox(${g}, ${i})">
+          <img src="${escapeAttr(im.thumb)}" data-fallback="${escapeAttr(im.fallback)}" alt="${escapeAttr(im.caption || flapName)}" loading="lazy" referrerpolicy="no-referrer"
+               onerror="if (this.dataset.fallback && this.dataset.tried !== '1') { this.dataset.tried = '1'; this.src = this.dataset.fallback; }">
+          ${im.caption ? `<figcaption>${escapeAttr(im.caption)}</figcaption>` : ''}
+        </figure>`).join('')}</div>`;
+    }
+
+    // Full-screen viewer: pinch / wheel / double-tap to zoom, drag to pan, swipe or arrows for next image
+    const lb = { gallery: null, index: 0, scale: 1, x: 0, y: 0, pointers: new Map(), pinchDist: 0, pinchScale: 1, pinchMid: null, start: null, lastTap: 0 };
+
+    function openLightbox(g, i) {
+      lb.gallery = galleryStore[g];
+      if (!lb.gallery) return;
+      document.getElementById('lightbox').classList.add('open');
+      history.pushState({ view: 'lightbox' }, '', '#image');
+      showLightboxImage(i);
+    }
+
+    function closeLightbox(fromBackButton) {
+      const box = document.getElementById('lightbox');
+      if (!box.classList.contains('open')) return;
+      box.classList.remove('open');
+      if (!fromBackButton) history.back();
+    }
+
+    function showLightboxImage(i) {
+      const imgs = lb.gallery.images;
+      lb.index = (i + imgs.length) % imgs.length;
+      const im = imgs[lb.index];
+      const el = document.getElementById('lb-img');
+      el.dataset.tried = '';
+      el.onerror = function () { if (im.fallback && this.dataset.tried !== '1') { this.dataset.tried = '1'; this.src = im.fallback; } };
+      el.src = im.full;
+      document.getElementById('lb-caption').innerText = im.caption || lb.gallery.name;
+      document.getElementById('lb-count').innerText = imgs.length > 1 ? `${lb.index + 1} / ${imgs.length}` : '';
+      document.getElementById('lb-prev').style.display = imgs.length > 1 ? 'block' : 'none';
+      document.getElementById('lb-next').style.display = imgs.length > 1 ? 'block' : 'none';
+      resetZoom();
+    }
+
+    function stepLightbox(d) { if (lb.gallery) showLightboxImage(lb.index + d); }
+
+    function applyZoom() {
+      document.getElementById('lb-img').style.transform = `translate(${lb.x}px, ${lb.y}px) scale(${lb.scale})`;
+    }
+    function resetZoom() { lb.scale = 1; lb.x = 0; lb.y = 0; applyZoom(); }
+
+    // Zoom about a point on screen, keeping that point still under the finger / cursor
+    function zoomAt(newScale, cx, cy) {
+      newScale = Math.min(6, Math.max(1, newScale));
+      const img = document.getElementById('lb-img');
+      const rect = img.getBoundingClientRect();
+      const ox = rect.left - lb.x, oy = rect.top - lb.y;          // position before any pan
+      const px = (cx - ox - lb.x) / lb.scale, py = (cy - oy - lb.y) / lb.scale;
+      lb.scale = newScale;
+      lb.x = cx - ox - px * newScale;
+      lb.y = cy - oy - py * newScale;
+      if (lb.scale === 1) { lb.x = 0; lb.y = 0; }
+      applyZoom();
+    }
+
+    (function setupLightboxGestures() {
+      const stage = document.getElementById('lb-stage');
+      stage.addEventListener('pointerdown', e => {
+        if (stage.setPointerCapture) stage.setPointerCapture(e.pointerId);
+        lb.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (lb.pointers.size === 2) {
+          const [a, b] = [...lb.pointers.values()];
+          lb.pinchDist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+          lb.pinchScale = lb.scale;
+          lb.pinchMid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+          lb.start = null;
+        } else {
+          lb.start = { x: e.clientX, y: e.clientY, tx: lb.x, ty: lb.y, t: Date.now() };
+        }
+      });
+      stage.addEventListener('pointermove', e => {
+        if (!lb.pointers.has(e.pointerId)) return;
+        lb.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (lb.pointers.size === 2) {
+          const [a, b] = [...lb.pointers.values()];
+          const dist = Math.hypot(a.x - b.x, a.y - b.y);
+          zoomAt(lb.pinchScale * dist / lb.pinchDist, lb.pinchMid.x, lb.pinchMid.y);
+        } else if (lb.pointers.size === 1 && lb.scale > 1 && lb.start) {
+          lb.x = lb.start.tx + (e.clientX - lb.start.x);
+          lb.y = lb.start.ty + (e.clientY - lb.start.y);
+          applyZoom();
+        }
+      });
+      const endPointer = e => {
+        if (!lb.pointers.has(e.pointerId)) return;
+        lb.pointers.delete(e.pointerId);
+        if (lb.pointers.size > 0 || !lb.start) return;
+        const dx = e.clientX - lb.start.x, dy = e.clientY - lb.start.y;
+        const quick = Date.now() - lb.start.t < 300 && Math.abs(dx) < 10 && Math.abs(dy) < 10;
+        if (quick) {
+          // double tap / double click toggles zoom
+          if (Date.now() - lb.lastTap < 350) { zoomAt(lb.scale > 1 ? 1 : 2.5, e.clientX, e.clientY); lb.lastTap = 0; }
+          else lb.lastTap = Date.now();
+        } else if (lb.scale === 1 && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
+          stepLightbox(dx < 0 ? 1 : -1);      // swipe left / right
+        } else if (lb.scale === 1 && dy > 100 && Math.abs(dy) > Math.abs(dx)) {
+          closeLightbox();                    // swipe down to close
+        }
+        lb.start = null;
+      };
+      stage.addEventListener('pointerup', endPointer);
+      stage.addEventListener('pointercancel', endPointer);
+      stage.addEventListener('wheel', e => { e.preventDefault(); zoomAt(lb.scale * (e.deltaY < 0 ? 1.2 : 1 / 1.2), e.clientX, e.clientY); }, { passive: false });
+      document.addEventListener('keydown', e => {
+        if (!document.getElementById('lightbox').classList.contains('open')) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowRight') stepLightbox(1);
+        if (e.key === 'ArrowLeft') stepLightbox(-1);
+      });
+    })();
+
+    // Phone / browser back button: close the topmost thing instead of leaving the app
     window.addEventListener('popstate', function(event) {
-        if (document.getElementById('matrix-dock').classList.contains('open')) {
+        if (document.getElementById('lightbox').classList.contains('open')) {
+            closeLightbox(true);
+        } else if (document.getElementById('matrix-dock').classList.contains('open')) {
             minimizeMatrix();
+        } else if (searchHistoryPushed) {
+            clearSearch(true);
+            document.getElementById('search-input').blur();
         }
     });
     
