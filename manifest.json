@@ -1,17 +1,14 @@
 {
-  "name": "Flap Reference Engine",
-  "short_name": "Flaps",
-  "description": "Interactive atlas for plastic and reconstructive surgery flaps.",
+  "name": "Amanyu’s Flapendium",
+  "short_name": "Flapendium",
+  "description": "Amanyu’s Flapendium: an interactive atlas of plastic and reconstructive surgery flaps.",
   "start_url": ".",
   "display": "fullscreen",
-  "background_color": "#1e293b",
-  "theme_color": "#1e293b",
+  "background_color": "#042551",
+  "theme_color": "#042551",
   "icons": [
-    {
-      "src": "icon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

@@ -3,15 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
-  <meta name="theme-color" content="#1e293b">
-  <title>Flap Atlas & Reference</title>
+  <meta name="theme-color" content="#042551">
+  <title>Amanyu’s Flapendium</title>
+  <meta name="application-name" content="Flapendium">
+  <meta name="apple-mobile-web-app-title" content="Flapendium">
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
 
   <style>
     :root {
       --bg-main: #f8fafc; --panel-dark: #1e293b; --panel-light: #ffffff;
       --accent-blue: #3b82f6; --text-dark: #0f172a; --text-muted: #64748b;
       --border-color: #e2e8f0; --matrix-bg: #cbd5e1; --matrix-card: #ffffff;
+      --topbar-h: 50px; --brand-navy: #042551; --brand-flap: #2dd4bf; --brand-flap-on-light: #0d9488;
+      --brand-font: 'Cinzel', Georgia, 'Times New Roman', serif;
     }
 
     body.dark-theme {
@@ -24,17 +33,23 @@
     ::-webkit-scrollbar { width: 0px; }
     
     /* TOP CONSTANT STATUS BAR */
-    .top-status-bar { position: fixed; top: 0; left: 0; right: 0; height: 25px; background: var(--accent-blue); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; z-index: 1000; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .top-status-bar { position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-h); background: var(--brand-navy); color: white; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 12px; box-sizing: border-box; z-index: 1000; box-shadow: 0 2px 6px rgba(0,0,0,0.35); }
+    .brand-logo { height: calc(var(--topbar-h) - 10px); width: auto; aspect-ratio: 1; border-radius: 8px; flex-shrink: 0; }
+    .brand-name { font-family: var(--brand-font); font-weight: 700; font-size: 1.35rem; letter-spacing: 0.5px; line-height: 1; white-space: nowrap; }
+    .brand-flap { color: var(--brand-flap); }
+    .login-logo { width: 96px; height: 96px; border-radius: 20px; display: block; margin: 0 auto 16px; box-shadow: 0 6px 16px rgba(4,37,81,0.35); }
+    .login-container h2.brand-name { white-space: normal; line-height: 1.2; }
+    body:not(.dark-theme) .login-container .brand-flap { color: var(--brand-flap-on-light); }
 
     /* OFFSET EVERYTHING DOWN BY 25PX */
-    .app-container { display: flex; height: calc(100vh - 25px); width: 100vw; margin-top: 25px; }
+    .app-container { display: flex; height: calc(100vh - var(--topbar-h)); width: 100vw; margin-top: var(--topbar-h); }
 
     /* OVERLAY FOR SIDEBAR (NOW GLOBAL) */
-    .sidebar-overlay { display: none; position: fixed; top: 25px; left: 0; width: 100vw; height: calc(100vh - 25px); background: rgba(0,0,0,0.5); z-index: 899; opacity: 0; transition: opacity 0.3s; }
+    .sidebar-overlay { display: none; position: fixed; top: var(--topbar-h); left: 0; width: 100vw; height: calc(100vh - var(--topbar-h)); background: rgba(0,0,0,0.5); z-index: 899; opacity: 0; transition: opacity 0.3s; }
     .sidebar-overlay.active { opacity: 1; }
 
     /* SIDEBAR IS NOW A HIDDEN DRAWER GLOBALLY (PC & MOBILE) */
-    .sidebar { position: fixed; left: 0; top: 25px; height: calc(100vh - 25px); width: 260px; background: var(--panel-dark); color: white; display: flex; flex-direction: column; z-index: 900; transform: translateX(-100%); touch-action: pan-y; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s; }
+    .sidebar { position: fixed; left: 0; top: var(--topbar-h); height: calc(100vh - var(--topbar-h)); width: 260px; background: var(--panel-dark); color: white; display: flex; flex-direction: column; z-index: 900; transform: translateX(-100%); touch-action: pan-y; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s; }
     .sidebar.open { transform: translateX(0); }
     
     .sidebar-brand { padding: 24px 20px; font-size: 1.15rem; font-weight: 700; border-bottom: 1px solid #334155; }
@@ -164,7 +179,7 @@
     .matrix-fab { position: fixed; bottom: 30px; right: 30px; background: var(--accent-blue); color: white; padding: 12px 24px; border-radius: 30px; box-shadow: 0 10px 20px rgba(59, 130, 246, 0.4); display: none; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; z-index: 90; transition: transform 0.2s; }
     .matrix-fab:hover { transform: scale(1.05); }
 
-    .comparison-dock { position: fixed; top: 25px; left: 0; width: 100vw; height: calc(100vh - 25px); background: var(--matrix-bg); z-index: 800; display: flex; flex-direction: column; clip-path: circle(0% at calc(100% - 100px) calc(100% - 50px)); opacity: 0; pointer-events: none; transition: clip-path 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s, background 0.3s; }
+    .comparison-dock { position: fixed; top: var(--topbar-h); left: 0; width: 100vw; height: calc(100vh - var(--topbar-h)); background: var(--matrix-bg); z-index: 800; display: flex; flex-direction: column; clip-path: circle(0% at calc(100% - 100px) calc(100% - 50px)); opacity: 0; pointer-events: none; transition: clip-path 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s, background 0.3s; }
     .comparison-dock.open { clip-path: circle(150% at calc(100% - 100px) calc(100% - 50px)); opacity: 1; pointer-events: auto; }
     .dock-header { height: 70px; background: var(--panel-dark); border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; color: white; flex-shrink: 0; }
     
@@ -223,7 +238,9 @@
       .matrix-table td { padding: 10px; font-size: 0.85rem; }
 
       /* LARGER TOUCH TARGETS ON PHONES (about 48px tall); card and matrix-table sizes are left as they are */
-      .top-status-bar { font-size: 0.85rem; }
+      :root { --topbar-h: 56px; }
+      .brand-name { font-size: 1.5rem; }
+      @media (max-width: 380px) { .brand-name { font-size: 1.3rem; } .top-status-bar { gap: 8px; } }
       .hamburger-btn { font-size: 2.3rem; padding: 2px 8px; }
       .search-bar { font-size: 1.08rem; padding: 13px 46px 13px 18px; }
       .search-clear { width: 34px; height: 34px; line-height: 34px; font-size: 18px; }
@@ -260,10 +277,11 @@
 <body oncontextmenu="return false;">
 
   <!-- TOP CONSTANT BAR -->
-  <div class="top-status-bar">Amanyu's Flap References</div>
+  <div class="top-status-bar"><img class="brand-logo" src="icons/logo-96.png" alt=""><span class="brand-name">Amanyu’s <span class="brand-flap">Flap</span>endium</span></div>
 
   <div class="login-container" id="login-screen">
-    <h2 style="margin-top: 0;">Flap Reference Engine</h2>
+    <img class="login-logo" src="icons/logo-96.png" alt="">
+    <h2 class="brand-name" style="margin-top: 0;">Amanyu’s <span class="brand-flap">Flap</span>endium</h2>
     <p id="login-desc" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">Enter credential email to synchronize verification token.</p>
     
     <input type="email" id="email-input" placeholder="doctor@hospital.com">
