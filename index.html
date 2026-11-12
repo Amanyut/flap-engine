@@ -310,7 +310,7 @@
   <div class="login-container" id="login-screen">
     <img class="login-logo" src="icons/logo-96.png" alt="">
     <h2 class="brand-name" style="margin-top: 0;">Amanyu’s <span class="brand-flap">Flap</span>endium</h2>
-    <p id="login-desc" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">Enter your registered email and we'll send you a login PIN.</p>
+    <p id="login-desc" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">Enter your registered email address to receive a one-time password (OTP).</p>
     
     <input type="email" id="email-input" placeholder="doctor@hospital.com">
     
@@ -322,15 +322,15 @@
       <input type="text" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" onkeyup="handleOtp(this, event)" onfocus="this.select()">
     </div>
 
-    <button id="action-btn" onclick="requestPin()">Send Login PIN</button>
+    <button id="action-btn" onclick="requestPin()">Send OTP</button>
     <div id="pin-links" class="pin-links">
-      <button type="button" id="resend-btn" class="link-btn" onclick="resendPin()" disabled>Resend PIN</button>
-      <button type="button" class="link-btn" onclick="changeEmail()">Use a different email</button>
+      <button type="button" id="resend-btn" class="link-btn" onclick="resendPin()" disabled>Resend OTP</button>
+      <button type="button" class="link-btn" onclick="changeEmail()">Use a different email address</button>
     </div>
 
     <div id="paywall-message" class="paywall">
-      <strong>No access for this email</strong><br><br>
-      This email does not have an active subscription. Get full access to Amanyu’s Flapendium.<br><br>
+      <strong>Access not available</strong><br><br>
+      This email address does not have an active subscription. Please subscribe for full access to Amanyu’s Flapendium.<br><br>
       <a href="https://razorpay.com" target="_blank"><button style="background: #3399cc; width: 100%; margin-top: 10px;">Subscribe via Razorpay</button></a>
     </div>
   </div>
@@ -650,7 +650,7 @@
         currentUserEmail = savedEmail;
         document.getElementById('email-input').style.display = 'none';
         document.getElementById('action-btn').style.display = 'none';
-        document.getElementById('login-desc').innerText = "Signing you in...";
+        document.getElementById('login-desc').innerText = "Signing in...";
 
         if (cachedFlaps) { initializeSystem(JSON.parse(cachedFlaps)); }
 
@@ -665,13 +665,13 @@
           })
           .catch(() => {
               if(!cachedFlaps) {
-                 document.getElementById('login-desc').innerText = "Couldn't reach the server. Enter your email to get a new login PIN.";
+                 document.getElementById('login-desc').innerText = "Unable to reach the server. Please enter your email address to receive a new OTP.";
                  const emailBox = document.getElementById('email-input');
                  emailBox.style.display = 'inline-block';
                  emailBox.value = savedEmail; 
                  const actionBtn = document.getElementById('action-btn');
                  actionBtn.style.display = 'block';
-                 actionBtn.innerText = "Send Login PIN";
+                 actionBtn.innerText = "Send OTP";
               }
           });
       }
@@ -687,11 +687,11 @@
       const rb = document.getElementById('resend-btn');
       let left = RESEND_AFTER_SECONDS;
       clearInterval(resendTimer);
-      rb.disabled = true; rb.innerText = 'Resend PIN in ' + left + 's';
+      rb.disabled = true; rb.innerText = 'Resend OTP in ' + left + 's';
       resendTimer = setInterval(() => {
         left--;
-        if (left <= 0) { clearInterval(resendTimer); rb.disabled = false; rb.innerText = 'Resend PIN'; }
-        else rb.innerText = 'Resend PIN in ' + left + 's';
+        if (left <= 0) { clearInterval(resendTimer); rb.disabled = false; rb.innerText = 'Resend OTP'; }
+        else rb.innerText = 'Resend OTP in ' + left + 's';
       }, 1000);
     }
 
@@ -703,8 +703,8 @@
       const emailInput = document.getElementById('email-input');
       emailInput.style.display = 'inline-block';
       const btn = document.getElementById('action-btn');
-      btn.innerText = 'Send Login PIN'; btn.onclick = requestPin; btn.disabled = false;
-      setLoginText("Enter your registered email and we'll send you a login PIN.");
+      btn.innerText = 'Send OTP'; btn.onclick = requestPin; btn.disabled = false;
+      setLoginText("Enter your registered email address to receive a one-time password (OTP).");
       emailInput.focus();
     }
 
@@ -712,7 +712,7 @@
       const btn = document.getElementById('action-btn');
       const rb = document.getElementById('resend-btn');
       if (isResend) { rb.disabled = true; rb.innerText = 'Sending...'; }
-      else { btn.innerText = 'Sending PIN...'; btn.disabled = true; }
+      else { btn.innerText = 'Sending OTP...'; btn.disabled = true; }
       document.getElementById('paywall-message').style.display = 'none';
 
       return fetch(API_URL + "?action=request_pin&email=" + encodeURIComponent(currentUserEmail))
@@ -721,33 +721,33 @@
           btn.disabled = false;
           if (data.error) {
             alert(data.error);
-            if (isResend) startResendCountdown(); else btn.innerText = 'Send Login PIN';
+            if (isResend) startResendCountdown(); else btn.innerText = 'Send OTP';
           } else if (data.locked) {
             document.getElementById('paywall-message').style.display = 'block';
-            if (!isResend) btn.innerText = 'Send Login PIN';
+            if (!isResend) btn.innerText = 'Send OTP';
           } else if (data.step === "pin_sent") {
             document.getElementById('email-input').style.display = "none";
             document.getElementById('otp-container').style.display = "flex";
             document.getElementById('pin-links').style.display = "flex";
             document.querySelectorAll('.otp-box').forEach(b => b.value = '');
-            setLoginText((isResend ? 'A new login PIN has been sent to ' : 'We have emailed a 4-digit login PIN to ') + currentUserEmail +
-              '. It is valid for ' + PIN_VALID_MINUTES + ' minutes.' + (isResend ? ' The earlier PIN no longer works.' : ''));
-            btn.innerText = "Verify PIN";
+            setLoginText((isResend ? 'A new OTP has been sent to ' : 'A 4-digit OTP has been sent to ') + currentUserEmail +
+              '. It is valid for ' + PIN_VALID_MINUTES + ' minutes.' + (isResend ? ' The previous OTP is no longer valid.' : ''));
+            btn.innerText = "Verify OTP";
             btn.onclick = verifyPin;
             startResendCountdown();
             document.querySelector('.otp-box').focus();
           }
         }).catch(() => {
           btn.disabled = false;
-          alert("Couldn't reach the server. Please check your connection.");
-          if (isResend) startResendCountdown(); else btn.innerText = 'Send Login PIN';
+          alert("Unable to reach the server. Please check your internet connection.");
+          if (isResend) startResendCountdown(); else btn.innerText = 'Send OTP';
         });
     }
 
     function requestPin() {
       const emailInput = document.getElementById('email-input');
       currentUserEmail = emailInput.value.trim();
-      if (!currentUserEmail) return alert("Please enter your email.");
+      if (!currentUserEmail) return alert("Please enter your email address.");
       sendPin(false);
     }
 
@@ -757,10 +757,10 @@
       // Concatenate values from the 4 boxes
       const pin = Array.from(document.querySelectorAll('.otp-box')).map(i => i.value).join('');
 
-      if (pin.length !== 4) return alert("Please enter the complete 4-digit PIN.");
+      if (pin.length !== 4) return alert("Please enter the complete 4-digit OTP.");
 
       const btn = document.getElementById('action-btn');
-      btn.innerText = "Verifying PIN...";
+      btn.innerText = "Verifying OTP...";
       btn.disabled = true;
 
       fetch(API_URL + "?action=verify_pin&email=" + encodeURIComponent(currentUserEmail) + "&pin=" + encodeURIComponent(pin))
@@ -770,12 +770,12 @@
           if (data.error) {
             alert(data.error);
             document.querySelectorAll('.otp-box').forEach(b => b.value = '');
-            btn.innerText = "Verify PIN";
+            btn.innerText = "Verify OTP";
             if (data.restart) {
               // PIN expired or too many wrong tries: a new one is needed
-              setLoginText('That PIN can no longer be used. Tap "Resend PIN" to get a new one.');
+              setLoginText('This OTP is no longer valid. Please select "Resend OTP" to receive a new one.');
               clearInterval(resendTimer);
-              const rb = document.getElementById('resend-btn'); rb.disabled = false; rb.innerText = 'Resend PIN';
+              const rb = document.getElementById('resend-btn'); rb.disabled = false; rb.innerText = 'Resend OTP';
             } else {
               document.querySelector('.otp-box').focus();
             }
@@ -789,8 +789,8 @@
           }
         }).catch(() => {
           btn.disabled = false;
-          alert("Couldn't reach the server. Please check your connection.");
-          btn.innerText = "Verify PIN";
+          alert("Unable to reach the server. Please check your internet connection.");
+          btn.innerText = "Verify OTP";
         });
     }
 
