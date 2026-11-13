@@ -421,6 +421,72 @@
     ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
     @media (prefers-reduced-motion: reduce) { .fav-btn.pop, .fav-btn.pop::after { animation: none; } }
 
+
+    /* ---- POLISH: entrance wave, press, glass header, progress, peek, recent, empty states, pull-to-refresh, back to top ---- */
+    .flap-card.enter, .list-row.enter, .recent-strip.enter { animation: cardIn 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(16px) scale(0.985); } }
+    .flap-card, .list-row { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+    .flap-card:active { transform: scale(0.975); transition-duration: 0.08s; }
+    .list-row:active { transform: scale(0.99); transition: transform 0.08s, background 0.15s; }
+    .menu-item.region-tile:active { transform: scale(0.95); transition-duration: 0.08s; }
+    .flap-card.peeking, .list-row.peeking { transform: scale(0.96); }
+
+    .navbar { position: absolute; top: 0; left: 0; right: 0; z-index: 20; background: color-mix(in srgb, var(--panel-light) 76%, transparent); -webkit-backdrop-filter: blur(14px) saturate(1.5); backdrop-filter: blur(14px) saturate(1.5); }
+    body.dark-theme .navbar { background: rgba(11, 18, 32, 0.78); }
+    body.yellow-theme .navbar { background: rgba(251, 250, 246, 0.76); }
+    .workspace { padding-top: calc(var(--nav-h, 70px) + 20px); overscroll-behavior-y: contain; }
+    @media (max-width: 768px) { .workspace { padding-top: calc(var(--nav-h, 70px) + 10px); } }
+
+    .fp-progress { height: 3px; flex-shrink: 0; position: relative; z-index: 2; margin-top: -3px; pointer-events: none; }
+    .fp-progress i { display: block; height: 100%; background: #f5c451; transform: scaleX(0); transform-origin: left center; transition: transform 0.08s linear; }
+    body.yellow-theme .fp-progress i { background: #0e3b43; }
+
+    .peek-backdrop { position: fixed; inset: 0; z-index: 2500; background: rgba(8, 15, 30, 0.38); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.18s ease-out; }
+    .peek-card { width: min(440px, 100%); max-height: 70vh; overflow: hidden; background: var(--panel-light); color: var(--text-dark); border-radius: 18px; padding: 18px 20px 14px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35); border-top: 4px solid #f5c451; animation: peekIn 0.26s cubic-bezier(0.2, 0.9, 0.3, 1.25); transition: transform 0.2s; }
+    body.yellow-theme .peek-card { border-top-color: #fff000; }
+    .peek-backdrop.to-open .peek-card { transform: translateY(-14px) scale(1.02); }
+    .peek-meta { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+    .peek-card h3 { margin: 2px 0 10px; font-size: 1.2rem; color: var(--accent-blue); }
+    .peek-label { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-top: 8px; }
+    .peek-text { font-size: 0.95rem; line-height: 1.45; }
+    .peek-hint { margin-top: 12px; text-align: center; font-size: 0.8rem; color: var(--text-muted); }
+    .peek-backdrop.to-open .peek-hint { color: var(--accent-blue); font-weight: 700; }
+    @keyframes peekIn { from { opacity: 0; transform: scale(0.88); } }
+    @keyframes fadeIn { from { opacity: 0; } }
+
+    .recent-strip { grid-column: 1 / -1; margin-bottom: 4px; min-width: 0; }
+    .recent-label { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin: 0 2px 6px; }
+    .recent-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+    .recent-row::-webkit-scrollbar { display: none; }
+    .recent-chip { flex-shrink: 0; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid var(--border-color); background: var(--panel-light); color: var(--text-dark); border-radius: 999px; padding: 8px 14px; font: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: transform 0.1s; }
+    .recent-chip:active { transform: scale(0.95); }
+    body.yellow-theme .recent-chip { border-color: rgba(14, 59, 67, 0.25); }
+
+    .empty-state { grid-column: 1 / -1; text-align: center; padding: 48px 20px; color: var(--text-muted); animation: cardIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+    .empty-state svg { width: 92px; height: 92px; color: var(--accent-blue); opacity: 0.75; margin-bottom: 10px; }
+    .empty-state .es-title { font-size: 1.15rem; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
+    .empty-state .es-text { font-size: 0.95rem; line-height: 1.5; max-width: 340px; margin: 0 auto; }
+
+    .title-hit { background: linear-gradient(transparent 58%, rgba(245, 196, 81, 0.6) 58%); color: inherit; border-radius: 2px; padding: 0 1px; }
+    body.yellow-theme .title-hit { background: linear-gradient(transparent 58%, rgba(14, 124, 134, 0.3) 58%); }
+    .dym-chip { display: inline-block; margin: 0 2px; padding: 3px 12px; border-radius: 999px; border: 1px solid var(--accent-blue); background: var(--panel-light); color: var(--accent-blue); font: inherit; font-weight: 700; cursor: pointer; animation: chipIn 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+    @keyframes chipIn { from { opacity: 0; transform: scale(0.6); } }
+
+    .ptr { position: absolute; left: 50%; top: var(--nav-h, 70px); z-index: 19; width: 42px; height: 42px; margin-top: 8px; border-radius: 50%; background: var(--panel-light); color: var(--accent-blue); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2); display: flex; align-items: center; justify-content: center; transform: translate(-50%, -60px); opacity: 0; pointer-events: none; transition: transform 0.25s, opacity 0.25s; }
+    .ptr.dragging { transition: none; }
+    .ptr svg { width: 28px; height: 28px; }
+    .ptr.ready { color: #c0392b; }
+    .ptr.spin svg { animation: scalpelSpin 0.75s linear infinite; }
+    @keyframes scalpelSpin { to { transform: rotate(360deg); } }
+
+    .to-top { position: absolute; left: 16px; bottom: 20px; z-index: 30; width: 46px; height: 46px; border-radius: 50%; border: none; background: var(--accent-blue); color: #fff; font-size: 1.4rem; line-height: 1; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25); cursor: pointer; opacity: 0; transform: translateY(20px) scale(0.8); pointer-events: none; transition: opacity 0.25s, transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+    .to-top.show { opacity: 1; transform: none; pointer-events: auto; }
+    body.yellow-theme .to-top { background: #0e3b43; color: #fff000; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .flap-card.enter, .list-row.enter, .recent-strip.enter, .empty-state, .peek-card, .dym-chip { animation: none; }
+    }
+
     /* ---- SMALL TOUCHES ---- */
     .toast { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -542,10 +608,12 @@
         </div>
       </div>
 
+      <div class="ptr" id="ptr"><svg viewBox="0 0 48 48" aria-hidden="true"><g transform="rotate(-45 24 24)"><rect x="21.5" y="23" width="5" height="21" rx="2" fill="currentColor"/><rect x="22.5" y="26" width="3" height="14" rx="1.2" fill="rgba(255,255,255,0.35)"/><path d="M21.5 23 L21.5 12 Q21.5 3.5 27.5 4 Q27 14 26.5 23 Z" fill="#cfd8dc" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></g></svg></div>
       <div class="workspace">
         <div class="grid-layout" id="flap-grid-canvas"></div>
         <div class="system-page-view" id="system-page-view"></div>
       </div>
+      <button class="to-top" id="to-top" onclick="document.querySelector('.workspace').scrollTo({ top: 0, behavior: 'smooth' }); buzz(6);" aria-label="Back to top" title="Back to top">↑</button>
     </div> 
 
     <div class="matrix-fab" id="matrix-fab" onclick="openMatrix()">
@@ -576,6 +644,7 @@
       </button>
     </div>
     <div class="fp-tabs" id="fp-tabs"></div>
+    <div class="fp-progress" aria-hidden="true"><i id="fp-progress"></i></div>
     <div class="fp-body" id="fp-body"><div class="fp-inner" id="fp-inner"></div></div>
     <div class="fp-nav"><button id="fp-prev" onclick="stepFlap(-1)"></button><button id="fp-next" onclick="stepFlap(1)"></button></div>
   </div>
@@ -1475,20 +1544,18 @@
 
       if (activeCategoryFilter === 'FAVOURITES' && viewData.length === 0) {
         canvas.className = 'list-layout';
-        canvas.innerHTML = searchQuery
-          ? '<div class="fav-empty">No favourites match this search.</div>'
-          : '<div class="fav-empty"><div class="fav-empty-star">☆</div>No favourites yet.<br>Tap the ☆ on any flap to add it here.</div>';
+        canvas.innerHTML = searchQuery ? emptyStateHtml('favsearch') : emptyStateHtml('fav');
         updateCompareButton();
         return;
       }
 
       if (isList) {
         renderListView(canvas, viewData, searchQuery, sortMode, subDropdownValue, searchMatchHtml);
-        addSearchNote(canvas, viewData.length);
+        addSearchNote(canvas, viewData.length); decorateGrid(canvas);
         updateCompareButton();
         return;
       }
-      if (viewData.length === 0) canvas.innerHTML = '<div class="search-note">No flaps found</div>';
+      if (viewData.length === 0) canvas.innerHTML = emptyStateHtml('none');
 
       viewData.forEach(flap => {
         const card = document.createElement('div');
@@ -1528,7 +1595,7 @@
         card.appendChild(makeStarButton(flap.name, 'card-fav'));
         canvas.appendChild(card);
       });
-      addSearchNote(canvas, viewData.length);
+      addSearchNote(canvas, viewData.length); decorateGrid(canvas);
       updateCompareButton();
     }
 
@@ -1538,7 +1605,15 @@
       if (!count || !slips.length) return;
       const note = document.createElement('div');
       note.className = 'search-note';
-      note.innerHTML = 'No exact match for ' + slips.map(p => '“' + escapeAttr(p.raw) + '”').join(', ') + ' – showing the closest matches.';
+      const fixes = slips.map(p => ({ raw: p.raw, word: realWordFor(p) })).filter(f => f.word && f.word !== f.raw);
+      note.innerHTML = fixes.length
+        ? 'Did you mean ' + fixes.map(f => '<button type="button" class="dym-chip" data-raw="' + escapeAttr(f.raw) + '" data-word="' + escapeAttr(f.word) + '">' + escapeAttr(f.word) + '</button>').join(' ') + '? Showing the closest matches.'
+        : 'No exact match for ' + slips.map(p => '“' + escapeAttr(p.raw) + '”').join(', ') + ' – showing the closest matches.';
+      note.querySelectorAll('.dym-chip').forEach(b => b.onclick = () => {
+        const input = document.getElementById('search-input');
+        input.value = input.value.replace(new RegExp(escapeRegExp(b.dataset.raw), 'i'), b.dataset.word);
+        buzz(8); onSearchInput();
+      });
       canvas.insertBefore(note, canvas.firstChild);
     }
 
@@ -1546,7 +1621,7 @@
     // so they always run 1, 2, 3... for the current chapter, sub-region or search.
     function renderListView(canvas, viewData, searchQuery, sortMode, subDropdownValue, searchMatchHtml) {
       if (viewData.length === 0) {
-        canvas.innerHTML = '<div class="list-heading" style="border:none;">No flaps found</div>';
+        canvas.innerHTML = emptyStateHtml('none');
         return;
       }
 
@@ -1751,6 +1826,7 @@
       const pb = document.getElementById('fp-prev'), nb = document.getElementById('fp-next');
       pb.disabled = !prev; pb.innerText = prev ? '‹ ' + stripHTML(prev) : '‹ Previous';
       nb.disabled = !next; nb.innerText = next ? stripHTML(next) + ' ›' : 'Next ›';
+      pushRecent(name); updateReadProgress();
       return true;
     }
 
@@ -1812,7 +1888,8 @@
 
     function stepFlap(d) {
       const order = viewOrder(), idx = order.indexOf(flapPageName), target = order[idx + d];
-      if (idx < 0 || !target) return;
+      if (idx < 0) return;
+      if (!target) { edgeBounce(d); return; }
       renderFlapPage(target, d);
       history.replaceState({ view: 'flap' }, '', flapHash(target));
       buzz(6); saveStateSoon();
@@ -1859,6 +1936,237 @@
       } catch (e) {}
     }
     function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+
+
+    // ================= POLISH =================
+    // Glass header: the list scrolls underneath the search bar, which keeps its height in --nav-h
+    (function () {
+      const nav = document.querySelector('.navbar'), mc = document.querySelector('.main-content');
+      if (!nav || !mc) return;
+      const set = () => mc.style.setProperty('--nav-h', nav.offsetHeight + 'px');
+      set();
+      if (window.ResizeObserver) new ResizeObserver(set).observe(nav); else window.addEventListener('resize', set);
+    })();
+
+    // Friendly empty screens
+    function emptyStateHtml(kind) {
+      const star = '<svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M48 16l9.4 19 21 3-15.2 14.8 3.6 20.9L48 63.8l-18.8 9.9 3.6-20.9L17.6 38l21-3z"/><path d="M80 14v8M76 18h8M16 66v6M13 69h6M82 58v5M79.5 60.5h5" stroke-width="2"/></svg>';
+      const lens = '<svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="41" cy="41" r="22"/><path d="M57 57l20 20"/><path d="M30 46c4-9 12-13 22-12" stroke-dasharray="3 4"/><path d="M33 33l5 5M38 33l-5 5" stroke-width="2"/></svg>';
+      const s = {
+        fav: [star, 'No favourites yet', 'Tap the ☆ on any flap and it will be kept here, ready for quick revision.'],
+        favsearch: [star, 'No favourites match this search', 'Try another word, or clear the search to see all your favourites.'],
+        none: [lens, 'No flaps found', 'Try another spelling, a vessel or a region, or clear the search.']
+      }[kind];
+      return '<div class="empty-state">' + s[0] + '<div class="es-title">' + s[1] + '</div><div class="es-text">' + s[2] + '</div></div>';
+    }
+
+    // Recently viewed flaps (most recent first)
+    function getRecent() { try { return JSON.parse(localStorage.getItem('flap_recent') || '[]'); } catch (e) { return []; } }
+    function pushRecent(name) {
+      const list = [name].concat(getRecent().filter(n => n !== name)).slice(0, 8);
+      try { localStorage.setItem('flap_recent', JSON.stringify(list)); } catch (e) {}
+    }
+    function addRecentStrip(canvas) {
+      const names = getRecent().filter(n => datasetMaster.some(f => f.name === n));
+      if (!names.length) return;
+      const strip = document.createElement('div');
+      strip.className = 'recent-strip';
+      strip.innerHTML = '<div class="recent-label">Recently viewed</div><div class="recent-row"></div>';
+      const row = strip.querySelector('.recent-row');
+      names.forEach(n => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'recent-chip'; b.textContent = stripHTML(n);
+        b.onclick = () => openFlapPage(n, { fromEl: b });
+        row.appendChild(b);
+      });
+      canvas.insertBefore(strip, canvas.firstChild);
+    }
+
+    // Typed words glow in the flap names of the results
+    function highlightTitles(canvas) {
+      const toks = lastSearchPlan.filter(p => p.mode === 'exact').map(p => p.raw).filter(x => x.length > 1);
+      if (!toks.length) return;
+      const re = new RegExp('(' + toks.sort((a, b) => b.length - a.length).map(escapeRegExp).join('|') + ')', 'gi');
+      canvas.querySelectorAll('.card-title, .list-title').forEach(el => {
+        el.innerHTML = escapeAttr(el.textContent).replace(re, '<mark class="title-hit">$1</mark>');
+      });
+    }
+
+    // The real word behind a spelling correction, as it is written in the flaps
+    const realWordCache = new Map();
+    function realWordFor(p) {
+      const key = p.raw + '|' + p.mode;
+      if (realWordCache.has(key)) return realWordCache.get(key);
+      const targets = new Set(p.mode === 'norm' ? [p.norm] : p.alts.slice(0, 6));
+      const counts = new Map();
+      if (targets.size) datasetMaster.forEach(f => {
+        if (f.category === 'System') return;
+        searchText(f).all.split(/[^a-z0-9]+/).forEach(w => { if (w.length >= 3 && targets.has(normSpell(w))) counts.set(w, (counts.get(w) || 0) + 1); });
+      });
+      let best = '', n = 0;
+      counts.forEach((c, w) => { if (c > n) { best = w; n = c; } });
+      realWordCache.set(key, best);
+      return best;
+    }
+
+    // After every list render: recently viewed, highlights, and a gentle entrance wave on a new screen
+    let lastGridCtx = '';
+    function decorateGrid(canvas) {
+      const q = document.getElementById('search-input').value.trim();
+      if (q) highlightTitles(canvas);
+      else if (activeCategoryFilter === 'ALL') addRecentStrip(canvas);
+      const sub = document.getElementById('subregion-dropdown');
+      const ctx = [activeCategoryFilter, viewMode, sub ? sub.value : '', document.getElementById('sort-dropdown').value].join('|');
+      if (ctx !== lastGridCtx && !reducedMotion()) {
+        canvas.querySelectorAll('.recent-strip, .flap-card, .list-row').forEach((el, i) => {
+          if (i > 15) return;
+          el.style.animationDelay = (i * 28) + 'ms';
+          el.classList.add('enter');
+          setTimeout(() => { el.classList.remove('enter'); el.style.animationDelay = ''; }, 460 + i * 28);
+        });
+      }
+      lastGridCtx = ctx;
+    }
+
+    // Rubber-band bounce at the first / last flap
+    function edgeBounce(d) {
+      buzz([6, 40, 6]);
+      const inner = document.getElementById('fp-inner');
+      if (!inner || reducedMotion() || !inner.animate) return;
+      inner.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(' + (-d * 34) + 'px)' }, { transform: 'translateX(0)' }],
+        { duration: 420, easing: 'cubic-bezier(0.3, 1.5, 0.5, 1)' });
+    }
+
+    // Reading progress line under the flap-page header
+    function updateReadProgress() {
+      const b = document.getElementById('fp-body'), bar = document.getElementById('fp-progress');
+      if (!b || !bar) return;
+      const max = b.scrollHeight - b.clientHeight;
+      bar.style.transform = 'scaleX(' + (max > 4 ? Math.min(1, b.scrollTop / max) : 0) + ')';
+    }
+    (function () {
+      let raf = 0;
+      const b = document.getElementById('fp-body');
+      if (b) b.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; updateReadProgress(); }); }, { passive: true });
+    })();
+
+    // Back-to-top bubble after a long scroll
+    (function () {
+      const ws = document.querySelector('.workspace'), btn = document.getElementById('to-top');
+      if (!ws || !btn) return;
+      let raf = 0;
+      ws.addEventListener('scroll', () => {
+        if (raf) return;
+        raf = requestAnimationFrame(() => { raf = 0; btn.classList.toggle('show', ws.scrollTop > 900); });
+      }, { passive: true });
+    })();
+
+    // Long-press a card or row: a floating peek of the flap. Release to close, slide up to open.
+    (function () {
+      const PEEK_KEYS = ['Also Known As', 'Arterial Anatomy', 'Indications', 'Flap dimensions', 'Flap markings', 'Introduction'];
+      let timer = 0, sx = 0, sy = 0, src = null, peek = null, suppressClick = false;
+      const noScroll = e => { if (peek) e.preventDefault(); };
+      function show(el) {
+        const flap = datasetMaster.find(f => f.name === el.dataset.name);
+        if (!flap) return;
+        buzz(15);
+        let body = '', used = 0;
+        PEEK_KEYS.forEach(k => {
+          if (used >= 4) return;
+          const v = stripHTML(String(getField(flap, k) || '').replace(/<br\s*\/?>/gi, ' · ')).trim();
+          if (!v) return;
+          used++;
+          body += '<div class="peek-label">' + escapeAttr(k) + '</div><div class="peek-text">' + escapeAttr(v.length > 170 ? v.slice(0, 168) + '…' : v) + '</div>';
+        });
+        peek = document.createElement('div');
+        peek.className = 'peek-backdrop';
+        peek.innerHTML = '<div class="peek-card"><div class="peek-meta">' + escapeAttr(stripHTML(flap.category)) + '</div><h3>' + escapeAttr(stripHTML(flap.name)) + '</h3>' + body +
+          '<div class="peek-hint">Slide up to open · Release to close</div></div>';
+        document.body.appendChild(peek);
+        el.classList.add('peeking');
+        document.addEventListener('touchmove', noScroll, { passive: false });
+      }
+      function hide(open) {
+        clearTimeout(timer);
+        const el = src; src = null;
+        if (!peek) return;
+        peek.remove(); peek = null;
+        document.removeEventListener('touchmove', noScroll, { passive: false });
+        if (el) el.classList.remove('peeking');
+        suppressClick = true; setTimeout(() => { suppressClick = false; }, 450);
+        if (open && el) openFlapPage(el.dataset.name, { fromEl: el });
+      }
+      document.addEventListener('pointerdown', e => {
+        const el = e.target.closest && e.target.closest('#flap-grid-canvas .flap-card, #flap-grid-canvas .list-row');
+        if (!el || e.target.closest('input, label, .fav-btn, button') || (e.pointerType === 'mouse' && e.button !== 0)) return;
+        if (window.visualViewport && window.visualViewport.scale > 1.02) return;
+        sx = e.clientX; sy = e.clientY; src = el;
+        clearTimeout(timer); timer = setTimeout(() => { if (src === el) show(el); }, 430);
+      });
+      document.addEventListener('pointermove', e => {
+        if (peek) { peek.classList.toggle('to-open', sy - e.clientY > 55); return; }
+        if (src && Math.hypot(e.clientX - sx, e.clientY - sy) > 10) { clearTimeout(timer); src = null; }
+      });
+      document.addEventListener('pointerup', () => { if (peek) hide(peek.classList.contains('to-open')); else { clearTimeout(timer); src = null; } });
+      document.addEventListener('pointercancel', () => { if (peek) hide(false); else { clearTimeout(timer); src = null; } });
+      document.addEventListener('contextmenu', e => { if (peek || (src && e.target.closest && e.target.closest('#flap-grid-canvas'))) e.preventDefault(); });
+      document.addEventListener('click', e => { if (suppressClick) { e.stopPropagation(); e.preventDefault(); suppressClick = false; } }, true);
+    })();
+
+    // Pull down at the top of the list to fetch the latest flaps (with a spinning scalpel)
+    function refreshData() {
+      const email = localStorage.getItem('flap_email'), token = localStorage.getItem('flap_token');
+      if (!email || !token || navigator.onLine === false) return Promise.resolve(false);
+      return fetch(API_URL + "?action=auto_login&email=" + encodeURIComponent(email) + "&token=" + encodeURIComponent(token))
+        .then(res => res.json())
+        .then(data => {
+          if (!data.flaps || data.locked) return false;
+          localStorage.setItem('flap_data_cache', JSON.stringify(data.flaps));
+          applyServerFavourites(data.favourites);
+          initializeSystem(data.flaps);
+          return true;
+        })
+        .catch(() => false);
+    }
+    (function () {
+      const ws = document.querySelector('.workspace'), ind = document.getElementById('ptr');
+      if (!ws || !ind) return;
+      const svg = ind.querySelector('svg');
+      let y0 = null, pull = 0, busy = false;
+      const place = () => { ind.style.transform = 'translate(-50%, ' + (pull - 60) + 'px)'; ind.style.opacity = Math.min(1, pull / 45); };
+      const reset = () => { pull = 0; ind.classList.remove('dragging', 'ready'); ind.style.transform = ''; ind.style.opacity = ''; svg.style.transform = ''; };
+      ws.addEventListener('touchstart', e => {
+        y0 = null;
+        if (busy || ws.scrollTop > 0 || e.touches.length > 1) return;
+        if (window.visualViewport && window.visualViewport.scale > 1.02) return;
+        if (document.getElementById('system-page-view').style.display === 'block') return;
+        y0 = e.touches[0].clientY; pull = 0;
+      }, { passive: true });
+      ws.addEventListener('touchmove', e => {
+        if (y0 === null) return;
+        const dy = e.touches[0].clientY - y0;
+        if (ws.scrollTop > 0 || dy < 0) { y0 = null; reset(); return; }
+        pull = Math.min(120, dy * 0.5);
+        ind.classList.add('dragging');
+        place();
+        svg.style.transform = 'rotate(' + Math.round(pull * 4) + 'deg)';
+        const ready = pull >= 70;
+        if (ready && !ind.classList.contains('ready')) buzz(8);
+        ind.classList.toggle('ready', ready);
+      }, { passive: true });
+      ws.addEventListener('touchend', () => {
+        if (y0 === null) return;
+        y0 = null;
+        if (pull < 70) { reset(); return; }
+        busy = true;
+        ind.classList.remove('dragging', 'ready'); ind.classList.add('spin');
+        svg.style.transform = '';
+        pull = 66; place();
+        Promise.all([refreshData(), new Promise(r => setTimeout(r, 800))]).then(([ok]) => {
+          showToast(ok ? 'Flaps are up to date' : 'Could not refresh – please check the connection');
+        }).finally(() => { busy = false; ind.classList.remove('spin'); reset(); });
+      }, { passive: true });
+    })();
 
     // ---- DEFECT MAPPER (prototype, loaded on demand) ----
     const DM_ICON = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\' fill=\'none\' stroke=\'white\' stroke-width=\'2.6\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><circle cx=\'32\' cy=\'9\' r=\'5\'/><path d=\'M24 18h16l2 16h-4l-1 24h-5l-1-17-1 17h-5l-1-24h-4z\'/><path d=\'M24 19l-9 14M40 19l9 14\'/><circle cx=\'40\' cy=\'48\' r=\'7.5\' stroke-dasharray=\'3.2 2.6\'/><path d=\'M40 38v-3M40 61v-3M30 48h-3M53 48h-3\'/></svg>')}")`;
