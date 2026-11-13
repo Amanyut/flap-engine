@@ -343,6 +343,9 @@
       .fp-nav button { font-size: 0.95rem; }
     }
 
+    .search-note { grid-column: 1 / -1; padding: 10px 14px; border-radius: 10px; background: rgba(245, 196, 81, 0.12); border: 1px solid rgba(245, 196, 81, 0.35); color: var(--text-dark); font-size: 0.92rem; line-height: 1.4; }
+    .list-layout .search-note { border-radius: 0; border-width: 0 0 1px; }
+
     /* ---- SMALL TOUCHES ---- */
     .toast { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -380,6 +383,7 @@
     })();
   </script>
   <script src="intro.js" defer></script>
+  <script src="tour.js" defer></script>
   <script>
     // Never leave the launch screen covering the app if the animation script fails to load
     setTimeout(function () { var el = document.getElementById('intro'); if (el && !window.__introRunning) el.remove(); }, 4000);
@@ -645,6 +649,7 @@
           if (text) fields.push({ key: k, text: text, lower: text.toLowerCase() });
         });
         c = { name: name, nameAka: name + ' | ' + aka, all: name + ' | ' + fields.map(f => f.lower).join(' | '), fields: fields };
+        c.nName = normSpell(c.name); c.nNameAka = normSpell(c.nameAka); c.nAll = normSpell(c.all);
         searchTextCache.set(flap, c);
       }
       return c;
@@ -657,17 +662,91 @@
       }
       return false;
     }
+    // ---- SPELLING SLIPS ----
+    // A word that appears nowhere as typed is matched leniently: doubled letters ("latisimus"), British/American
+    // spellings (haem/hem, oe/e, ph/f) and, failing that, words in the flaps that are 1-2 letters different
+    // (wrong, missing, extra or swapped letters). Lenient matches rank below exact ones.
+    function normSpell(s) {
+      return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/ae/g, 'e').replace(/oe/g, 'e').replace(/ph/g, 'f').replace(/([a-z])\1+/g, '$1');
+    }
+    let spellVocab = null;           // every distinct (normalised) word used in the flaps
+    const spellCache = new Map();    // misspelt word -> close words
+    function getSpellVocab() {
+      if (spellVocab) return spellVocab;
+      const set = new Set();
+      datasetMaster.forEach(f => {
+        if (f.category === 'System') return;
+        searchText(f).nAll.split(/[^a-z0-9]+/).forEach(w => { if (w.length >= 3) set.add(w); });
+      });
+      spellVocab = Array.from(set);
+      return spellVocab;
+    }
+    // Damerau-Levenshtein distance, giving up early once it exceeds max
+    function editDistance(a, b, max) {
+      if (Math.abs(a.length - b.length) > max) return max + 1;
+      let prev2 = null, prev = [];
+      for (let j = 0; j <= b.length; j++) prev.push(j);
+      for (let i = 1; i <= a.length; i++) {
+        const cur = [i]; let rowMin = i;
+        for (let j = 1; j <= b.length; j++) {
+          let v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+          if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) v = Math.min(v, prev2[j - 2] + 1);
+          cur.push(v); if (v < rowMin) rowMin = v;
+        }
+        if (rowMin > max) return max + 1;
+        prev2 = prev; prev = cur;
+      }
+      return prev[b.length];
+    }
+    // Words in the flaps whose beginning is within 1 (short words) or 2 (8+ letters) slips of what was typed,
+    // so an unfinished word still finds its matches
+    function closeWords(norm) {
+      if (spellCache.has(norm)) return spellCache.get(norm);
+      const max = norm.length >= 8 ? 2 : 1, out = [];
+      if (norm.length >= 4) {
+        for (const w of getSpellVocab()) {
+          if (w.length < norm.length - max) continue;
+          let best = max + 1;
+          for (let L = Math.max(norm.length - max, 3); L <= Math.min(w.length, norm.length + max) && best > 0; L++) {
+            best = Math.min(best, editDistance(norm, w.slice(0, L), max));
+          }
+          if (best <= max) out.push(w);
+        }
+      }
+      spellCache.set(norm, out);
+      return out;
+    }
+    // How each typed word will be matched: as typed, normalised, or by close words
+    let lastSearchPlan = [];
+    function buildSearchPlan(tokens) {
+      const flaps = datasetMaster.filter(f => f.category !== 'System');
+      return tokens.map(tok => {
+        const p = { raw: tok, norm: normSpell(tok), mode: 'exact', alts: [] };
+        if (flaps.some(f => searchText(f).all.includes(tok))) return p;
+        if (p.norm && flaps.some(f => searchText(f).nAll.includes(p.norm))) { p.mode = 'norm'; return p; }
+        p.mode = 'close'; p.alts = closeWords(p.norm);
+        return p;
+      });
+    }
+    function tokenIn(text, ntext, p) {
+      if (p.mode === 'exact') return text.includes(p.raw);
+      if (p.mode === 'norm') return ntext.includes(p.norm);
+      return p.alts.some(a => ntext.includes(a));
+    }
     // null when the flap does not match; otherwise { tier, score } (lower tier first, then higher score)
-    function searchRank(flap, tokens) {
+    function searchRank(flap, plan) {
       const t = searchText(flap);
-      const hasAll = text => tokens.every(tok => text.includes(tok));
+      const hasAll = (text, ntext) => plan.every(p => tokenIn(text, ntext, p));
       let tier, text;
-      if (hasAll(t.name)) { tier = 0; text = t.name; }
-      else if (hasAll(t.nameAka)) { tier = 1; text = t.nameAka; }
-      else if (hasAll(t.all)) { tier = 2; text = t.all; }
+      if (hasAll(t.name, t.nName)) { tier = 0; text = t.name; }
+      else if (hasAll(t.nameAka, t.nNameAka)) { tier = 1; text = t.nameAka; }
+      else if (hasAll(t.all, t.nAll)) { tier = 2; text = t.all; }
       else return null;
+      const tokens = plan.filter(p => p.mode === 'exact').map(p => p.raw);
       let score = tokens.filter(tok => startsWord(text, tok)).length;
-      if (tokens.length > 1 && text.includes(tokens.join(' '))) score += tokens.length;
+      if (tokens.length > 1 && tokens.length === plan.length && text.includes(tokens.join(' '))) score += tokens.length;
+      score -= plan.filter(p => p.mode === 'norm').length + 2 * plan.filter(p => p.mode === 'close').length;
       return { tier: tier, score: score };
     }
 
@@ -937,6 +1016,7 @@
     }
 
     function initializeSystem(flaps) {
+      spellVocab = null; spellCache.clear();
       // first start: the screen saved when the app was last closed; later refreshes: keep the current screen
       const screenToShow = stateRestored ? captureState() : loadSavedState();
       datasetMaster = flaps;
@@ -1005,12 +1085,17 @@
            div.onclick = function() { viewSystemPage(page.name, div); };
            systemMenu.appendChild(div);
         });
+        const guide = document.createElement('div');
+        guide.className = 'menu-item guide-item'; guide.innerText = 'Guide';
+        guide.onclick = function() { closeSidebarDrawer(); if (window.flapTour) window.flapTour.start(); };
+        systemMenu.appendChild(guide);
       }
 
       renderWorkspaceGrid();
       applyState(screenToShow);
       stateRestored = true;
       openSharedLink();
+      if (window.flapTour) window.flapTour.maybeStartFirstTime();
     }
 
     // A shared link (…/#flap=Name) opens that flap once the flaps are loaded
@@ -1196,6 +1281,8 @@
 
     function getFilteredFlaps() {
       const tokens = searchTokens(document.getElementById('search-input').value);
+      const plan = tokens.length ? buildSearchPlan(tokens) : [];
+      lastSearchPlan = plan;
       const subDropdown = document.getElementById('subregion-dropdown');
       const subDropdownValue = subDropdown ? subDropdown.value : 'ALL';
       searchRanks = new Map();
@@ -1213,7 +1300,7 @@
         }
 
         if (tokens.length) {
-          const rank = searchRank(flap, tokens);
+          const rank = searchRank(flap, plan);
           if (!rank) return false;
           searchRanks.set(flap, rank);
         }
@@ -1282,9 +1369,11 @@
 
       if (isList) {
         renderListView(canvas, viewData, searchQuery, sortMode, subDropdownValue, searchMatchHtml);
+        addSearchNote(canvas, viewData.length);
         updateCompareButton();
         return;
       }
+      if (viewData.length === 0) canvas.innerHTML = '<div class="search-note">No flaps found</div>';
 
       viewData.forEach(flap => {
         const card = document.createElement('div');
@@ -1324,7 +1413,18 @@
         card.appendChild(makeStarButton(flap.name, 'card-fav'));
         canvas.appendChild(card);
       });
+      addSearchNote(canvas, viewData.length);
       updateCompareButton();
+    }
+
+    // "Showing close matches for ..." above results found despite a spelling slip
+    function addSearchNote(canvas, count) {
+      const slips = lastSearchPlan.filter(p => p.mode !== 'exact');
+      if (!count || !slips.length) return;
+      const note = document.createElement('div');
+      note.className = 'search-note';
+      note.innerHTML = 'No exact match for ' + slips.map(p => '“' + escapeAttr(p.raw) + '”').join(', ') + ' – showing the closest matches.';
+      canvas.insertBefore(note, canvas.firstChild);
     }
 
     // Numbered contents-page view. Numbers are worked out every time from what is on screen,
