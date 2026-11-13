@@ -423,8 +423,8 @@
 
 
     /* ---- POLISH: entrance wave, press, glass header, progress, peek, recent, empty states, pull-to-refresh, back to top ---- */
-    .flap-card.enter, .list-row.enter, .recent-strip.enter { animation: cardIn 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
-    @keyframes cardIn { from { opacity: 0; transform: translateY(16px) scale(0.985); } }
+    .flap-card.enter, .list-row.enter, .recent-strip.enter, .amanyu-note.enter { animation: cardIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(28px) scale(0.97); } 60% { opacity: 1; } }
     .flap-card, .list-row { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
     .flap-card:active { transform: scale(0.975); transition-duration: 0.08s; }
     .list-row:active { transform: scale(0.99); transition: transform 0.08s, background 0.15s; }
@@ -556,6 +556,28 @@
     @keyframes bdayIn { from { opacity: 0; transform: scale(0.6) translateY(40px); } }
     @keyframes cakeBob { 50% { transform: translateY(-8px) rotate(-4deg); } }
     @keyframes shimmer { to { background-position: -200% 0; } }
+
+    /* ---- SMALL PHONES: cards always fit three across, toolbar in two compact rows ---- */
+    @media (max-width: 768px) {
+      .grid-layout { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .flap-card { min-width: 0; }
+      .card-title, .preview-text, .card-meta { overflow-wrap: anywhere; hyphens: auto; }
+      .ask-card { width: 100%; border: none; font: inherit; text-align: left; cursor: pointer; }
+    }
+    @media (max-width: 420px) {
+      .navbar { padding: 7px 8px; gap: 7px; }
+      .hamburger-btn { font-size: 1.9rem; padding: 0 4px; margin-right: 0; }
+      .search-wrap { min-width: 0; }
+      .search-bar { font-size: 0.98rem; padding: 9px 40px 9px 14px; }
+      .search-clear { width: 30px; height: 30px; line-height: 30px; font-size: 16px; }
+      .control-group { gap: 6px; }
+      .control-group select { flex: 1 1 96px; font-size: 0.86rem; padding: 7px 6px; min-height: 38px; }
+      .control-group .btn { font-size: 0.86rem; padding: 7px 10px; min-height: 38px; white-space: nowrap; }
+      .workspace { padding-left: 8px; padding-right: 8px; }
+      .grid-layout { gap: 6px; }
+      .flap-card { padding: 8px; }
+    }
+    .pm-card textarea { width: 100%; box-sizing: border-box; padding: 12px 14px; font: inherit; font-size: 1rem; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-dark); resize: vertical; }
 
     /* ---- SMALL TOUCHES ---- */
     .toast { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
@@ -1866,22 +1888,23 @@
       const starSlot = document.getElementById('fp-star'); starSlot.innerHTML = ''; starSlot.appendChild(makeStarButton(flap.name, 'fp-fav'));
 
       galleryStore = [];
-      let tabs = '', html = '', pearlTab = '', pearlHtml = '';
+      let tabs = '', html = '';
       Object.keys(flap).filter(k => { const s = stripHTML(k); return s !== 'name' && s !== 'category' && s !== 'Sub-Region Tag' && String(flap[k]).trim() !== ''; })
         .forEach((k, i) => {
           const label = stripHTML(k), val = String(flap[k]).trim();
           const content = isImageKey(k) ? buildGalleryHtml(val, stripHTML(flap.name)) : `<div class="fp-text">${val}</div>`;
-          if (/pearl/i.test(label)) {
-            pearlHtml = `<section class="fp-section fp-pearl" id="fps-${i}"><div class="row-label">✦ Amanyu’s Pearl</div>${content}</section>`;
-            pearlTab = `<button class="fp-tab" data-target="fps-${i}">Pearl</button>`;
+          // "Amanyu's Pearl" keeps its place in the sheet (after Clinical Pearls) but is drawn as a personal note
+          if (/amanyu/i.test(label)) {
+            html += `<section class="fp-section fp-pearl" id="fps-${i}"><div class="row-label">✦ Amanyu’s Pearl</div>${content}</section>`;
+            tabs += `<button class="fp-tab" data-target="fps-${i}">Amanyu’s Pearl</button>`;
             return;
           }
           html += `<section class="fp-section" id="fps-${i}"><div class="row-label">${label}</div>${content}</section>`;
           tabs += `<button class="fp-tab" data-target="fps-${i}">${label}</button>`;
         });
-      inner.innerHTML = pearlHtml + html;
+      inner.innerHTML = html;
       const tabBar = document.getElementById('fp-tabs');
-      tabBar.innerHTML = pearlTab + tabs;
+      tabBar.innerHTML = tabs;
       tabBar.querySelectorAll('.fp-tab').forEach(btn => btn.onclick = () => {
         const sec = document.getElementById(btn.dataset.target);
         body.scrollTo({ top: sec.offsetTop - 10, behavior: 'smooth' });
@@ -2102,10 +2125,10 @@
       const ctx = [activeCategoryFilter, viewMode, sub ? sub.value : '', document.getElementById('sort-dropdown').value].join('|');
       if (ctx !== lastGridCtx && !reducedMotion()) {
         canvas.querySelectorAll('.amanyu-note, .recent-strip, .flap-card, .list-row').forEach((el, i) => {
-          if (i > 15) return;
-          el.style.animationDelay = (i * 28) + 'ms';
+          if (i > 17) return;
+          el.style.animationDelay = (i * 70) + 'ms';
           el.classList.add('enter');
-          setTimeout(() => { el.classList.remove('enter'); el.style.animationDelay = ''; }, 460 + i * 28);
+          setTimeout(() => { el.classList.remove('enter'); el.style.animationDelay = ''; }, 900 + i * 70);
         });
       }
       lastGridCtx = ctx;
@@ -2367,7 +2390,7 @@
       wrap.className = 'pm-backdrop'; wrap.id = 'pf-backdrop';
       wrap.innerHTML = '<div class="pm-card"><div class="pm-kicker">' + (first ? 'One small thing first' : 'Your details') + '</div>' +
         '<h3>' + (first ? 'What is your name?' : 'Edit your name and birthday') + '</h3>' +
-        '<label for="pf-name">Your name, without “Dr”</label><input id="pf-name" maxlength="40" autocomplete="given-name" placeholder="e.g. Gayathri" value="' + escapeAttr(curName) + '">' +
+        '<label for="pf-name">Your name, without “Dr”</label><input id="pf-name" maxlength="40" autocomplete="given-name" placeholder="Name" value="' + escapeAttr(curName) + '">' +
         '<div class="pf-preview" id="pf-preview"></div>' +
         '<label>Birthday <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label><div class="pf-bday"><select id="pf-day">' + days + '</select><select id="pf-month">' + months + '</select></div>' +
         '<div class="pf-note">Only the day and month. It can be left blank.</div>' +
@@ -2468,8 +2491,28 @@
     }
 
     // ---- Ask Amanyu (only for friends ticked in the Users tab) ----
-    function askLink(flapName) {
-      return 'https://wa.me/' + SUPPORT_WHATSAPP + '?text=' + encodeURIComponent('Hi Amanyu, I have a doubt about the ' + stripHTML(flapName) + ': ');
+    // The question is typed here first, so WhatsApp receives one complete message (it would otherwise put the cursor before the greeting)
+    function openAskBox() {
+      if (!flapPageName || document.getElementById('ask-backdrop')) return;
+      const flapName = stripHTML(flapPageName);
+      const wrap = document.createElement('div');
+      wrap.className = 'pm-backdrop'; wrap.id = 'ask-backdrop';
+      wrap.innerHTML = '<div class="pm-card"><div class="pm-kicker">Ask Amanyu</div><h3>' + escapeAttr(flapName) + '</h3>' +
+        '<label for="ask-text">Your question</label><textarea id="ask-text" rows="5" placeholder="Type your question"></textarea>' +
+        '<div class="pf-err" id="ask-err"></div><button type="button" class="pm-btn" id="ask-send">Send on WhatsApp</button>' +
+        '<button type="button" class="pm-link" id="ask-cancel">Cancel</button></div>';
+      document.body.appendChild(wrap);
+      const box = document.getElementById('ask-text');
+      setTimeout(() => box.focus(), 250);
+      box.oninput = () => { document.getElementById('ask-err').textContent = ''; };
+      document.getElementById('ask-cancel').onclick = () => wrap.remove();
+      document.getElementById('ask-send').onclick = () => {
+        const q = box.value.trim();
+        if (!q) { document.getElementById('ask-err').textContent = 'Please type your question first.'; box.focus(); return; }
+        const text = 'Hi Amanyu, I have a doubt about the ' + flapName + ':\n\n' + q;
+        window.open('https://wa.me/' + SUPPORT_WHATSAPP + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+        wrap.remove(); buzz(10);
+      };
     }
     function refreshAskButton() {
       const btn = document.getElementById('fp-ask');
@@ -2479,9 +2522,10 @@
       const inner = document.getElementById('fp-inner'), old = inner && inner.querySelector('.ask-card');
       if (old) old.remove();
       if (!on) return;
-      btn.href = askLink(flapPageName);
-      inner.insertAdjacentHTML('beforeend', '<a class="ask-card" target="_blank" rel="noopener" href="' + escapeAttr(askLink(flapPageName)) + '">' +
-        btn.innerHTML + '<span>Ask Amanyu about this flap<small>Opens WhatsApp with the flap name filled in</small></span></a>');
+      btn.removeAttribute('href');
+      btn.onclick = e => { e.preventDefault(); openAskBox(); };
+      inner.insertAdjacentHTML('beforeend', '<button type="button" class="ask-card" onclick="openAskBox()">' +
+        btn.innerHTML + '<span>Ask Amanyu about this flap<small>Type your question, then send it on WhatsApp</small></span></button>');
     }
 
     // ---- Birthdays ----
