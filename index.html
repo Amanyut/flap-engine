@@ -581,6 +581,36 @@
     }
     .pm-card textarea { width: 100%; box-sizing: border-box; padding: 12px 14px; font: inherit; font-size: 1rem; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-dark); resize: vertical; }
 
+
+    /* ---- INSTALL GATE: shown when the link is opened in a browser by someone not yet signed in ---- */
+    .gate { position: fixed; inset: 0; z-index: 2600; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; overflow-y: auto;
+      background: radial-gradient(circle at 50% 18%, rgba(245, 196, 81, 0.18), transparent 42%), radial-gradient(ellipse at 50% 100%, #0b3a7a 0%, transparent 60%), linear-gradient(170deg, #042551 0%, #031a3a 60%, #020f24 100%);
+      color: #e8eef9; font-family: var(--ui-font, sans-serif); }
+    .gate-card { width: min(420px, 100%); text-align: center; animation: gateIn 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
+    @keyframes gateIn { from { opacity: 0; transform: translateY(24px) scale(0.97); } }
+    .gate-logo { width: 104px; height: 104px; border-radius: 24px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(245, 196, 81, 0.35); }
+    .gate-title { font-family: var(--brand-font, serif); font-weight: 700; font-size: 1.7rem; line-height: 1.2; margin: 18px 0 6px; color: #fff; }
+    .gate-title .brand-flap { color: #f5c451; }
+    .gate-tag { color: #aebbd2; font-size: 0.98rem; line-height: 1.5; margin: 0 0 26px; }
+    .gate-panel { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(245, 196, 81, 0.28); border-radius: 20px; padding: 22px 20px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06); animation: gateIn 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+    .gate-panel p { margin: 0 0 14px; font-size: 1rem; line-height: 1.55; color: #d6e0f0; }
+    .gate-panel h3 { margin: 0 0 8px; font-size: 1.3rem; color: #fff; }
+    .gate-input { width: 100%; box-sizing: border-box; padding: 15px 16px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.22); background: rgba(2, 10, 26, 0.55); color: #fff; font: inherit; font-size: 1.05rem; outline: none; }
+    .gate-input:focus { border-color: #f5c451; box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.25); }
+    .gate-btn { width: 100%; margin-top: 14px; padding: 15px; border: none; border-radius: 14px; font: inherit; font-weight: 800; font-size: 1.08rem; cursor: pointer; color: #042551; background: linear-gradient(180deg, #fbd774, #f5c451); box-shadow: 0 10px 26px rgba(245, 196, 81, 0.3); }
+    .gate-btn:disabled { opacity: 0.6; }
+    .gate-link { display: inline-block; margin-top: 14px; background: none; border: none; color: #93a4bf; font: inherit; font-size: 0.92rem; text-decoration: underline; cursor: pointer; }
+    .gate-err { color: #fca5a5; font-size: 0.9rem; min-height: 1.2em; margin-top: 10px; }
+    .gate-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: rgba(74, 222, 128, 0.14); color: #86efac; font-weight: 700; font-size: 0.9rem; margin-bottom: 12px; }
+    .gate-icon { font-size: 2.6rem; line-height: 1; margin-bottom: 8px; }
+    .gate-steps { text-align: left; margin: 4px 0 0; padding: 0; list-style: none; counter-reset: gs; }
+    .gate-steps li { counter-increment: gs; position: relative; padding: 10px 0 10px 44px; font-size: 0.98rem; line-height: 1.45; color: #d6e0f0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+    .gate-steps li:first-child { border-top: none; }
+    .gate-steps li::before { content: counter(gs); position: absolute; left: 0; top: 8px; width: 30px; height: 30px; border-radius: 50%; background: #f5c451; color: #042551; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .gate-steps b { color: #fff; }
+    .gate-note { font-size: 0.85rem; color: #93a4bf; margin-top: 12px; line-height: 1.45; }
+    .gate-foot { margin-top: 22px; font-size: 0.78rem; color: #6f819f; }
+
     /* ---- SMALL TOUCHES ---- */
     .toast { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -1097,6 +1127,11 @@
 
     window.onload = function() {
       applyTheme(localStorage.getItem('flap_theme') || 'light');
+      try {
+        const gateEmail = localStorage.getItem('flap_gate_email');
+        if (gateEmail && !localStorage.getItem('flap_email')) document.getElementById('email-input').value = gateEmail;
+      } catch (e) {}
+      if (needGate()) openGate();
       const savedEmail = localStorage.getItem('flap_email');
       const savedToken = localStorage.getItem('flap_token');
       const cachedFlaps = localStorage.getItem('flap_data_cache');
@@ -2600,6 +2635,118 @@
         });
         if (el < ms) requestAnimationFrame(frame); else cv.remove();
       })(start);
+    }
+
+
+    // ================= INSTALL GATE =================
+    // Opened in a browser by someone not signed in: ask for the email first. Only addresses marked active in the
+    // Users tab get the install button; everyone else sees "Coming soon". (Signing in still needs the emailed OTP.)
+    let deferredInstall = null;
+    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; if (gateState === 'ok') gateShow('ok'); });
+    window.addEventListener('appinstalled', () => { deferredInstall = null; if (document.getElementById('gate')) gateShow('installed'); });
+    let gateState = '';
+    function isAppMode() {
+      return ['fullscreen', 'standalone', 'minimal-ui'].some(m => window.matchMedia && window.matchMedia('(display-mode: ' + m + ')').matches) || window.navigator.standalone === true;
+    }
+    function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+    function needGate() {
+      if (isAppMode()) return false;
+      try { if (localStorage.getItem('flap_token') || localStorage.getItem('flap_gate_browser')) return false; } catch (e) {}
+      return true;
+    }
+    function openGate() {
+      if (document.getElementById('gate')) return;
+      const g = document.createElement('div');
+      g.className = 'gate'; g.id = 'gate';
+      g.innerHTML = '<div class="gate-card"><img class="gate-logo" src="icons/icon-192.png" onerror="this.src=\'icons/logo-96.png\'" alt="">' +
+        '<div class="gate-title">Amanyu’s <span class="brand-flap">Flap</span>endium</div>' +
+        '<p class="gate-tag">Your ready reckoner of flaps in plastic and reconstructive surgery – always at hand.</p>' +
+        '<div id="gate-body"></div><div class="gate-foot">© Dr Amanyu</div></div>';
+      document.body.appendChild(g);
+      gateShow('ask');
+    }
+    function gateShow(state, info) {
+      gateState = state;
+      const body = document.getElementById('gate-body');
+      if (!body) return;
+      const saved = (() => { try { return localStorage.getItem('flap_gate_email') || ''; } catch (e) { return ''; } })();
+      let html = '';
+      if (state === 'ask') {
+        html = '<div class="gate-panel"><p>Enter your registered email address to continue.</p>' +
+          '<input class="gate-input" id="gate-email" type="email" inputmode="email" autocomplete="email" placeholder="Email address" value="' + escapeAttr(saved) + '">' +
+          '<div class="gate-err" id="gate-err">' + (info || '') + '</div><button type="button" class="gate-btn" id="gate-go">Continue</button></div>';
+      } else if (state === 'ok') {
+        let install;
+        if (deferredInstall) {
+          install = '<p>Install the app on this device: it opens like any other app, full screen, and works offline.</p>' +
+            '<button type="button" class="gate-btn" id="gate-install">Install Flapendium</button>';
+        } else if (isIOS()) {
+          install = '<p>Add the app to your Home Screen:</p><ol class="gate-steps">' +
+            '<li>Tap the <b>Share</b> button <b>⬆</b> in the browser’s toolbar.</li>' +
+            '<li>Scroll down and choose <b>Add to Home Screen</b>.</li>' +
+            '<li>Tap <b>Add</b>, then open <b>Flapendium</b> from your Home Screen.</li></ol>';
+        } else {
+          install = '<p>Install the app on this device:</p><ol class="gate-steps">' +
+            '<li>Open the browser menu <b>⋮</b>.</li>' +
+            '<li>Choose <b>Install app</b> (or <b>Add to Home screen</b>).</li>' +
+            '<li>Open <b>Flapendium</b> from your home screen.</li></ol>' +
+            '<div class="gate-note">Already installed? Simply open Flapendium from your home screen.</div>';
+        }
+        html = '<div class="gate-panel"><div class="gate-badge">✓ Access confirmed</div>' + install +
+          '</div><button type="button" class="gate-link" id="gate-browser">Continue in the browser instead</button>';
+      } else if (state === 'installed') {
+        html = '<div class="gate-panel"><div class="gate-icon">🎉</div><h3>Installed</h3>' +
+          '<p>Open <b>Amanyu’s Flapendium</b> from your home screen or app drawer to sign in.</p></div>' +
+          '<button type="button" class="gate-link" id="gate-browser">Continue in the browser instead</button>';
+      } else if (state === 'soon') {
+        html = '<div class="gate-panel"><div class="gate-icon">🛠</div><h3>Coming soon</h3>' +
+          '<p>Amanyu’s Flapendium is not yet open to the public.</p><p style="margin:0">Thank you for your interest – please check back later.</p></div>' +
+          '<button type="button" class="gate-link" id="gate-retry">Try another email</button>';
+      }
+      body.innerHTML = html;
+      const $g = id => document.getElementById(id);
+      if ($g('gate-go')) {
+        const input = $g('gate-email');
+        input.onkeydown = e => { if (e.key === 'Enter') gateCheck(); };
+        input.oninput = () => { $g('gate-err').textContent = ''; };
+        $g('gate-go').onclick = gateCheck;
+      }
+      if ($g('gate-install')) $g('gate-install').onclick = () => {
+        if (!deferredInstall) return;
+        deferredInstall.prompt();
+        deferredInstall.userChoice.then(c => { deferredInstall = null; if (c && c.outcome === 'accepted') gateShow('installed'); else gateShow('ok'); }).catch(() => {});
+      };
+      if ($g('gate-browser')) $g('gate-browser').onclick = () => {
+        try { localStorage.setItem('flap_gate_browser', '1'); } catch (e) {}
+        closeGate();
+      };
+      if ($g('gate-retry')) $g('gate-retry').onclick = () => gateShow('ask');
+    }
+    function gateCheck() {
+      const input = document.getElementById('gate-email'), err = document.getElementById('gate-err'), btn = document.getElementById('gate-go');
+      const email = input.value.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.textContent = 'Please enter a valid email address.'; input.focus(); return; }
+      btn.disabled = true; btn.textContent = 'Checking…';
+      fetch(API_URL + '?action=check_access&email=' + encodeURIComponent(email))
+        .then(r => r.json())
+        .then(res => {
+          if (res && res.locked === true) { gateShow('soon'); return; }
+          try { localStorage.setItem('flap_gate_email', email); } catch (e) {}
+          const box = document.getElementById('email-input');
+          if (box && !box.value) box.value = email;
+          buzz(12);
+          gateShow('ok');
+        })
+        .catch(() => {
+          btn.disabled = false; btn.textContent = 'Continue';
+          err.textContent = 'Unable to reach the server. Please check your internet connection and try again.';
+        });
+    }
+    function closeGate() {
+      const g = document.getElementById('gate');
+      if (!g) return;
+      g.style.transition = 'opacity 0.35s'; g.style.opacity = '0';
+      setTimeout(() => g.remove(), 360);
     }
 
     // ---- DEFECT MAPPER (prototype, loaded on demand) ----
