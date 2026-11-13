@@ -410,6 +410,17 @@
     body.yellow-theme .search-highlight { background: #fff000; color: #0e3b43; }
     body.yellow-theme .list-layout { border-color: #dcd8cc; }
 
+    /* ---- MOTION: favourite star burst, theme ripple ---- */
+    .fav-btn:not(.card-fav) { position: relative; }
+    .fav-btn.pop { animation: starPop 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.3); }
+    .fav-btn.pop::after { content: ''; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; pointer-events: none;
+      box-shadow: 0 -15px 0 currentColor, 13px -7px 0 currentColor, 13px 7px 0 currentColor, 0 15px 0 currentColor, -13px 7px 0 currentColor, -13px -7px 0 currentColor;
+      animation: starBurst 0.5s ease-out forwards; }
+    @keyframes starPop { 0% { transform: scale(1); } 40% { transform: scale(1.45) rotate(-12deg); } 70% { transform: scale(0.92) rotate(4deg); } 100% { transform: scale(1); } }
+    @keyframes starBurst { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(1.7); opacity: 0; } }
+    ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+    @media (prefers-reduced-motion: reduce) { .fav-btn.pop, .fav-btn.pop::after { animation: none; } }
+
     /* ---- SMALL TOUCHES ---- */
     .toast { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -498,7 +509,7 @@
       <div class="sidebar-profile" id="user-profile-section">
         <div class="profile-email" id="display-user-email"></div>
         <div class="profile-controls">
-          <button class="btn-sidebar" onclick="toggleTheme()" title="Toggle Dark Mode">🌓 Theme</button>
+          <button class="btn-sidebar" onclick="toggleTheme(event)" title="Toggle Dark Mode">🌓 Theme</button>
           <button class="btn-sidebar btn-logout" onclick="logOut()">Log Out</button>
         </div>
       </div>
@@ -646,13 +657,21 @@
     }
 
     function toggleFavourite(name) {
-      buzz(12);
       const key = favKey(name);
-      if (favouriteFlaps.has(key)) favouriteFlaps.delete(key); else favouriteFlaps.add(key);
+      const adding = !favouriteFlaps.has(key);
+      buzz(adding ? [10, 40, 16] : 10);
+      if (adding) favouriteFlaps.add(key); else favouriteFlaps.delete(key);
       storeFavouritesLocally(true);
       clearTimeout(favSyncTimer);
       favSyncTimer = setTimeout(saveFavouritesToServer, 1200);
-      document.querySelectorAll('.fav-btn').forEach(btn => { if (btn.dataset.fav === key) paintStar(btn); });
+      document.querySelectorAll('.fav-btn').forEach(btn => {
+        if (btn.dataset.fav !== key) return;
+        paintStar(btn);
+        if (adding && !reducedMotion()) {
+          btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
+          setTimeout(() => btn.classList.remove('pop'), 550);
+        }
+      });
       if (activeCategoryFilter === 'FAVOURITES') renderWorkspaceGrid();
     }
 
@@ -890,10 +909,19 @@
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute('content', name === 'yellow' ? '#0e3b43' : '#042551');
     }
-    function toggleTheme() {
+    function toggleTheme(ev) {
       let cur = 'light'; try { cur = localStorage.getItem('flap_theme') || 'light'; } catch (e) {}
       const next = THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length];
-      applyTheme(next);
+      buzz(10);
+      // the new theme spreads as a circle from the Theme button (where the browser supports it)
+      if (document.startViewTransition && !reducedMotion()) {
+        const x = ev && ev.clientX ? ev.clientX : innerWidth / 2, y = ev && ev.clientY ? ev.clientY : innerHeight / 2;
+        const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+        const vt = document.startViewTransition(() => applyTheme(next));
+        vt.ready.then(() => document.documentElement.animate(
+          { clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + r + 'px at ' + x + 'px ' + y + 'px)'] },
+          { duration: 560, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', pseudoElement: '::view-transition-new(root)' })).catch(() => {});
+      } else applyTheme(next);
       try { localStorage.setItem('flap_theme', next); } catch (e) {}
       showToast(next === 'yellow' ? 'Yellow theme' : next === 'dark' ? 'Dark theme' : 'Light theme');
     }
@@ -1299,6 +1327,7 @@
     }
 
     function filterCategory(cat, element) {
+      buzz(7);
       document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
       element.classList.add('active');
       activeCategoryFilter = cat;
@@ -1465,7 +1494,7 @@
         const card = document.createElement('div');
         card.className = 'flap-card';
         card.dataset.name = flap.name;
-        card.onclick = () => viewSingleFlap(flap.name);
+        card.onclick = () => viewSingleFlap(flap.name, card);
 
         let previewHtml = '';
         if (searchQuery && searchRanks.get(flap).tier > 0) {
@@ -1555,7 +1584,7 @@
           const row = document.createElement('div');
           row.className = 'list-row';
           row.dataset.name = flap.name;
-          row.onclick = () => viewSingleFlap(flap.name);
+          row.onclick = () => viewSingleFlap(flap.name, row);
 
           let sub = '';
           if (searchQuery && searchRanks.get(flap).tier > 0) {
@@ -1661,9 +1690,9 @@
     }
 
     // A ticked flap opens the comparison matrix of all ticked flaps; any other flap opens its own page
-    function viewSingleFlap(flapName) {
+    function viewSingleFlap(flapName, fromEl) {
       if (selectedFlaps.has(flapName)) openMatrix();
-      else openFlapPage(flapName);
+      else openFlapPage(flapName, { fromEl: fromEl });
     }
 
     // ---- SINGLE-FLAP PAGE ----
@@ -1725,18 +1754,57 @@
       return true;
     }
 
+    // Card-to-page morph: the page grows out of the tapped card, and shrinks back into it on closing
+    const morph = { el: null, name: null, timer: 0 };
+    function morphInset(page, el) {
+      if (!el || !el.isConnected || reducedMotion()) return null;
+      const r = el.getBoundingClientRect(), top = page.getBoundingClientRect().top;
+      if (r.width < 20 || r.bottom < top || r.top > innerHeight) return null;
+      const px = v => Math.max(0, Math.round(v)) + 'px';
+      return 'inset(' + px(r.top - top) + ' ' + px(innerWidth - r.right) + ' ' + px(innerHeight - r.bottom) + ' ' + px(r.left) + ' round 12px)';
+    }
+    function clearMorph(page) {
+      clearTimeout(morph.timer);
+      page.style.transition = ''; page.style.clipPath = ''; page.style.opacity = '';
+    }
+
     function openFlapPage(name, opts) {
       if (!renderFlapPage(name)) return;
       const page = document.getElementById('flap-page');
       if (page.classList.contains('open')) { history.replaceState({ view: 'flap' }, '', flapHash(name)); return; }
-      page.classList.add('open'); page.setAttribute('aria-hidden', 'false');
+      clearMorph(page);
+      const start = morphInset(page, opts && opts.fromEl);
+      if (start) {
+        morph.el = opts.fromEl; morph.name = name;
+        page.style.transition = 'none'; page.style.clipPath = start; page.style.opacity = '0.55';
+        page.classList.add('open'); void page.offsetWidth;
+        page.style.transition = 'clip-path 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.22s ease-out';
+        page.style.clipPath = 'inset(0px 0px 0px 0px round 0px)'; page.style.opacity = '1';
+        morph.timer = setTimeout(() => clearMorph(page), 440);
+      } else {
+        morph.el = null; morph.name = null;
+        page.classList.add('open');
+      }
+      page.setAttribute('aria-hidden', 'false');
+      buzz(6);
       if (!(opts && opts.noHistory)) history.pushState({ view: 'flap' }, '', flapHash(name));
     }
 
     function closeFlapPage(fromBackButton) {
       const page = document.getElementById('flap-page');
       if (!page.classList.contains('open')) return;
-      page.classList.remove('open'); page.setAttribute('aria-hidden', 'true');
+      clearMorph(page);
+      const end = morph.name === flapPageName ? morphInset(page, morph.el) : null;
+      if (end) {
+        page.style.transition = 'clip-path 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.32s ease-in';
+        page.style.clipPath = end; page.style.opacity = '0.3';
+        morph.timer = setTimeout(() => {
+          page.style.transition = 'none'; page.classList.remove('open'); void page.offsetWidth;
+          clearMorph(page);
+        }, 320);
+      } else page.classList.remove('open');
+      morph.el = null; morph.name = null;
+      page.setAttribute('aria-hidden', 'true');
       flapPageName = null;
       if (fromBackButton !== true) history.back();
       saveStateSoon();
@@ -1754,9 +1822,11 @@
     (function () {
       let sx = 0, sy = 0, st = 0;
       const body = () => document.getElementById('fp-body');
-      document.addEventListener('touchstart', e => { if (!e.target.closest || !e.target.closest('#fp-body')) return; sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); }, { passive: true });
+      const zoomed = () => !!(window.visualViewport && window.visualViewport.scale > 1.02);
+      document.addEventListener('touchstart', e => { if (!e.target.closest || !e.target.closest('#fp-body')) return; if (e.touches.length > 1 || zoomed()) { st = 0; return; } sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); }, { passive: true });
       document.addEventListener('touchend', e => {
         if (!e.target.closest || !e.target.closest('#fp-body') || !st) return;
+        if (e.touches.length > 0 || zoomed()) { st = 0; return; }   // pinch-zoomed: a swipe only scrolls
         const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; st = 0;
         if (Math.abs(dx) > 70 && Math.abs(dx) > 2 * Math.abs(dy)) stepFlap(dx < 0 ? 1 : -1);
         void body;
@@ -1781,7 +1851,14 @@
     }
 
     // A short vibration on phones that support it
-    function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms || 10); } catch (e) {} }
+    function buzz(ms) {
+      try {
+        if (!navigator.vibrate) return;
+        if (navigator.userActivation && !navigator.userActivation.isActive) return;
+        navigator.vibrate(ms || 10);
+      } catch (e) {}
+    }
+    function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
 
     // ---- DEFECT MAPPER (prototype, loaded on demand) ----
     const DM_ICON = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\' fill=\'none\' stroke=\'white\' stroke-width=\'2.6\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><circle cx=\'32\' cy=\'9\' r=\'5\'/><path d=\'M24 18h16l2 16h-4l-1 24h-5l-1-17-1 17h-5l-1-24h-4z\'/><path d=\'M24 19l-9 14M40 19l9 14\'/><circle cx=\'40\' cy=\'48\' r=\'7.5\' stroke-dasharray=\'3.2 2.6\'/><path d=\'M40 38v-3M40 61v-3M30 48h-3M53 48h-3\'/></svg>')}")`;
