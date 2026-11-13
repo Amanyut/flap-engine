@@ -8,6 +8,7 @@
   <meta name="application-name" content="Flapendium">
   <meta name="apple-mobile-web-app-title" content="Flapendium">
   <link rel="manifest" href="manifest.json">
+  <script type="importmap">{ "imports": { "three": "./defect/vendor/three-0.160.0.module.min.js", "three-mesh-bvh": "./defect/vendor/three-mesh-bvh-0.7.3.module.js" } }</script>
   <link rel="preload" as="image" href="icons/splash.webp">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -65,6 +66,8 @@
        they only shrink when the screen is too short to fit them, and any spare height stays empty below */
     .sidebar { width: clamp(296px, 50vw, 420px); max-width: 86vw; }
     .sidebar .sidebar-brand { padding: 16px 20px; }
+    .sidebar-system .menu-item.dm-entry { color: #f5c451; font-weight: 700; }
+    .dm-entry-beta { display: inline-block; margin-left: 4px; padding: 0 5px; border-radius: 6px; background: #f5c451; color: #042551; font-size: 0.72rem; font-weight: 800; vertical-align: 1px; }
     .sidebar-menu.region-grid { container-type: size; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: max-content; align-content: start; gap: 10px; padding: 12px; }
     /* tiles fill their column; their height (--s) equals the column width (square), unless the screen is too short,
        in which case they get a third of the height left after the two wide bars */
@@ -269,7 +272,7 @@
       .list-sub { font-size: 0.92rem; }
       .menu-item { font-size: 1.1rem; padding: 14px 16px; }
       .sidebar-brand { font-size: 1.3rem; }
-      .sidebar-system .menu-item { font-size: 1.05rem; padding: 10px 14px; }
+      .sidebar-system .menu-item { font-size: 1.05rem; padding: 10px 11px; }
       .system-divider { font-size: 0.85rem; }
       .btn-sidebar { font-size: 1.05rem; padding: 13px 10px; }
       .profile-email { font-size: 0.98rem; }
@@ -298,7 +301,19 @@
     }
     .sidebar-profile { padding: 14px 20px; gap: 10px; }
     /* text size buttons sit at the end of the System row (About, Help) */
-    .text-size-ctl { float: right; display: inline-flex; gap: 6px; margin-top: 2px; }
+    /* System row: items wrap onto as few lines as possible; the text-size buttons sit at the end */
+    .sidebar-system { flex-wrap: wrap; align-items: center; }
+    .sidebar-system .system-divider { flex-basis: 100%; }
+    .sidebar-system .menu-item { margin: 0 !important; }
+    @media (max-width: 768px) {
+      .sidebar .sidebar-brand { padding: 12px 20px; }
+      .sidebar-system { padding: 6px 12px 4px; }
+      .sidebar-system .system-divider { margin: 2px 2px 2px; }
+      .sidebar-system .menu-item { padding: 8px 10px; }
+      .text-size-ctl button { height: 36px; }
+      .sidebar-profile { padding: 10px 20px 12px; gap: 8px; }
+    }
+    .text-size-ctl { order: 99; margin-left: auto; display: inline-flex; gap: 6px; }
     .text-size-ctl button { min-width: 46px; height: 38px; border-radius: 8px; border: 1px solid #475569; background: transparent; color: #cbd5e1; font-weight: 700; font-size: 0.95rem; cursor: pointer; }
     .text-size-ctl button:active { background: #334155; }
 
@@ -1066,7 +1081,7 @@
       }
 
       if (systemPages.length > 0) {
-        systemMenu.style.display = 'block';
+        systemMenu.style.display = 'flex';
         const ts = document.createElement('span');
         ts.className = 'text-size-ctl';
         ts.innerHTML = '<button type="button" onclick="changeTextSize(-1)" aria-label="Smaller text" title="Smaller text">A−</button><button type="button" onclick="changeTextSize(1)" aria-label="Larger text" title="Larger text">A+</button>';
@@ -1075,6 +1090,11 @@
         divider.innerText = "System";
         systemMenu.appendChild(divider);
         systemMenu.appendChild(ts);
+        const dm = document.createElement('div');
+        dm.className = 'menu-item dm-entry'; dm.title = 'Paint a defect on a 3D body to see which flaps can cover it';
+        dm.innerHTML = 'Defect Mapper<span class="dm-entry-beta">β</span>';
+        dm.onclick = openDefectMapper;
+        systemMenu.appendChild(dm);
 
         systemPages.forEach(page => {
            const cleanName = stripHTML(page.name).toLowerCase();
@@ -1697,6 +1717,15 @@
     // A short vibration on phones that support it
     function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms || 10); } catch (e) {} }
 
+    // ---- DEFECT MAPPER (prototype, loaded on demand) ----
+    function openDefectMapper() {
+      closeSidebarDrawer();
+      if (window.defectMapper) { window.defectMapper.open(); return; }
+      showToast('Loading the 3D Defect Mapper…');
+      import('./defect/mapper.js').then(m => { window.defectMapper = m; m.open(); })
+        .catch(err => { console.error(err); showToast('The Defect Mapper could not be opened'); });
+    }
+
     // ---- READING TEXT SIZE ----
     const TEXT_SCALES = [0.85, 1, 1.15, 1.3, 1.45];
     function applyTextSize() {
@@ -1966,6 +1995,8 @@
             closeLightbox(true);
         } else if (document.getElementById('flap-page').classList.contains('open')) {
             closeFlapPage(true);
+        } else if (window.defectMapper && window.defectMapper.isOpen()) {
+            window.defectMapper.close(true);
         } else if (document.getElementById('matrix-dock').classList.contains('open')) {
             minimizeMatrix();
         } else if (searchHistoryPushed) {
