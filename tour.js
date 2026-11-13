@@ -6,7 +6,12 @@
 
   const DONE_KEY = 'flap_tour_done';
   const $ = sel => document.querySelector(sel);
-  const visible = el => { if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; };
+  const visible = el => {
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    if (!(r.width > 0 && r.height > 0) || getComputedStyle(el).visibility === 'hidden') return false;
+    return r.right > 0 && r.left < window.innerWidth;   // a panel slid out sideways is not visible (below the fold is fine: it is scrolled into view)
+  };
   const sidebarOpen = () => $('.sidebar') && $('.sidebar').classList.contains('open');
   const pageOpen = () => $('#flap-page') && $('#flap-page').classList.contains('open');
   const matrixOpen = () => $('#matrix-dock') && $('#matrix-dock').classList.contains('open');
@@ -25,7 +30,20 @@
   // ---------- the steps ----------
   // target: element to highlight (null = centred card). action: () => true once the user has done it.
   // free: the whole screen stays usable during the step (not only the highlighted element).
+  // when: the step is shown only if this is true (otherwise it is passed over).
+  // wait: how long (ms) to wait for the step's element to appear before passing it over.
+  // group 'dm': the optional Defect Mapper tour. choice: offers that tour.
   let mem = {};
+  const dmOpen = () => !!(window.defectMapper && window.defectMapper.isOpen && window.defectMapper.isOpen());
+  const dmSheetOpen = () => !!(window.defectMapper && window.defectMapper.sheetOpen && window.defectMapper.sheetOpen());
+  const dm = sel => dmOpen() ? document.querySelector('.dm-root ' + sel) : null;
+  const peekShown = () => !!document.querySelector('.peek-backdrop');
+  function firstToggle() {
+    const el = firstUnticked();
+    return el ? el.querySelector('.compare-toggle, .list-check') : null;
+  }
+  const showFirst = () => { const el = firstUnticked(); if (el) el.scrollIntoView({ block: 'center' }); };
+
   const STEPS = [
     { center: true, icon: '📖', title: 'Welcome to Amanyu’s Flapendium',
       text: () => `Your ready reckoner of flaps in plastic and reconstructive surgery – always at hand.<br><br>This short guide shows you everything the app can do. On steps marked <b>Try it</b>, you do it yourself.`,
@@ -36,7 +54,7 @@
       prepare: () => { mainScreen(); }, action: sidebarOpen },
 
     { target: () => $('#chapter-menu'), title: 'Choose a region', tryIt: true,
-      text: 'Each tile is a chapter. <b>All References</b> shows every flap and <b>Favourites</b> holds your starred ones.<br>Tap a region now – for example <b>Head &amp; Neck</b>.',
+      text: 'Each tile is a chapter. <b>All References</b> shows every flap, with the ones you viewed recently at the top.<br>Tap a region now – for example <b>Head &amp; Neck</b>.',
       prepare: openSidebar,
       onStart: () => {
         mem.tapped = false;
@@ -52,77 +70,145 @@
       text: 'Keep the textbook order, or sort the flaps <b>A–Z</b> or <b>Z–A</b>.' },
 
     { target: () => $('#search-wrap'), title: 'Search anything',
-      text: 'Type a flap’s name, an artery, a nerve, an author – even fragments such as <b>“rev sur”</b>.<br>Spelling slips are forgiven: <b>“latisimus”</b> still finds the latissimus flaps.' },
+      text: 'Type a flap’s name, an artery, a nerve, an author – even fragments such as <b>“rev sur”</b>. The words you type are highlighted in the results.<br>Spelling slips are forgiven, and a <b>Did you mean…?</b> button offers the right spelling.' },
 
     { target: () => $('#view-toggle-btn'), title: 'Cards or List', tryIt: true,
       text: 'Switch between <b>Cards</b> and a numbered <b>List</b>, like a book’s contents page. Tap it to try.',
       onStart: () => { mem.view = viewMode; }, action: () => viewMode !== mem.view },
 
+    { target: firstUnticked, title: 'Press and hold to peek', tryIt: true,
+      text: 'Press and <b>hold</b> this flap for a quick preview of its key points.<br>Then <b>slide your finger up</b> to open the flap, or simply <b>let go</b> to close the preview.',
+      prepare: () => { mainScreen(); showFirst(); },
+      onStart: () => { mem.peeked = false; },
+      action: () => { if (peekShown()) mem.peeked = true; return mem.peeked && !peekShown(); } },
+
     { target: firstUnticked, title: 'Open a flap', tryIt: true,
-      text: 'Tap any flap to open its own page.',
-      prepare: () => { mainScreen(); const el = firstUnticked(); if (el) el.scrollIntoView({ block: 'center' }); },
+      text: 'A normal <b>tap</b> on any flap opens its own page.',
+      prepare: () => { if (!pageOpen()) { mainScreen(); showFirst(); } },
       action: pageOpen },
 
     { target: () => $('#fp-tabs'), title: 'Jump to a section',
-      text: 'These chips take you straight to a section – Introduction, Arterial Anatomy, Flap Markings and more. The one you are reading lights up as you scroll.' },
+      text: 'These chips take you straight to a section – Introduction, Arterial Anatomy, Flap Markings and more. The one you are reading lights up as you scroll, and the thin gold line beneath shows how far you have read.' },
 
     { target: () => $('.fp-nav'), title: 'Next and previous flap',
-      text: '<b>Swipe left or right</b> on the page – or use these buttons – to move through the flaps of the list you came from.' },
+      text: '<b>Swipe left or right</b> on the page – or use these buttons – to move through the flaps of the list you came from.<br><span class="tg-tip">When you have zoomed in with two fingers, a sideways swipe simply scrolls the text.</span>' },
 
     { target: () => $('#fp-star .fav-btn'), title: 'Add to Favourites', tryIt: true,
-      text: 'Tap <b>☆</b> to star this flap. Starred flaps are saved to your account on every device. Tap again any time to remove it.',
+      text: 'Tap <b>☆</b> to star this flap. Starred flaps are saved to your account on every device and gathered under <b>Favourites</b>. Tap again any time to remove it.',
       onStart: () => { mem.favs = favouriteFlaps.size; }, action: () => favouriteFlaps.size !== mem.favs },
 
     { target: () => $('.fp-header button[aria-label="Share this flap"]'), title: 'Share a flap',
       text: 'Sends a link that opens straight to this flap – handy for WhatsApp groups and colleagues.' },
 
+    { target: () => $('#fp-ask'), title: 'Ask Amanyu',
+      text: 'You have personal access to <b>Ask Amanyu</b>. Type your question about this flap and send it straight to Amanyu on WhatsApp.' },
+
     { target: () => $('.fp-header .fp-icon-btn'), title: 'Back to the list', tryIt: true,
       text: 'Tap <b>‹</b> – or your phone’s Back button – to return to the list.',
       action: () => !pageOpen() },
 
-    { target: () => $('#flap-grid-canvas .compare-toggle, #flap-grid-canvas .list-check'), title: 'Compare flaps', tryIt: true, free: true,
-      text: 'Tick <b>Compare</b> on <b>two or more</b> flaps that you want to see side by side.',
-      prepare: () => { mainScreen(); },
+    { target: firstToggle, title: 'Compare flaps', tryIt: true,
+      text: 'To see flaps side by side, tick <b>Compare</b> on this flap.',
+      prepare: () => { mainScreen(); showFirst(); },
+      action: () => selectedFlaps.size >= 1 },
+
+    { target: firstToggle, title: 'And one more', tryIt: true,
+      text: 'Now tick <b>Compare</b> on a second flap – here, or any other.',
       action: () => selectedFlaps.size >= 2 },
 
     { target: () => $('#launch-matrix-btn'), title: 'Open the comparison', tryIt: true,
       text: 'Now tap <b>Compare Flaps</b>.<br><span class="tg-tip">Tip: tapping any <b>ticked</b> flap also opens the comparison, while an <b>unticked</b> flap opens its own page.</span>',
-      action: matrixOpen },
+      when: () => selectedFlaps.size >= 2, action: matrixOpen },
 
     { target: () => $('#matrix-container'), title: 'Comparative Overview',
-      text: 'Every section is lined up side by side. Scroll down to read on, and sideways when you compare more flaps than fit on the screen.' },
+      text: 'Every section is lined up side by side. Scroll down to read on, and sideways when you compare more flaps than fit on the screen.',
+      when: matrixOpen },
 
     { target: () => $('.dock-header button[onclick="minimizeMatrix()"]'), title: 'Keep it for later', tryIt: true,
       text: '<b>Minimise</b> keeps this comparison ready for later; <b>Close &amp; Clear</b> ends it and unticks the flaps. Tap <b>Minimise</b>.',
-      action: () => !matrixOpen() },
+      when: matrixOpen, action: () => !matrixOpen() },
 
     { target: () => $('#matrix-fab'), title: 'Back to your comparison',
-      text: '<b>Show Comparison</b> brings it back at any time, from any screen.' },
+      text: '<b>Show Comparison</b> brings it back at any time, from any screen.',
+      when: () => !matrixOpen() && selectedFlaps.size > 0 },
+
+    { target: () => $('.workspace'), title: 'Pull down to refresh',
+      text: 'At the top of any list, <b>pull down</b> to fetch the newest flaps – watch the scalpel spin.<br>After a long scroll, the round <b>↑</b> button takes you back to the top.',
+      prepare: mainScreen },
 
     { target: () => $('.fav-tile'), title: 'Your Favourites',
       text: 'Everything you star is gathered here.',
-      prepare: openSidebar },
-
-    { target: () => $('.dm-tile'), title: 'Defect Mapper (beta)',
-      text: 'Paint a defect on a 3D body, sized to your patient, and see which reconstructive options may reach it. A preview of what is to come.',
       prepare: openSidebar },
 
     { target: () => $('.text-size-ctl'), title: 'Text size',
       text: '<b>A−</b> and <b>A+</b> make the reading text smaller or larger – in cards, lists, flap pages and comparisons.',
       prepare: openSidebar },
 
-    { target: () => $('.btn-sidebar[onclick="toggleTheme()"]'), title: 'Light or dark',
-      text: 'Switch between the light and dark themes.',
+    { target: () => $('.btn-sidebar[onclick^="toggleTheme"]'), title: 'Three themes',
+      text: 'Each tap of <b>Theme</b> moves to the next look: <b>light</b>, <b>dark</b> and a bold <b>yellow</b>.',
+      prepare: openSidebar },
+
+    { target: () => $('#display-user-name'), title: 'Your details',
+      text: 'Tap your name to change it, or to add or change your <b>birthday</b>.',
       prepare: openSidebar },
 
     { target: () => $('.guide-item'), title: 'Need a reminder?',
       text: 'Replay this guide any time from <b>Guide</b>, here in the menu.',
       prepare: openSidebar },
 
+    { target: () => $('.dm-tile'), title: 'Defect Mapper (beta)', choice: true,
+      text: 'Paint a defect on a 3D body, sized to your patient, and see which reconstructive options may reach it.<br><br>Would you like a short tour of the <b>Defect Mapper</b>?',
+      prepare: () => { if (dmOpen()) window.defectMapper.close(); openSidebar(); } },
+
+    // ----- optional Defect Mapper tour -----
+    { group: 'dm', target: () => dm('.dm-modal.show .dm-mcard'), title: 'A note before you begin', tryIt: true,
+      text: 'Please read this note, then tap <b>I understand</b>.',
+      when: dmOpen, wait: 4000, action: () => !dm('.dm-modal.show') },
+
+    { group: 'dm', target: () => dm('.dm-patient'), title: 'Your patient',
+      text: 'Choose <b>Male</b> or <b>Female</b> and enter the <b>height</b> and <b>weight</b>. The body is reshaped to match, so the size of the defect in cm² is true to life.',
+      when: dmOpen, wait: 8000 },
+
+    { group: 'dm', target: () => dm('.dm-stage'), title: 'Turn the body',
+      text: '<b>One finger</b> rotates the body. <b>Two fingers</b> move it and zoom in or out.',
+      when: dmOpen, wait: 8000 },
+
+    { group: 'dm', target: () => dm('[data-a="view"]'), title: 'Reset the view',
+      text: 'Lost your way? <b>⟲</b> brings the body back to the starting view.',
+      when: dmOpen },
+
+    { group: 'dm', target: () => dm('[data-tool="brush"]'), title: 'Pick the brush', tryIt: true,
+      text: 'Tap <b>Paint</b>.',
+      when: dmOpen, action: () => { const b = dm('[data-tool="brush"]'); return !!(b && b.classList.contains('on')); } },
+
+    { group: 'dm', target: () => dm('.dm-stage'), title: 'Paint the defect', tryIt: true,
+      text: 'Draw the defect on the body with <b>one finger</b>. While painting, the <b>circle</b> at the side rotates the body and two fingers still move and zoom.<br><span class="tg-tip">A defect must be one continuous area.</span>',
+      when: dmOpen, action: () => { const b = dm('[data-a="find"]'); return !!(b && !b.disabled); } },
+
+    { group: 'dm', target: () => dm('.dm-tools'), title: 'Fine-tune it',
+      text: 'The slider sets the <b>brush size</b>. <b>Erase</b> trims the edge, <b>↶</b> undoes the last stroke and <b>🗑</b> clears the defect.',
+      when: dmOpen },
+
+    { group: 'dm', target: () => dm('.dm-result'), title: 'Find the options', tryIt: true,
+      text: 'The defect’s <b>area</b> and <b>size</b> appear here. Tap <b>Find flaps</b>.',
+      when: dmOpen, action: dmSheetOpen },
+
+    { group: 'dm', target: () => dm('.dm-sheet'), title: 'The reconstructive ladder',
+      text: 'The options follow the ladder: <b>direct closure</b>, <b>skin graft</b>, <b>local flaps</b>, named <b>regional flaps</b> and <b>free flaps</b> – with the size each one usually covers. Tap a flap’s name to open its page.<br><span class="tg-tip">This is a beta and a rough guide – always judge the defect and the patient yourself.</span>',
+      when: dmSheetOpen },
+
+    { group: 'dm', target: () => dm('.dm-head [data-a="close"]'), title: 'Leave the Defect Mapper', tryIt: true,
+      text: 'Tap <b>‹</b> – or your phone’s Back button – to return to the flaps.',
+      prepare: () => { if (dmSheetOpen()) window.defectMapper.closeSheet(); },
+      when: dmOpen, action: () => !dmOpen() },
+
     { center: true, icon: '🎉', title: 'You’re all set',
-      text: () => 'Enjoy exploring the flaps.' + (selectedFlaps.size ? '<br><br><span class="tg-tip">Your practice comparison is still waiting under <b>Show Comparison</b> – open it and tap <b>Close &amp; Clear</b> when you no longer need it.</span>' : ''),
+      text: () => 'Enjoy exploring the flaps.<br><br><span class="tg-tip">Notes from Amanyu appear at the top of <b>All References</b> from time to time.</span>' + (selectedFlaps.size ? '<span class="tg-tip">Your practice comparison is still waiting under <b>Show Comparison</b> – open it and tap <b>Close &amp; Clear</b> when you no longer need it.</span>' : ''),
       prepare: closeSidebar, startLabel: 'Finish' }
   ];
+  const FINAL = STEPS.length - 1;
+  const MAIN = STEPS.filter(s => !s.center && s.group !== 'dm');
+  const DMSTEPS = STEPS.filter(s => s.group === 'dm');
 
   // ---------- drawing ----------
   let root, spot, card, blockers, idx = -1, raf = 0, active = false, advanceTimer = 0, ready = false;
@@ -191,25 +277,32 @@
     const s = STEPS[idx];
     const text = typeof s.text === 'function' ? s.text() : s.text;
     const isFirst = idx === 0, isLast = idx === STEPS.length - 1;
-    const n = STEPS.length - 2; // numbered steps (welcome and finish are not counted)
-    const pct = Math.round(Math.max(0, Math.min(1, (idx) / (STEPS.length - 1))) * 100);
+    const list = s.group === 'dm' ? DMSTEPS : MAIN;
+    const k = list.indexOf(s) + 1, n = list.length;
+    const label = s.group === 'dm' ? `Defect Mapper · ${k} of ${n}` : `Step ${k} of ${n}`;
+    const pct = Math.round(Math.max(0, Math.min(1, k / n)) * 100);
     card.className = 'tg-card' + (s.center ? ' tg-card-center' : '') + (s.tryIt ? ' tg-try' : '');
     card.innerHTML = `
-      ${s.center ? `<div class="tg-icon">${s.icon || ''}</div>` : `<div class="tg-step"><span>Step ${idx} of ${n}</span>${s.tryIt ? '<span class="tg-badge">Try it</span>' : ''}</div>`}
+      ${s.center ? `<div class="tg-icon">${s.icon || ''}</div>` : `<div class="tg-step"><span>${label}</span>${s.tryIt ? '<span class="tg-badge">Try it</span>' : ''}</div>`}
       <div class="tg-title">${s.title}</div>
       <div class="tg-text">${text}</div>
       ${s.center ? '' : `<div class="tg-bar"><i style="width:${pct}%"></i></div>`}
       <div class="tg-actions">
         ${isFirst ? '<button class="tg-btn tg-ghost" data-act="end">Skip for now</button>' : (isLast ? '' : '<button class="tg-btn tg-ghost" data-act="back">Back</button>')}
         <span class="tg-spacer"></span>
-        ${s.tryIt ? '<button class="tg-btn tg-ghost" data-act="next">Skip step</button>' : `<button class="tg-btn tg-gold" data-act="next">${s.startLabel || 'Next'}</button>`}
+        ${s.choice ? '<button class="tg-btn tg-ghost" data-act="finish">No, finish</button><button class="tg-btn tg-gold" data-act="dmtour">Yes, show me</button>'
+          : s.tryIt ? '<button class="tg-btn tg-ghost" data-act="next">Skip step</button>' : `<button class="tg-btn tg-gold" data-act="next">${s.startLabel || 'Next'}</button>`}
       </div>
       ${isFirst || isLast ? '' : '<button class="tg-x" data-act="end" aria-label="End the guide">✕</button>'}
       ${isFirst ? '<div class="tg-foot">You can replay it any time from Menu › Guide.</div>' : ''}`;
     card.querySelectorAll('[data-act]').forEach(b => b.onclick = e => {
       e.stopPropagation();
       const a = b.dataset.act;
-      if (a === 'next') go(idx + 1); else if (a === 'back') go(idx - 1, -1); else end();
+      if (a === 'next') go(idx + 1);
+      else if (a === 'back') go(idx - 1, -1);
+      else if (a === 'finish') go(FINAL);
+      else if (a === 'dmtour') { closeSidebar(); if (typeof openDefectMapper === 'function') openDefectMapper(); go(idx + 1); }
+      else end();
     });
     card.classList.remove('tg-in'); void card.offsetWidth; card.classList.add('tg-in');
   }
@@ -222,11 +315,17 @@
     const s = STEPS[idx];
     if (s.prepare) { try { s.prepare(); } catch (e) {} }
     mem = Object.assign({}, mem);
-    // give drawers and pages a moment to slide into place, then show the step (or skip it if its element is missing)
-    setTimeout(() => {
+    // give drawers and pages a moment to slide into place, then show the step – or pass it over when it does not apply
+    const t0 = Date.now();
+    const attempt = () => {
       if (!active || idx !== i) return;
       const el = s.target ? s.target() : null;
-      if (s.target && !visible(el)) { go(idx + (dir || 1), dir); return; }
+      const ok = (!s.when || s.when()) && (!s.target || visible(el));
+      if (!ok) {
+        if (Date.now() - t0 < (s.wait || 0)) { setTimeout(attempt, 200); return; }
+        // the Defect Mapper part is only for those who asked for it: moving back out of it returns to the offer
+        go(idx + (dir || 1), dir); return;
+      }
       if (s.onStart) { try { s.onStart(); } catch (e) {} }
       if (el && el.scrollIntoView) {
         const b = el.getBoundingClientRect();
@@ -234,7 +333,8 @@
       }
       render();
       ready = true;
-    }, s.prepare ? 380 : 60);
+    };
+    setTimeout(attempt, s.prepare ? 380 : 60);
   }
 
   function start() {
@@ -304,6 +404,7 @@
   .tg-gold { border: none; background: linear-gradient(180deg, #fbd774, #f5c451); color: #042551; box-shadow: 0 4px 14px rgba(245, 196, 81, .3); }
   .tg-ghost { border: 1px solid rgba(255, 255, 255, 0.22); background: transparent; color: #d6e0f0; }
   .tg-x { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%; border: none; background: rgba(255, 255, 255, 0.08); color: #cbd5e1; cursor: pointer; font-size: .9rem; }
+  .tg-card .tg-actions .tg-btn { white-space: nowrap; }
   .tg-foot { margin-top: 10px; text-align: center; font-size: .8rem; color: #93a4bf; }
   .tg-card.tg-done { border-color: #4ade80; box-shadow: 0 0 0 3px rgba(74, 222, 128, .35), 0 18px 50px rgba(0, 0, 0, .55); }
   .tg-card.tg-done .tg-badge { background: #4ade80; }

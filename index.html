@@ -441,7 +441,7 @@
     .fp-progress i { display: block; height: 100%; background: #f5c451; transform: scaleX(0); transform-origin: left center; transition: transform 0.08s linear; }
     body.yellow-theme .fp-progress i { background: #0e3b43; }
 
-    .peek-backdrop { position: fixed; inset: 0; z-index: 2500; background: rgba(8, 15, 30, 0.38); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.18s ease-out; }
+    .peek-backdrop { position: fixed; inset: 0; z-index: 2900; background: rgba(8, 15, 30, 0.38); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.18s ease-out; }
     .peek-card { width: min(440px, 100%); max-height: 70vh; overflow: hidden; background: var(--panel-light); color: var(--text-dark); border-radius: 18px; padding: 18px 20px 14px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35); border-top: 4px solid #f5c451; animation: peekIn 0.26s cubic-bezier(0.2, 0.9, 0.3, 1.25); transition: transform 0.2s; }
     body.yellow-theme .peek-card { border-top-color: #fff000; }
     .peek-backdrop.to-open .peek-card { transform: translateY(-14px) scale(1.02); }
