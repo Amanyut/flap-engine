@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Cinzel:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     :root {
@@ -487,6 +487,76 @@
       .flap-card.enter, .list-row.enter, .recent-strip.enter, .empty-state, .peek-card, .dym-chip { animation: none; }
     }
 
+
+    /* ---- PERSONAL TOUCHES: greetings, profile, Amanyu's messages, pearls, Ask Amanyu, birthdays ---- */
+    .sidebar-greeting { padding: 12px 20px 0; font-size: 0.92rem; line-height: 1.35; font-style: italic; color: #f5c451; }
+    body.yellow-theme .sidebar-greeting { color: #0e3b43; }
+    .profile-name { font-size: 0.95rem; font-weight: 700; color: inherit; background: none; border: none; padding: 0; text-align: left; cursor: pointer; font-family: inherit; }
+    .profile-name::after { content: ' ✎'; font-size: 0.8em; opacity: 0.6; }
+    .greet-pill { position: absolute; left: 50%; top: calc(var(--nav-h, 70px) + 10px); z-index: 25; max-width: calc(100% - 32px); transform: translate(-50%, -10px); opacity: 0; pointer-events: none;
+      background: var(--brand-navy); color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 0.95rem; font-weight: 600; text-align: center; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22); transition: opacity 0.45s, transform 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+    .greet-pill.show { opacity: 1; transform: translate(-50%, 0); }
+    .greet-pill b { color: var(--brand-flap); }
+
+    .pm-backdrop { position: fixed; inset: 0; z-index: 3000; background: rgba(8, 15, 30, 0.55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 18px; animation: fadeIn 0.25s ease-out; }
+    .pm-card { width: min(430px, 100%); max-height: 86vh; overflow-y: auto; background: var(--panel-light); color: var(--text-dark); border-radius: 20px; padding: 24px 22px 18px; box-shadow: 0 30px 70px rgba(0, 0, 0, 0.4); animation: peekIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+    .pm-kicker { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+    .pm-card h3 { margin: 4px 0 12px; font-size: 1.35rem; color: var(--accent-blue); }
+    .pm-card label { display: block; font-size: 0.85rem; font-weight: 700; margin: 14px 0 6px; }
+    .pm-card input, .pm-card select { width: 100%; box-sizing: border-box; padding: 12px 14px; font: inherit; font-size: 1rem; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-dark); }
+    .pf-bday { display: flex; gap: 10px; }
+    .pf-note, .pf-preview { font-size: 0.82rem; color: var(--text-muted); margin-top: 6px; }
+    .pf-err { color: #c0392b; font-size: 0.88rem; min-height: 1.2em; margin-top: 10px; }
+    .pm-btn { width: 100%; margin-top: 14px; padding: 13px; border: none; border-radius: 14px; background: var(--accent-blue); color: #fff; font: inherit; font-weight: 700; font-size: 1rem; cursor: pointer; }
+    body.yellow-theme .pm-btn { background: #0e3b43; color: #fff000; }
+    .pm-link { display: block; margin: 10px auto 0; background: none; border: none; color: var(--text-muted); font: inherit; font-size: 0.9rem; cursor: pointer; text-decoration: underline; }
+    .pm-card.letter { border-top: 5px solid #f5c451; background-image: linear-gradient(rgba(245, 196, 81, 0.07), transparent 120px); }
+    .pm-body { font-size: 1.02rem; line-height: 1.6; }
+    .pm-sign { font-family: 'Caveat', cursive; font-size: 1.7rem; text-align: right; color: var(--accent-blue); margin-top: 8px; }
+
+    .amanyu-note { grid-column: 1 / -1; min-width: 0; position: relative; border-radius: 14px; padding: 14px 40px 14px 16px; background: linear-gradient(135deg, rgba(245, 196, 81, 0.18), rgba(245, 196, 81, 0.06)); border: 1px solid rgba(245, 196, 81, 0.55); color: var(--text-dark); margin-bottom: 4px; }
+    body.yellow-theme .amanyu-note { background: #fffbe0; border-color: rgba(14, 59, 67, 0.25); }
+    .amanyu-note .an-from { font-family: 'Caveat', cursive; font-size: 1.25rem; color: var(--accent-blue); line-height: 1; }
+    .amanyu-note .an-title { font-weight: 700; margin: 4px 0 2px; }
+    .amanyu-note .an-text { font-size: 0.95rem; line-height: 1.5; }
+    .an-close { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%; border: none; background: transparent; color: var(--text-muted); font-size: 1rem; cursor: pointer; }
+    #msg-banner:empty { display: none; }
+    .amanyu-banner { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 40px 10px 14px; margin-bottom: 12px; border-radius: 12px; background: var(--brand-navy); color: #fff; font-size: 0.95rem; line-height: 1.4; }
+    .amanyu-banner b.an-from { font-family: 'Caveat', cursive; font-size: 1.2rem; color: var(--brand-flap); font-weight: 600; flex-shrink: 0; }
+    .amanyu-banner .an-close { color: rgba(255, 255, 255, 0.75); }
+
+    .fp-section.fp-pearl { background: linear-gradient(135deg, #fff8dc, #fff3c4); border: 1px solid #f0d27a; border-left: 5px solid #f5c451; }
+    body.dark-theme .fp-section.fp-pearl { background: linear-gradient(135deg, rgba(245, 196, 81, 0.16), rgba(245, 196, 81, 0.06)); border-color: rgba(245, 196, 81, 0.45); }
+    .fp-pearl .row-label { font-family: 'Caveat', cursive; font-size: 1.5rem; letter-spacing: 0; text-transform: none; color: #9a6b00; border-bottom: none; }
+    body.dark-theme .fp-pearl .row-label { color: #f5c451; }
+    .fp-pearl .fp-text { font-size: 1.05em; }
+    .fp-icon-btn.ask-btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; color: #128c4a; }
+    .ask-card { display: flex; align-items: center; gap: 12px; margin: 18px 0 6px; padding: 14px 16px; border-radius: 14px; text-decoration: none; background: linear-gradient(135deg, #e8f8ee, #d3f2df); color: #0b5d33; border: 1px solid #a6dfbd; font-weight: 600; }
+    body.dark-theme .ask-card { background: rgba(37, 211, 102, 0.1); color: #7ee2a8; border-color: rgba(37, 211, 102, 0.35); }
+    .ask-card svg { width: 30px; height: 30px; flex-shrink: 0; }
+    .ask-card small { display: block; font-weight: 400; opacity: 0.8; }
+
+    #fx-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 3500; pointer-events: none; }
+    body.bday .top-status-bar::after { content: '🎂'; font-size: 1.3rem; margin-left: 2px; }
+    body.bday .top-status-bar { overflow: visible; }
+    .bday-bunting { position: fixed; top: var(--topbar-h); left: 0; right: 0; height: 26px; z-index: 990; pointer-events: none; display: none;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='26'%3E%3Cpath d='M0 2 Q60 10 120 2' stroke='%23b08d57' stroke-width='1.2' fill='none'/%3E%3Cpath d='M6 3l12 1-6 18z' fill='%23ef4444'/%3E%3Cpath d='M26 5l12 1-6 18z' fill='%23f5c451'/%3E%3Cpath d='M46 6l12 0-6 18z' fill='%2322c55e'/%3E%3Cpath d='M66 6l12-1-6 18z' fill='%233b82f6'/%3E%3Cpath d='M86 5l12-1-6 18z' fill='%23d946ef'/%3E%3Cpath d='M104 3l12-1-6 17z' fill='%23f97316'/%3E%3C/svg%3E") repeat-x; animation: bunting 3s ease-in-out infinite alternate; transform-origin: top center; }
+    body.bday .bday-bunting { display: block; }
+    @keyframes bunting { from { transform: rotate(-0.3deg); } to { transform: rotate(0.3deg); } }
+    .bday-backdrop { position: fixed; inset: 0; z-index: 3400; display: flex; align-items: center; justify-content: center; padding: 18px;
+      background: radial-gradient(circle at 30% 20%, rgba(255, 214, 0, 0.35), transparent 45%), radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.45), transparent 50%), linear-gradient(160deg, #1e1b4b, #581c87 55%, #9d174d); animation: fadeIn 0.5s ease-out; }
+    .bday-card { width: min(440px, 100%); text-align: center; color: #fff; animation: bdayIn 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.25); }
+    .bday-cake { font-size: 5rem; line-height: 1; animation: cakeBob 1.6s ease-in-out infinite; }
+    .bday-hb { font-family: var(--brand-font); font-size: 2.3rem; margin: 10px 0 0; letter-spacing: 1px;
+      background: linear-gradient(90deg, #fde68a, #fff7d6, #f5c451, #fde68a); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 2.4s linear infinite; }
+    .bday-name { font-size: 2.1rem; font-weight: 800; margin: 2px 0 14px; }
+    .bday-msg { font-size: 1.08rem; line-height: 1.6; color: rgba(255, 255, 255, 0.92); background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 18px; padding: 16px 18px; }
+    .bday-sign { font-family: 'Caveat', cursive; font-size: 2rem; color: #fde68a; margin-top: 10px; }
+    .bday-btn { margin-top: 18px; padding: 15px 26px; border: none; border-radius: 999px; background: linear-gradient(90deg, #f5c451, #fde68a); color: #3b0764; font: inherit; font-weight: 800; font-size: 1.08rem; cursor: pointer; box-shadow: 0 12px 30px rgba(245, 196, 81, 0.45); }
+    @keyframes bdayIn { from { opacity: 0; transform: scale(0.6) translateY(40px); } }
+    @keyframes cakeBob { 50% { transform: translateY(-8px) rotate(-4deg); } }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
     /* ---- SMALL TOUCHES ---- */
     .toast { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -532,6 +602,7 @@
 
   <!-- TOP CONSTANT BAR -->
   <div class="top-status-bar"><img class="brand-logo" src="icons/logo-96.png" alt=""><span class="brand-name">Amanyu’s <span class="brand-flap">Flap</span>endium</span></div>
+  <div class="bday-bunting" aria-hidden="true"></div>
 
   <div class="login-container" id="login-screen">
     <img class="login-logo" src="icons/logo-96.png" alt="">
@@ -567,12 +638,14 @@
   <div class="app-container" id="app-shell">
     
     <div class="sidebar">
+      <div class="sidebar-greeting" id="sidebar-greeting"></div>
       <div class="sidebar-brand">Flap Chapters</div>
       <div class="sidebar-menu" id="chapter-menu"></div>
       
       <div class="sidebar-system" id="system-menu"></div>
 
       <div class="sidebar-profile" id="user-profile-section">
+        <button type="button" class="profile-name" id="display-user-name" onclick="showProfilePrompt(false)" style="display:none" title="Edit your name and birthday"></button>
         <div class="profile-email" id="display-user-email"></div>
         <div class="profile-controls">
           <button class="btn-sidebar" onclick="toggleTheme(event)" title="Toggle Dark Mode">🌓 Theme</button>
@@ -609,7 +682,9 @@
       </div>
 
       <div class="ptr" id="ptr"><svg viewBox="0 0 48 48" aria-hidden="true"><g transform="rotate(-45 24 24)"><rect x="21.5" y="23" width="5" height="21" rx="2" fill="currentColor"/><rect x="22.5" y="26" width="3" height="14" rx="1.2" fill="rgba(255,255,255,0.35)"/><path d="M21.5 23 L21.5 12 Q21.5 3.5 27.5 4 Q27 14 26.5 23 Z" fill="#cfd8dc" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></g></svg></div>
+      <div class="greet-pill" id="greet-pill"></div>
       <div class="workspace">
+        <div id="msg-banner"></div>
         <div class="grid-layout" id="flap-grid-canvas"></div>
         <div class="system-page-view" id="system-page-view"></div>
       </div>
@@ -639,6 +714,7 @@
       <button class="fp-icon-btn" onclick="closeFlapPage()" aria-label="Back">‹</button>
       <div class="fp-title-wrap"><div class="fp-meta" id="fp-meta"></div><h2 class="fp-title" id="fp-title"></h2></div>
       <span id="fp-star"></span>
+      <a class="fp-icon-btn ask-btn" id="fp-ask" target="_blank" rel="noopener" aria-label="Ask Amanyu about this flap" title="Ask Amanyu" style="display:none"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.1-.2-.2-.4-.3z"/></svg></a>
       <button class="fp-icon-btn" onclick="shareFlap()" aria-label="Share this flap" title="Share">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
       </button>
@@ -1007,7 +1083,7 @@
         document.getElementById('action-btn').style.display = 'none';
         document.getElementById('login-desc').innerText = "Signing in...";
 
-        if (cachedFlaps) { initializeSystem(JSON.parse(cachedFlaps)); }
+        if (cachedFlaps) { initializeSystem(JSON.parse(cachedFlaps)); personalise(null, false); }
 
         fetch(API_URL + "?action=auto_login&email=" + encodeURIComponent(savedEmail) + "&token=" + encodeURIComponent(savedToken))
           .then(res => res.json())
@@ -1016,6 +1092,7 @@
                 localStorage.setItem('flap_data_cache', JSON.stringify(data.flaps));
                 applyServerFavourites(data.favourites);
                 initializeSystem(data.flaps);
+                personalise(data, true);
             } else { logOut(); } 
           })
           .catch(() => {
@@ -1141,6 +1218,7 @@
             localStorage.setItem('flap_data_cache', JSON.stringify(data.flaps));
             applyServerFavourites(data.favourites);
             initializeSystem(data.flaps);
+            personalise(data, true);
           }
         }).catch(() => {
           btn.disabled = false;
@@ -1151,7 +1229,7 @@
 
     function logOut() {
         const finish = () => {
-            ['flap_email', 'flap_token', 'flap_data_cache', 'flap_favs', 'flap_favs_dirty', 'flap_state'].forEach(k => localStorage.removeItem(k));
+            ['flap_email', 'flap_token', 'flap_data_cache', 'flap_favs', 'flap_favs_dirty', 'flap_state', 'flap_profile', 'flap_msgs'].forEach(k => localStorage.removeItem(k));
             location.reload();
         };
         // Save any unsaved favourites first (waits at most 3 seconds)
@@ -1788,17 +1866,22 @@
       const starSlot = document.getElementById('fp-star'); starSlot.innerHTML = ''; starSlot.appendChild(makeStarButton(flap.name, 'fp-fav'));
 
       galleryStore = [];
-      let tabs = '', html = '';
+      let tabs = '', html = '', pearlTab = '', pearlHtml = '';
       Object.keys(flap).filter(k => { const s = stripHTML(k); return s !== 'name' && s !== 'category' && s !== 'Sub-Region Tag' && String(flap[k]).trim() !== ''; })
         .forEach((k, i) => {
           const label = stripHTML(k), val = String(flap[k]).trim();
           const content = isImageKey(k) ? buildGalleryHtml(val, stripHTML(flap.name)) : `<div class="fp-text">${val}</div>`;
+          if (/pearl/i.test(label)) {
+            pearlHtml = `<section class="fp-section fp-pearl" id="fps-${i}"><div class="row-label">✦ Amanyu’s Pearl</div>${content}</section>`;
+            pearlTab = `<button class="fp-tab" data-target="fps-${i}">Pearl</button>`;
+            return;
+          }
           html += `<section class="fp-section" id="fps-${i}"><div class="row-label">${label}</div>${content}</section>`;
           tabs += `<button class="fp-tab" data-target="fps-${i}">${label}</button>`;
         });
-      inner.innerHTML = html;
+      inner.innerHTML = pearlHtml + html;
       const tabBar = document.getElementById('fp-tabs');
-      tabBar.innerHTML = tabs;
+      tabBar.innerHTML = pearlTab + tabs;
       tabBar.querySelectorAll('.fp-tab').forEach(btn => btn.onclick = () => {
         const sec = document.getElementById(btn.dataset.target);
         body.scrollTo({ top: sec.offsetTop - 10, behavior: 'smooth' });
@@ -1826,7 +1909,7 @@
       const pb = document.getElementById('fp-prev'), nb = document.getElementById('fp-next');
       pb.disabled = !prev; pb.innerText = prev ? '‹ ' + stripHTML(prev) : '‹ Previous';
       nb.disabled = !next; nb.innerText = next ? stripHTML(next) + ' ›' : 'Next ›';
-      pushRecent(name); updateReadProgress();
+      pushRecent(name); updateReadProgress(); refreshAskButton();
       return true;
     }
 
@@ -2014,11 +2097,11 @@
     function decorateGrid(canvas) {
       const q = document.getElementById('search-input').value.trim();
       if (q) highlightTitles(canvas);
-      else if (activeCategoryFilter === 'ALL') addRecentStrip(canvas);
+      else if (activeCategoryFilter === 'ALL') { addRecentStrip(canvas); addMessageNotes(canvas); }
       const sub = document.getElementById('subregion-dropdown');
       const ctx = [activeCategoryFilter, viewMode, sub ? sub.value : '', document.getElementById('sort-dropdown').value].join('|');
       if (ctx !== lastGridCtx && !reducedMotion()) {
-        canvas.querySelectorAll('.recent-strip, .flap-card, .list-row').forEach((el, i) => {
+        canvas.querySelectorAll('.amanyu-note, .recent-strip, .flap-card, .list-row').forEach((el, i) => {
           if (i > 15) return;
           el.style.animationDelay = (i * 28) + 'ms';
           el.classList.add('enter');
@@ -2124,6 +2207,7 @@
           localStorage.setItem('flap_data_cache', JSON.stringify(data.flaps));
           applyServerFavourites(data.favourites);
           initializeSystem(data.flaps);
+          personalise(data, true);
           return true;
         })
         .catch(() => false);
@@ -2167,6 +2251,310 @@
         }).finally(() => { busy = false; ind.classList.remove('spin'); reset(); });
       }, { passive: true });
     })();
+
+
+    // ================= PERSONAL TOUCHES =================
+    let userProfile = (function () { try { return JSON.parse(localStorage.getItem('flap_profile') || 'null'); } catch (e) { return null; } })();
+    let amanyuMessages = (function () { try { return JSON.parse(localStorage.getItem('flap_msgs') || '[]'); } catch (e) { return []; } })();
+    let launchDone = false, popupOpen = false, currentGreeting = '';
+    const lsList = k => { try { return JSON.parse(localStorage.getItem(k) || '[]'); } catch (e) { return []; } };
+    const lsAdd = (k, v) => { const l = lsList(k); if (l.indexOf(v) === -1) { l.push(v); try { localStorage.setItem(k, JSON.stringify(l.slice(-300))); } catch (e) {} } };
+
+    function callName() { return (userProfile && userProfile.call) || 'Doctor'; }
+    function formalName() { return (userProfile && userProfile.name) || ''; }
+    // "Vasu sir!" followed by "!" or "." reads "Vasu sir!", not "Vasu sir!!"
+    function tidyPunct(s) { return String(s).replace(/([!?])((?:<\/b>)?)[!.]+/g, '$1$2'); }
+    function fillNames(html) { return tidyPunct(String(html || '').replace(/\{name\}/gi, escapeAttr(callName())).replace(/\{fullname\}/gi, escapeAttr(formalName() || callName()))); }
+
+    // Called with every answer from the server (and once with the saved copy when the app opens)
+    function personalise(data, fromServer) {
+      if (data && data.profile) { userProfile = data.profile; try { localStorage.setItem('flap_profile', JSON.stringify(userProfile)); } catch (e) {} }
+      if (data && Array.isArray(data.messages)) { amanyuMessages = data.messages; try { localStorage.setItem('flap_msgs', JSON.stringify(amanyuMessages)); } catch (e) {} }
+      paintProfile();
+      renderBanner();
+      if (activeCategoryFilter === 'ALL' && !document.getElementById('search-input').value.trim()) renderWorkspaceGrid();
+      refreshAskButton();
+      if (fromServer && userProfile && !userProfile.name) { showProfilePrompt(true); return; }
+      if (!userProfile) return;
+      if (!launchDone) { launchDone = true; launchMoments(); }
+      else if (fromServer) queuePopups();
+    }
+
+    function paintProfile() {
+      const nameBtn = document.getElementById('display-user-name');
+      if (userProfile && userProfile.name) { nameBtn.textContent = userProfile.name; nameBtn.style.display = 'block'; }
+      else nameBtn.style.display = 'none';
+      if (!currentGreeting && userProfile) currentGreeting = makeGreeting();
+      document.getElementById('sidebar-greeting').textContent = currentGreeting;
+    }
+
+    // ---- Greetings: a different line almost every time ----
+    const GREETINGS = {
+      lateNight: ['Still awake, {n}? The flaps will still be here in the morning.', 'It is past midnight, {n}. One flap, then sleep – doctor’s orders.',
+        'Night owl mode on, {n}. Go easy on yourself.', 'The wards are quiet and so is the city. Just you and the flaps, {n}.',
+        'Late-night revision, {n}? Respect. Now drink some water.', '{n}, even free flaps need rest. So do you.',
+        'Burning the midnight oil again, {n}?', 'Sleep is the best flap salvage there is, {n}. Just saying.',
+        'Shh… the flaps are sleeping, {n}. Maybe you should too?'],
+      early: ['Up before the sun, {n}? Impressive.', 'Early bird, {n}! Coffee first, flaps next.', 'Good morning, {n}. The OT lights are not even on yet.',
+        'Fresh mind, fresh flaps. Morning, {n}!', 'The quietest hour of the day belongs to you, {n}.'],
+      morning: ['Good morning, {n}! Ready to raise some flaps?', 'Morning, {n}. One flap a day keeps the examiner away.', 'Rise and revise, {n}!',
+        'Hello {n}! Hope the rounds were kind today.', 'A bright morning to you, {n}.', 'Morning, {n}. A good day to master a new flap.',
+        'Good morning, {n}. Chai in one hand, Flapendium in the other?', 'Morning, {n}! Steady hands, sharp mind – let’s go.',
+        'Good morning, {n}. May your flaps be pink and your list be short.'],
+      afternoon: ['Good afternoon, {n}! Lunch done? Flaps next.', 'Post-lunch slump, {n}? A quick flap will wake you up.',
+        'Afternoon, {n}. Hope the OT list is running on time.', 'Hello {n}! Halfway through the day already.',
+        'Good afternoon, {n}. Pick a flap, any flap.', 'Afternoon, {n}. Ten minutes of reading now saves an hour later.'],
+      evening: ['Good evening, {n}! Long day?', 'Evening, {n}. Time for a little quiet reading.', 'Hey {n}! Tea and flaps – the perfect evening.',
+        'The day is done, {n}. Well, almost.', 'Good evening, {n}. You have earned a gentle revision session.',
+        'Evening, {n}! Hope today treated you well.', 'Sunset, chai and a flap or two, {n}?'],
+      night: ['Hello {n}! A calm night for some flaps.', 'Winding down, {n}? One last flap before bed?', 'Hey {n}, don’t stay up too late tonight.',
+        'Night shift or night reading, {n}?', 'Good evening, {n}. The best revision happens in the quiet hours.',
+        'Dinner done, {n}? Dessert is a flap.'],
+      any: ['Hello again, {n}!', 'Look who’s back – {n}!', 'Welcome back, {n}. The flaps missed you.', 'Hey {n}! Every flap you learn is a patient helped.',
+        '{n}, you are doing better than you think.', 'Nice to see you, {n}.', 'Hey {n}! Think in angiosomes.',
+        '{n}, the reconstructive ladder is climbed one rung at a time.', 'Back for more, {n}? I like it.', 'Hi {n}! Small steps, big flaps.',
+        'Here’s to steady hands and sharp minds, {n}.', 'Welcome, {n}. Take your time – no examiner here.',
+        'Hey {n}! Like a good flap, consistency survives.', 'Made with love, for friends like you, {n}.',
+        'Good to have you here, {n}.', '{n}! Ready when you are.', 'Hey {n}, proud of you for showing up today.'],
+      day: { 1: ['Happy Monday, {n}! New week, new flaps.', 'Monday again, {n}. You have got this.'],
+             5: ['It’s Friday, {n}! Weekend loading…', 'Friday feels, {n}. One flap before the weekend?'],
+             6: ['Weekend revision, {n}? That is dedication.', 'Saturday, {n}! Learn a little, rest a lot.'],
+             0: ['A slow Sunday, {n}? Perfect for a few flaps.', 'Sunday, {n}. Be kind to yourself today.'] }
+    };
+    function makeGreeting() {
+      const n = callName(), now = new Date(), h = now.getHours();
+      const slot = h < 4 ? 'lateNight' : h < 7 ? 'early' : h < 12 ? 'morning' : h < 16 ? 'afternoon' : h < 20 ? 'evening' : 'night';
+      let pool = [];
+      const roll = Math.random();
+      if (roll < 0.45 || slot === 'lateNight') pool = GREETINGS[slot];
+      else if (roll < 0.6 && GREETINGS.day[now.getDay()]) pool = GREETINGS.day[now.getDay()];
+      else if (roll < 0.72) {
+        const recent = getRecent()[0], favs = favouriteFlaps.size;
+        if (recent && Math.random() < 0.6) pool = ['Pick up where you left off, {n}: the ' + stripHTML(recent) + '.'];
+        else if (favs > 1) pool = ['{n}, your ' + favs + ' favourite flaps are waiting for you.'];
+        else pool = GREETINGS.any;
+      } else pool = GREETINGS.any;
+      const used = lsList('flap_greet_used');
+      let choices = pool.filter(g => used.indexOf(g) === -1);
+      if (!choices.length) choices = pool;
+      const line = choices[Math.floor(Math.random() * choices.length)];
+      try { localStorage.setItem('flap_greet_used', JSON.stringify(used.concat([line]).slice(-12))); } catch (e) {}
+      return tidyPunct(line.replace(/\{n\}/g, n));
+    }
+
+    function launchMoments() {
+      currentGreeting = makeGreeting();
+      paintProfile();
+      const pill = document.getElementById('greet-pill');
+      const bday = isBirthday();
+      if (bday) celebrateBirthday();
+      pill.innerHTML = bday ? tidyPunct('Happy birthday, <b>' + escapeAttr(callName()) + '</b>!') + ' 🎉' : escapeAttr(currentGreeting);
+      setTimeout(() => pill.classList.add('show'), bday ? 600 : 900);
+      setTimeout(() => pill.classList.remove('show'), bday ? 6500 : 5200);
+      if (!bday || !needsBirthdayWish()) setTimeout(queuePopups, 1200);
+    }
+
+    // ---- Name and birthday ----
+    const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    function showProfilePrompt(first) {
+      if (document.getElementById('pf-backdrop')) return;
+      const curName = formalName().replace(/^dr\.?\s+/i, '');
+      const bd = (userProfile && userProfile.birthday || '').split('-');
+      let days = '<option value="">Day</option>', months = '<option value="">Month</option>';
+      for (let d = 1; d <= 31; d++) days += '<option value="' + d + '"' + (Number(bd[0]) === d ? ' selected' : '') + '>' + d + '</option>';
+      MONTH_NAMES.forEach((m, i) => { months += '<option value="' + (i + 1) + '"' + (Number(bd[1]) === i + 1 ? ' selected' : '') + '>' + m + '</option>'; });
+      const wrap = document.createElement('div');
+      wrap.className = 'pm-backdrop'; wrap.id = 'pf-backdrop';
+      wrap.innerHTML = '<div class="pm-card"><div class="pm-kicker">' + (first ? 'One small thing first' : 'Your details') + '</div>' +
+        '<h3>' + (first ? 'What is your name?' : 'Edit your name and birthday') + '</h3>' +
+        '<label for="pf-name">Your name, without “Dr”</label><input id="pf-name" maxlength="40" autocomplete="given-name" placeholder="e.g. Gayathri" value="' + escapeAttr(curName) + '">' +
+        '<div class="pf-preview" id="pf-preview"></div>' +
+        '<label>Birthday <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label><div class="pf-bday"><select id="pf-day">' + days + '</select><select id="pf-month">' + months + '</select></div>' +
+        '<div class="pf-note">Only the day and month. It can be left blank.</div>' +
+        '<div class="pf-err" id="pf-err"></div><button type="button" class="pm-btn" id="pf-save">Save</button>' +
+        (first ? '' : '<button type="button" class="pm-link" id="pf-cancel">Cancel</button>') + '</div>';
+      document.body.appendChild(wrap);
+      const input = document.getElementById('pf-name'), preview = document.getElementById('pf-preview');
+      const tidy = s => { s = s.replace(/\s+/g, ' ').trim().replace(/^(dr\.?\s+)+/i, ''); return s === s.toLowerCase() ? s.replace(/(^|[\s\-'])([a-z])/g, (m, a, b) => a + b.toUpperCase()) : s; };
+      const showPreview = () => { const v = tidy(input.value); preview.innerHTML = v ? 'It will appear as <b>Dr ' + escapeAttr(v) + '</b>' : ''; };
+      input.oninput = showPreview; showPreview();
+      if (first) setTimeout(() => input.focus(), 300);
+      const close = () => wrap.remove();
+      if (!first) document.getElementById('pf-cancel').onclick = close;
+      document.getElementById('pf-save').onclick = function () {
+        const name = tidy(input.value), err = document.getElementById('pf-err');
+        const d = document.getElementById('pf-day').value, m = document.getElementById('pf-month').value;
+        if (!name) { err.textContent = 'Please enter your name.'; input.focus(); return; }
+        if ((d && !m) || (!d && m)) { err.textContent = 'Please choose both the day and the month, or leave both blank.'; return; }
+        if (d && m && Number(d) > [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1]) { err.textContent = 'That date does not exist. Please check it.'; return; }
+        const bday = d && m ? ('0' + d).slice(-2) + '-' + ('0' + m).slice(-2) : '';
+        const btn = this; btn.disabled = true; btn.textContent = 'Saving…'; err.textContent = '';
+        fetch(API_URL + '?action=save_profile&email=' + encodeURIComponent(localStorage.getItem('flap_email') || currentUserEmail) +
+          '&token=' + encodeURIComponent(localStorage.getItem('flap_token') || '') + '&name=' + encodeURIComponent(name) + '&birthday=' + encodeURIComponent(bday))
+          .then(r => r.json())
+          .then(res => {
+            if (!res.profile) throw new Error(res.error || 'failed');
+            close(); buzz(12);
+            currentGreeting = '';
+            personalise({ profile: res.profile }, false);
+            if (!first) showToast('Saved');
+          })
+          .catch(() => {
+            btn.disabled = false; btn.textContent = 'Save';
+            err.textContent = 'This could not be saved. Please check the connection and try again.';
+            if (first && !document.getElementById('pf-later')) {
+              const later = document.createElement('button');
+              later.type = 'button'; later.className = 'pm-link'; later.id = 'pf-later'; later.textContent = 'Later';
+              later.onclick = close; btn.after(later);
+            }
+          });
+      };
+    }
+
+    // ---- Messages from Amanyu ----
+    function queuePopups() {
+      if (popupOpen || document.getElementById('pf-backdrop') || document.querySelector('.bday-backdrop')) return;
+      const seen = lsList('flap_msgs_seen');
+      const next = amanyuMessages.find(m => m.style === 'popup' && seen.indexOf(m.id) === -1);
+      if (!next) return;
+      popupOpen = true;
+      const wrap = document.createElement('div');
+      wrap.className = 'pm-backdrop';
+      wrap.innerHTML = '<div class="pm-card letter"><div class="pm-kicker">A message from Amanyu</div>' + (next.title ? '<h3>' + fillNames(escapeAttr(next.title)) + '</h3>' : '<div style="height:10px"></div>') +
+        '<div class="pm-body">' + fillNames(next.html) + '</div><div class="pm-sign">– Amanyu</div><button type="button" class="pm-btn">Thank you</button></div>';
+      document.body.appendChild(wrap);
+      buzz([10, 50, 10]);
+      wrap.querySelector('.pm-btn').onclick = () => {
+        lsAdd('flap_msgs_seen', next.id); reportSeen(next.id);
+        wrap.remove(); popupOpen = false;
+        setTimeout(queuePopups, 400);
+      };
+    }
+    function reportSeen(id) {
+      if (lsList('flap_msgs_reported').indexOf(id) !== -1) return;
+      const email = localStorage.getItem('flap_email'), token = localStorage.getItem('flap_token');
+      if (!email || !token) return;
+      fetch(API_URL + '?action=message_seen&email=' + encodeURIComponent(email) + '&token=' + encodeURIComponent(token) + '&id=' + encodeURIComponent(id))
+        .then(r => r.json()).then(res => { if (res.saved) lsAdd('flap_msgs_reported', id); }).catch(() => {});
+    }
+    function closeMessage(id) { lsAdd('flap_msgs_closed', id); buzz(6); renderBanner(); document.querySelectorAll('.amanyu-note[data-id="' + id + '"]').forEach(n => n.remove()); }
+    function messageNodes(style) {
+      const closed = lsList('flap_msgs_closed');
+      return amanyuMessages.filter(m => m.style === style && closed.indexOf(m.id) === -1);
+    }
+    function addMessageNotes(canvas) {
+      messageNodes('note').reverse().forEach(m => {
+        const n = document.createElement('div');
+        n.className = 'amanyu-note'; n.dataset.id = m.id;
+        n.innerHTML = '<div class="an-from">From Amanyu</div>' + (m.title ? '<div class="an-title">' + fillNames(escapeAttr(m.title)) + '</div>' : '') +
+          '<div class="an-text">' + fillNames(m.html) + '</div><button type="button" class="an-close" aria-label="Dismiss">✕</button>';
+        n.querySelector('.an-close').onclick = e => { e.stopPropagation(); closeMessage(m.id); };
+        canvas.insertBefore(n, canvas.firstChild);
+        reportSeen(m.id);
+      });
+    }
+    function renderBanner() {
+      const box = document.getElementById('msg-banner');
+      if (!box) return;
+      box.innerHTML = '';
+      messageNodes('banner').forEach(m => {
+        const b = document.createElement('div');
+        b.className = 'amanyu-banner';
+        b.innerHTML = '<b class="an-from">Amanyu:</b><div>' + (m.title ? '<b>' + fillNames(escapeAttr(m.title)) + '</b> ' : '') + fillNames(m.html) + '</div><button type="button" class="an-close" aria-label="Dismiss">✕</button>';
+        b.querySelector('.an-close').onclick = () => closeMessage(m.id);
+        box.appendChild(b);
+        reportSeen(m.id);
+      });
+    }
+
+    // ---- Ask Amanyu (only for friends ticked in the Users tab) ----
+    function askLink(flapName) {
+      return 'https://wa.me/' + SUPPORT_WHATSAPP + '?text=' + encodeURIComponent('Hi Amanyu, I have a doubt about the ' + stripHTML(flapName) + ': ');
+    }
+    function refreshAskButton() {
+      const btn = document.getElementById('fp-ask');
+      if (!btn) return;
+      const on = !!(userProfile && userProfile.ask && flapPageName);
+      btn.style.display = on ? 'inline-flex' : 'none';
+      const inner = document.getElementById('fp-inner'), old = inner && inner.querySelector('.ask-card');
+      if (old) old.remove();
+      if (!on) return;
+      btn.href = askLink(flapPageName);
+      inner.insertAdjacentHTML('beforeend', '<a class="ask-card" target="_blank" rel="noopener" href="' + escapeAttr(askLink(flapPageName)) + '">' +
+        btn.innerHTML + '<span>Ask Amanyu about this flap<small>Opens WhatsApp with the flap name filled in</small></span></a>');
+    }
+
+    // ---- Birthdays ----
+    function isBirthday() {
+      if (!userProfile || !userProfile.birthday) return false;
+      const d = new Date();
+      return userProfile.birthday === ('0' + d.getDate()).slice(-2) + '-' + ('0' + (d.getMonth() + 1)).slice(-2);
+    }
+    function needsBirthdayWish() { return localStorage.getItem('flap_bday_wish') !== String(new Date().getFullYear()); }
+    const BDAY_WISHES = [
+      'Wishing you a year as reliable as a radial forearm flap and as full of happy surprises as a perforator dissection. Have a wonderful day!',
+      'May this year bring you steady hands, a calm mind, and every single thing you have been hoping for. Enjoy every moment today!',
+      'Another year wiser, kinder and more brilliant. So glad to call you a friend. Have the happiest birthday!',
+      'Here’s to a year of good outcomes, great company and much deserved rest. Have a beautiful birthday!'
+    ];
+    function celebrateBirthday() {
+      document.body.classList.add('bday');
+      confettiBurst(9000);
+      if (!needsBirthdayWish()) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'bday-backdrop';
+      wrap.innerHTML = '<div class="bday-card"><div class="bday-cake">🎂</div><div class="bday-hb">Happy Birthday</div><div class="bday-name">' + tidyPunct(escapeAttr(callName()) + '!') + ' 🎉</div>' +
+        '<div class="bday-msg">' + BDAY_WISHES[Math.floor(Math.random() * BDAY_WISHES.length)] + '</div><div class="bday-sign">– Amanyu</div>' +
+        '<button type="button" class="bday-btn">Thank you, Amanyu! 💛</button></div>';
+      setTimeout(() => {
+        document.body.appendChild(wrap);
+        buzz([30, 60, 30, 60, 80]);
+        wrap.querySelector('.bday-btn').onclick = () => {
+          try { localStorage.setItem('flap_bday_wish', String(new Date().getFullYear())); } catch (e) {}
+          wrap.remove(); confettiBurst(3500);
+          setTimeout(queuePopups, 600);
+        };
+      }, 700);
+    }
+    // Confetti, sparkles, balloons and cakes on a canvas; stops by itself and frees the canvas
+    function confettiBurst(ms) {
+      if (reducedMotion()) return;
+      let cv = document.getElementById('fx-canvas');
+      if (cv) cv.remove();
+      cv = document.createElement('canvas'); cv.id = 'fx-canvas';
+      document.body.appendChild(cv);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2), W = innerWidth, H = innerHeight;
+      cv.width = W * dpr; cv.height = H * dpr;
+      const ctx = cv.getContext('2d'); ctx.scale(dpr, dpr);
+      const colours = ['#f5c451', '#ef4444', '#22c55e', '#3b82f6', '#d946ef', '#f97316', '#fff000', '#14b8a6'];
+      const emoji = ['🎈', '🎂', '🎉', '🎁', '🧁', '✨'];
+      const parts = [];
+      for (let i = 0; i < 170; i++) parts.push({ kind: 'c', x: Math.random() * W, y: -20 - Math.random() * H * 0.9, vx: (Math.random() - 0.5) * 1.6, vy: 1.6 + Math.random() * 2.6,
+        r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.25, w: 6 + Math.random() * 6, h: 3 + Math.random() * 4, c: colours[i % colours.length] });
+      for (let i = 0; i < 26; i++) parts.push({ kind: 's', x: Math.random() * W, y: Math.random() * H, t: Math.random() * 6, s: 2 + Math.random() * 3 });
+      for (let i = 0; i < 12; i++) parts.push({ kind: 'e', x: Math.random() * W, y: H + 40 + Math.random() * H * 0.6, vy: -(0.9 + Math.random() * 1.2), sway: Math.random() * 6, e: emoji[i % emoji.length], size: 26 + Math.random() * 14 });
+      const start = performance.now();
+      (function frame(now) {
+        const el = now - start, fade = Math.max(0, Math.min(1, (ms - el) / 900));
+        ctx.clearRect(0, 0, W, H);
+        ctx.globalAlpha = fade;
+        parts.forEach(p => {
+          if (p.kind === 'c') {
+            p.x += p.vx + Math.sin((el / 500) + p.r) * 0.6; p.y += p.vy; p.r += p.vr;
+            if (p.y > H + 20 && el < ms - 2500) { p.y = -20; p.x = Math.random() * W; }
+            ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.r * 2))); ctx.restore();
+          } else if (p.kind === 's') {
+            const a = (Math.sin(el / 260 + p.t) + 1) / 2;
+            ctx.save(); ctx.globalAlpha = fade * a; ctx.fillStyle = '#fff7c2'; ctx.translate(p.x, p.y); ctx.rotate(Math.PI / 4);
+            ctx.fillRect(-p.s, -0.6, p.s * 2, 1.2); ctx.fillRect(-0.6, -p.s, 1.2, p.s * 2); ctx.restore();
+          } else {
+            p.y += p.vy;
+            ctx.font = p.size + 'px serif'; ctx.fillText(p.e, p.x + Math.sin(el / 700 + p.sway) * 14, p.y);
+          }
+        });
+        if (el < ms) requestAnimationFrame(frame); else cv.remove();
+      })(start);
+    }
 
     // ---- DEFECT MAPPER (prototype, loaded on demand) ----
     const DM_ICON = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\' fill=\'none\' stroke=\'white\' stroke-width=\'2.6\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><circle cx=\'32\' cy=\'9\' r=\'5\'/><path d=\'M24 18h16l2 16h-4l-1 24h-5l-1-17-1 17h-5l-1-24h-4z\'/><path d=\'M24 19l-9 14M40 19l9 14\'/><circle cx=\'40\' cy=\'48\' r=\'7.5\' stroke-dasharray=\'3.2 2.6\'/><path d=\'M40 38v-3M40 61v-3M30 48h-3M53 48h-3\'/></svg>')}")`;
