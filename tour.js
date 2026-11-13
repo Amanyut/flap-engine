@@ -28,7 +28,7 @@
   let mem = {};
   const STEPS = [
     { center: true, icon: '📖', title: 'Welcome to Amanyu’s Flapendium',
-      text: () => `A pocket atlas of ${flapCount()} flaps, arranged the way you study them – region by region.<br><br>This short guide shows you everything the app can do. On steps marked <b>Try it</b>, you do it yourself.`,
+      text: () => `Your ready reckoner of flaps in plastic and reconstructive surgery – always at hand.<br><br>This short guide shows you everything the app can do. On steps marked <b>Try it</b>, you do it yourself.`,
       prepare: mainScreen, startLabel: 'Start the guide' },
 
     { target: () => $('.hamburger-btn'), title: 'Open the Flap Chapters', tryIt: true,
@@ -101,6 +101,10 @@
 
     { target: () => $('.fav-tile'), title: 'Your Favourites',
       text: 'Everything you star is gathered here.',
+      prepare: openSidebar },
+
+    { target: () => $('.dm-tile'), title: 'Defect Mapper (beta)',
+      text: 'Paint a defect on a 3D body, sized to your patient, and see which reconstructive options may reach it. A preview of what is to come.',
       prepare: openSidebar },
 
     { target: () => $('.text-size-ctl'), title: 'Text size',

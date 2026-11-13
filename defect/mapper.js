@@ -11,20 +11,11 @@ THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 const BASE = 'defect/';
-const BODY_FILES = { male: 'body_male.v1.bin', female: 'body_female.v1.bin' };
+const BODY_FILES = { male: 'body_male.v2.bin', female: 'body_female.v2.bin' };
 const LEVEL_DELTA = { Very_Lean: 0, Lean: 1, Obese: 2, Very_Obese: 3 };   // order of the deltas in the .bin
 const LEVELS = ['Very_Lean', 'Lean', 'Normal', 'Obese', 'Very_Obese'];
 // short codes for the zones (same order as body_meta.json "zones")
-const ZONE_CODES = ['unmapped',
-  'thigh.prox.ant', 'thigh.prox.med', 'thigh.prox.lat', 'thigh.prox.post',
-  'thigh.mid.ant', 'thigh.mid.med', 'thigh.mid.lat', 'thigh.mid.post',
-  'thigh.dist.ant', 'thigh.dist.med', 'thigh.dist.lat', 'thigh.dist.post',
-  'knee.ant', 'knee.med', 'knee.lat', 'knee.post',
-  'leg.prox.ant', 'leg.prox.med', 'leg.prox.lat', 'leg.prox.post',
-  'leg.mid.ant', 'leg.mid.med', 'leg.mid.lat', 'leg.mid.post',
-  'leg.dist.ant', 'leg.dist.med', 'leg.dist.lat', 'leg.dist.post',
-  'ankle.ant', 'ankle.med', 'ankle.lat', 'heel.post',
-  'foot.dorsum', 'sole.heel', 'sole.mid', 'sole.fore', 'toes'];
+let ZONE_CODES = [];   // short zone codes, from body_meta.json
 
 const SKIN = new THREE.Color('#e7b49c');
 const DEFECT = new THREE.Color('#b3121f');
@@ -34,7 +25,7 @@ let meta = null, reach = null, ui = null, state = null, openFlag = false;
 
 // ================= BODY DATA =================
 async function loadMeta() {
-  if (!meta) meta = await fetch(BASE + 'body_meta.json').then(r => r.json());
+  if (!meta) { meta = await fetch(BASE + 'body_meta.json').then(r => r.json()); ZONE_CODES = meta.codes; }
   if (!reach) reach = await fetch(BASE + 'reach.json').then(r => r.json());
 }
 const bodyCache = {};
@@ -126,53 +117,70 @@ varying float vPaint;
 
 // ================= UI =================
 const CSS = `
-.dm-root { position: fixed; top: var(--topbar-h); left: 0; right: 0; bottom: 0; z-index: 840; display: flex; flex-direction: column; background: radial-gradient(ellipse at 50% 35%, #12305e 0%, #071631 55%, #030a18 100%); color: #e8eef9; font-family: var(--ui-font, sans-serif); transform: translateY(100%); transition: transform .32s cubic-bezier(.2,.8,.2,1); }
+.dm-root { position: fixed; top: var(--topbar-h); left: 0; right: 0; bottom: 0; z-index: 840; display: flex; flex-direction: column; font-size: clamp(16px, 3.1vw, 24px); background: radial-gradient(ellipse at 50% 35%, #12305e 0%, #071631 55%, #030a18 100%); color: #e8eef9; font-family: var(--ui-font, sans-serif); transform: translateY(100%); transition: transform .32s cubic-bezier(.2,.8,.2,1); }
 .dm-root.open { transform: none; }
-.dm-head { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: rgba(4, 18, 44, .85); border-bottom: 1px solid rgba(147,197,253,.18); }
-.dm-head h2 { flex: 1; margin: 0; font-size: 1.12rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-.dm-beta { font-size: .66rem; font-weight: 800; letter-spacing: .6px; padding: 3px 7px; border-radius: 999px; background: #f5c451; color: #042551; }
-.dm-ibtn { width: 42px; height: 42px; flex-shrink: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.04); color: #e8eef9; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
-.dm-patient { display: flex; gap: 8px; align-items: center; padding: 8px 10px; flex-wrap: wrap; background: rgba(4, 18, 44, .6); border-bottom: 1px solid rgba(147,197,253,.12); }
-.dm-seg { display: inline-flex; border: 1px solid rgba(255,255,255,.2); border-radius: 10px; overflow: hidden; }
-.dm-seg button { border: none; background: transparent; color: #cbd5e1; padding: 9px 12px; font-weight: 700; font-size: .92rem; cursor: pointer; font-family: inherit; }
+.dm-root button { font-family: inherit; }
+.dm-head { display: flex; align-items: center; gap: .5em; padding: .45em .6em; background: rgba(4, 18, 44, .85); border-bottom: 1px solid rgba(147,197,253,.18); }
+.dm-head h2 { flex: 1; margin: 0; font-size: 1.15em; font-weight: 700; display: flex; align-items: center; gap: .45em; }
+.dm-beta { font-size: .58em; font-weight: 800; letter-spacing: .06em; padding: .2em .55em; border-radius: 999px; background: #f5c451; color: #042551; }
+.dm-ibtn { width: 2.5em; height: 2.5em; flex-shrink: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.05); color: #e8eef9; font-size: 1.05em; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+.dm-patient { display: flex; gap: .45em; align-items: center; padding: .45em .6em; flex-wrap: wrap; background: rgba(4, 18, 44, .6); border-bottom: 1px solid rgba(147,197,253,.12); }
+.dm-seg { display: inline-flex; border: 1px solid rgba(255,255,255,.22); border-radius: .6em; overflow: hidden; }
+.dm-seg button { border: none; background: transparent; color: #cbd5e1; padding: .55em .85em; font-weight: 700; font-size: .95em; cursor: pointer; }
 .dm-seg button.on { background: #3b82f6; color: #fff; }
-.dm-field { display: inline-flex; align-items: center; gap: 4px; font-size: .85rem; color: #9fb0c8; }
-.dm-field input { width: 62px; padding: 9px 6px; border-radius: 9px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.06); color: #fff; font-size: .98rem; font-family: inherit; text-align: center; }
-.dm-fitnote { flex-basis: 100%; font-size: .78rem; color: #93a4bf; }
+.dm-field { display: inline-flex; align-items: center; gap: .3em; font-size: .9em; color: #9fb0c8; }
+.dm-field input { width: 3.6em; padding: .45em .25em; border-radius: .5em; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.07); color: #fff; font-size: 1.05em; font-family: inherit; text-align: center; }
+.dm-fitnote { flex-basis: 100%; font-size: .78em; color: #93a4bf; }
 .dm-stage { position: relative; flex: 1; min-height: 0; touch-action: none; overflow: hidden; }
 .dm-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.dm-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 600; color: #cbd5e1; pointer-events: none; }
-.dm-pad { position: absolute; right: 12px; bottom: 26px; width: 108px; height: 108px; border-radius: 50%; border: 1.5px solid rgba(147,197,253,.45); background: radial-gradient(circle, rgba(59,130,246,.18), rgba(4,18,44,.55)); display: none; touch-action: none; }
+.dm-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 600; color: #cbd5e1; pointer-events: none; text-align: center; padding: 1em; }
+.dm-pad { position: absolute; right: max(1.2em, 4vw); bottom: max(1.6em, 4vh); width: min(8.6em, 40vw); height: min(8.6em, 40vw); border-radius: 50%; border: 2px solid rgba(147,197,253,.5); background: radial-gradient(circle, rgba(59,130,246,.22), rgba(4,18,44,.6)); display: none; touch-action: none; box-shadow: 0 0 22px rgba(59,130,246,.25); }
 .dm-pad.show { display: block; }
-.dm-pad::after { content: 'rotate'; position: absolute; left: 0; right: 0; bottom: -18px; text-align: center; font-size: .7rem; color: #93a4bf; }
-.dm-knob { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; background: rgba(147,197,253,.55); box-shadow: 0 0 12px rgba(96,165,250,.6); }
-.dm-hint { position: absolute; left: 12px; top: 10px; right: 130px; font-size: .8rem; color: #b8c6dc; text-shadow: 0 1px 2px #000; pointer-events: none; }
-.dm-tools { display: flex; align-items: center; gap: 6px; padding: 8px 8px; background: rgba(4, 18, 44, .88); border-top: 1px solid rgba(147,197,253,.18); flex-wrap: wrap; }
-.dm-tool { min-width: 44px; height: 44px; border-radius: 12px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.05); color: #e8eef9; font-weight: 700; font-size: .88rem; cursor: pointer; padding: 0 9px; font-family: inherit; white-space: nowrap; }
+.dm-pad::after { content: 'rotate'; position: absolute; left: 0; right: 0; bottom: -1.5em; text-align: center; font-size: .72em; color: #93a4bf; }
+.dm-knob { position: absolute; left: 50%; top: 50%; width: 2.6em; height: 2.6em; margin: -1.3em 0 0 -1.3em; border-radius: 50%; background: rgba(147,197,253,.6); box-shadow: 0 0 14px rgba(96,165,250,.7); }
+.dm-hint { position: absolute; left: .7em; top: .55em; right: .7em; font-size: .8em; color: #b8c6dc; text-shadow: 0 1px 2px #000; pointer-events: none; }
+.dm-tools { display: flex; align-items: center; gap: .4em; padding: .5em .5em; background: rgba(4, 18, 44, .9); border-top: 1px solid rgba(147,197,253,.18); }
+.dm-tool { min-width: 2.7em; height: 2.7em; border-radius: .7em; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.06); color: #e8eef9; font-weight: 700; font-size: .95em; cursor: pointer; padding: 0 .6em; white-space: nowrap; }
 .dm-tool.on { background: #b3121f; border-color: #e2394a; }
 .dm-tool.on.eraser { background: #475569; border-color: #94a3b8; }
-.dm-size { flex: 1; min-width: 70px; display: flex; flex-direction: column; align-items: stretch; gap: 0; font-size: .72rem; color: #9fb0c8; text-align: center; }
-.dm-size input { flex: 1; accent-color: #f5c451; }
-.dm-result { padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: #04122c; border-top: 1px solid rgba(245,196,81,.35); display: flex; align-items: center; gap: 10px; }
-.dm-result .dm-rtext { flex: 1; min-width: 0; font-size: .9rem; line-height: 1.35; }
+.dm-size { flex: 1; min-width: 4em; display: flex; flex-direction: column; align-items: stretch; font-size: .75em; color: #9fb0c8; text-align: center; }
+.dm-size input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 2.2em; background: transparent; margin: 0; }
+.dm-size input[type=range]::-webkit-slider-runnable-track { height: .45em; border-radius: .3em; background: linear-gradient(90deg, #f5c451, rgba(255,255,255,.25)); }
+.dm-size input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 1.9em; height: 1.9em; margin-top: -.73em; border-radius: 50%; background: #f5c451; border: 2px solid #042551; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+.dm-size input[type=range]::-moz-range-track { height: .45em; border-radius: .3em; background: rgba(255,255,255,.25); }
+.dm-size input[type=range]::-moz-range-thumb { width: 1.9em; height: 1.9em; border-radius: 50%; background: #f5c451; border: 2px solid #042551; }
+.dm-result { padding: .55em .65em calc(.55em + env(safe-area-inset-bottom)); background: #04122c; border-top: 1px solid rgba(245,196,81,.35); display: flex; align-items: center; gap: .55em; }
+.dm-result .dm-rtext { flex: 1; min-width: 0; font-size: .92em; line-height: 1.35; }
 .dm-result .dm-rtext b { color: #f5c451; }
-.dm-find { border: none; border-radius: 12px; padding: 12px 14px; background: linear-gradient(180deg, #fbd774, #f5c451); color: #042551; font-weight: 800; font-size: .95rem; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.dm-find { border: none; border-radius: .7em; padding: .8em .95em; background: linear-gradient(180deg, #fbd774, #f5c451); color: #042551; font-weight: 800; font-size: 1em; cursor: pointer; white-space: nowrap; }
 .dm-find:disabled { opacity: .45; }
-.dm-sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 78%; background: #061633; border-top: 1px solid rgba(245,196,81,.45); border-radius: 18px 18px 0 0; box-shadow: 0 -12px 40px rgba(0,0,0,.5); transform: translateY(105%); transition: transform .3s cubic-bezier(.2,.8,.2,1); display: flex; flex-direction: column; z-index: 5; }
+.dm-sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 82%; background: #061633; border-top: 1px solid rgba(245,196,81,.45); border-radius: 1em 1em 0 0; box-shadow: 0 -12px 40px rgba(0,0,0,.5); transform: translateY(105%); transition: transform .3s cubic-bezier(.2,.8,.2,1); display: flex; flex-direction: column; z-index: 5; }
 .dm-sheet.open { transform: none; }
-.dm-sheet-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,.08); }
-.dm-sheet-head h3 { flex: 1; margin: 0; font-size: 1.05rem; }
-.dm-sheet-body { overflow-y: auto; padding: 6px 14px 22px; }
-.dm-sec { margin: 14px 0 6px; font-size: .74rem; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; color: #f28b8b; }
-.dm-item { display: flex; align-items: center; gap: 10px; padding: 12px; margin: 6px 0; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); cursor: pointer; }
-.dm-item .dm-iname { flex: 1; font-weight: 600; }
-.dm-item .dm-imeta { font-size: .78rem; color: #93a4bf; }
-.dm-item.nolink { cursor: default; opacity: .75; }
-.dm-note { font-size: .82rem; color: #b8c6dc; line-height: 1.45; padding: 10px 12px; border-radius: 10px; background: rgba(245,196,81,.08); border-left: 3px solid #f5c451; margin: 10px 0; }
-.dm-zones { font-size: .84rem; color: #cbd5e1; line-height: 1.5; }
-.dm-toast { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); background: rgba(127,29,29,.95); color: #fff; padding: 10px 14px; border-radius: 12px; font-size: .88rem; font-weight: 600; max-width: 88%; text-align: center; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 6; }
+.dm-sheet-head { display: flex; align-items: center; gap: .55em; padding: .6em .75em; border-bottom: 1px solid rgba(255,255,255,.08); }
+.dm-sheet-head h3 { flex: 1; margin: 0; font-size: 1.05em; }
+.dm-sheet-body { overflow-y: auto; padding: .3em .75em 1.4em; }
+.dm-sec { margin: 1em 0 .35em; font-size: .74em; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: #f28b8b; }
+.dm-step { margin: .55em 0; padding: .7em .8em; border-radius: .75em; background: rgba(245,196,81,.08); border: 1px solid rgba(245,196,81,.28); }
+.dm-step h4 { margin: 0 0 .3em; font-size: .95em; color: #f5c451; }
+.dm-step p { margin: 0; font-size: .86em; line-height: 1.5; color: #d6e0f0; }
+.dm-item { display: flex; align-items: center; gap: .55em; padding: .7em .75em; margin: .35em 0; border-radius: .7em; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); cursor: pointer; }
+.dm-item .dm-iname { font-weight: 600; font-size: .95em; }
+.dm-item .dm-imeta { font-size: .78em; color: #93a4bf; line-height: 1.4; margin-top: .15em; }
+.dm-item.nolink { cursor: default; }
+.dm-note { font-size: .82em; color: #b8c6dc; line-height: 1.45; padding: .6em .75em; border-radius: .6em; background: rgba(245,196,81,.08); border-left: 3px solid #f5c451; margin: .6em 0; }
+.dm-zones { font-size: .86em; color: #cbd5e1; line-height: 1.5; }
+.dm-toast { position: absolute; left: 50%; top: .8em; transform: translateX(-50%); background: rgba(127,29,29,.95); color: #fff; padding: .6em .85em; border-radius: .7em; font-size: .85em; font-weight: 600; max-width: 88%; text-align: center; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 6; }
 .dm-toast.show { opacity: 1; }
-@media (max-width: 400px) { .dm-field input { width: 54px; } .dm-seg button { padding: 9px 10px; } }
+.dm-modal { position: absolute; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center; padding: 1em; background: rgba(2, 8, 20, .78); backdrop-filter: blur(3px); }
+.dm-modal.show { display: flex; }
+.dm-mcard { max-width: 30em; max-height: 100%; overflow-y: auto; padding: 1.2em 1.3em 1.1em; border-radius: 1.1em; background: linear-gradient(160deg, #0b2a5c, #041533); border: 1px solid rgba(245,196,81,.55); box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+.dm-mcard .dm-from { font-size: .72em; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #f5c451; margin-bottom: .4em; }
+.dm-mcard h3 { margin: 0 0 .6em; font-family: var(--brand-font, serif); font-size: 1.25em; color: #fff; }
+.dm-mcard p { margin: 0 0 .75em; font-size: .92em; line-height: 1.6; color: #d6e0f0; }
+.dm-mcard .dm-sign { text-align: right; font-family: var(--brand-font, serif); color: #f5c451; margin: .2em 0 .9em; }
+.dm-mcard label { display: flex; align-items: center; gap: .5em; font-size: .82em; color: #b8c6dc; margin-bottom: .8em; }
+.dm-mcard label input { width: 1.2em; height: 1.2em; }
+.dm-mcard .dm-find { width: 100%; }
 `;
 
 function buildUI() {
@@ -197,8 +205,21 @@ function buildUI() {
       <div class="dm-pad" data-r="pad"><div class="dm-knob"></div></div>
       <div class="dm-toast" data-r="toast"></div>
       <div class="dm-sheet" data-r="sheet">
-        <div class="dm-sheet-head"><h3>Flap options</h3><button class="dm-ibtn" data-a="sheet-close" aria-label="Close">✕</button></div>
+        <div class="dm-sheet-head"><h3>Reconstructive options</h3><button class="dm-ibtn" data-a="sheet-close" aria-label="Close">✕</button></div>
         <div class="dm-sheet-body" data-r="sheetbody"></div>
+      </div>
+      <div class="dm-modal" data-r="note">
+        <div class="dm-mcard" role="dialog" aria-label="A note from Dr Amanyu">
+          <div class="dm-from">A note from Dr Amanyu</div>
+          <h3>Before you begin</h3>
+          <p>Hello! The Defect Mapper is a feature I am still building. It is very much a work in progress, and I have not yet had the time to complete it or review its suggestions in detail.</p>
+          <p>So please read its results with care. At this stage, some of the flaps it offers may be inaccurate or simply not appropriate – and simpler, more logical options may well be missing.</p>
+          <p>Even once it is finished, it is meant to be a rough guide, never the decision itself. Whether a flap will truly reach a defect and suit the patient can only be judged by knowing the flap well and planning it in reverse – on the patient, not on a screen.</p>
+          <p>For now, think of it as a glimpse of what this app can do, and of what is still to come.</p>
+          <div class="dm-sign">– Dr Amanyu</div>
+          <label><input type="checkbox" data-r="notehide"> Don’t show this again</label>
+          <button class="dm-find" data-a="note-ok">I understand</button>
+        </div>
       </div>
     </div>
     <div class="dm-tools">
@@ -464,19 +485,100 @@ function showResult() {
   const m = state.measure, el = ui.q('[data-r="result"]'), btn = ui.q('[data-a="find"]');
   if (!m || m.count < 3) { el.innerHTML = state.tool ? 'Draw the defect on the body. Two fingers move and zoom.' : 'Choose <b>Paint</b> and draw the defect on the body.'; btn.disabled = true; return; }
   const main = m.zones[0];
-  const where = main.z === 0 ? 'outside the mapped lower limb' : zoneName(main.z);
+  const where = zoneName(main.z);
   el.innerHTML = `<b>${m.areaCm2.toFixed(m.areaCm2 < 10 ? 1 : 0)} cm²</b> · about ${m.L.toFixed(1)} × ${m.W.toFixed(1)} cm<br>${where}${m.zones.length > 1 ? ` <span style="color:#93a4bf">+ ${m.zones.length - 1} more</span>` : ''}`;
   btn.disabled = false;
 }
 
-// ================= FLAP MATCHING =================
+// ================= RECONSTRUCTIVE OPTIONS =================
+// Generic designs (from the Local Flaps chapter where it has them) and the questions to ask first, per site
+const LOCAL_TYPES = {
+  rotation: { label: 'Rotation flap', match: 'rotation flap' },
+  rhomboid: { label: 'Transposition flap – rhomboid (Limberg) / Dufourmentel', match: 'rhomboid' },
+  bilobed: { label: 'Bilobed flap', match: 'bilobed' },
+  advancement: { label: 'Advancement flap (unipedicle, H-plasty)', match: 'unipedicle advancement' },
+  bipedicle: { label: 'Bipedicle advancement flap', match: 'bipedicle advancement' },
+  vy: { label: 'V-Y advancement flap', match: 'v-y advancement flap' },
+  island: { label: 'Subcutaneous pedicle island flap', match: 'subcutaneous pedicle island' },
+  keystone: { label: 'Keystone flap', match: 'keystone' },
+  at: { label: 'A-T flap', match: 'a-t flap' },
+  oz: { label: 'O-Z flap', match: 'o-z flap' },
+  zplasty: { label: 'Z-plasty (to release tension or reorient the scar)', match: 'z-plasty' },
+  fct: { label: 'Local fasciocutaneous transposition flap', match: null,
+    meta: 'Superiorly or inferiorly based, raised from the medial or the lateral side. Make sure the donor site will not leave bone or tendon exposed – graft the donor only where it lies over muscle or paratenon.' }
+};
+// lax = width (cm) that usually closes directly; graft = what to ask about a skin graft; localMax = cm2 local flaps usually manage
+const RULES = [
+  { z: ['scalp.*'], lax: 2, graft: 'pericranium', local: ['rotation', 'rhomboid', 'oz'], localMax: 40, note: 'Scalp barely stretches: direct closure needs wide subgaleal undermining (± galeotomies). Rotation and transposition designs suit the scalp; V-Y and keystone flaps do not.' },
+  { z: ['temple'], lax: 2, graft: 'ftsg', local: ['rotation', 'rhomboid', 'advancement'], localMax: 20 },
+  { z: ['forehead.*'], lax: 2.5, graft: 'ftsg', local: ['advancement', 'at', 'oz', 'rotation', 'rhomboid'], localMax: 15, note: 'Hide scars in the horizontal forehead creases and avoid lifting the eyebrow.' },
+  { z: ['eyelid.*'], lax: 0.8, graft: 'ftsg', local: [], localMax: 3, note: 'Up to about a quarter of the lid width closes directly (more with a lateral canthotomy and cantholysis).' },
+  { z: ['nose.dorsum', 'nose.sidewall'], lax: 0.5, graft: 'ftsg', local: ['rhomboid', 'bilobed', 'island'], localMax: 3 },
+  { z: ['nose.tip'], lax: 0.3, graft: 'ftsg', local: ['bilobed'], localMax: 2 },
+  { z: ['nose.ala'], lax: 0.2, graft: 'composite', local: ['island'], localMax: 1.5 },
+  { z: ['cheek.*'], lax: 2, graft: 'ftsg', local: ['rhomboid', 'rotation', 'advancement', 'island', 'bilobed'], localMax: 20 },
+  { z: ['lip.*'], lax: 1.5, graft: 'poor', local: ['advancement', 'island'], localMax: 3, note: 'Up to about a third of the lip width can be closed directly as a full-thickness wedge.' },
+  { z: ['chin'], lax: 1.5, graft: 'ftsg', local: ['rotation', 'advancement', 'oz', 'vy'], localMax: 8 },
+  { z: ['ear.*'], lax: 1, graft: 'ear', local: ['advancement'], localMax: 4, note: 'Small rim defects close as a wedge excision or with helical rim advancement.' },
+  { z: ['neck.*'], lax: 3, graft: 'stsg', local: ['rotation', 'rhomboid', 'advancement', 'vy', 'zplasty'], localMax: 40 },
+  { z: ['chest.*', 'axilla'], lax: 4, graft: 'stsg', local: ['rhomboid', 'rotation', 'vy', 'advancement', 'keystone'], localMax: 60 },
+  { z: ['abdomen.*', 'flank'], lax: 6, graft: 'stsg', local: ['advancement', 'vy', 'rotation', 'rhomboid'], localMax: 80 },
+  { z: ['back.*'], lax: 3, graft: 'stsg', local: ['rhomboid', 'keystone', 'vy', 'rotation', 'bipedicle'], localMax: 80 },
+  { z: ['sacrum'], lax: 2, graft: 'pressure', local: ['rotation', 'rhomboid', 'vy'], localMax: 60 },
+  { z: ['buttock'], lax: 4, graft: 'stsg', local: ['vy', 'rotation', 'rhomboid', 'keystone'], localMax: 80 },
+  { z: ['groin', 'pubis'], lax: 3, graft: 'stsg', local: ['rhomboid', 'vy', 'rotation', 'advancement'], localMax: 30 },
+  { z: ['perineum'], lax: 2, graft: 'stsg', local: ['vy', 'rotation', 'rhomboid'], localMax: 20 },
+  { z: ['shoulder'], lax: 3, graft: 'stsg', local: ['rhomboid', 'rotation', 'vy', 'keystone'], localMax: 40 },
+  { z: ['arm.*'], lax: 3, graft: 'stsg', local: ['fct', 'rhomboid', 'keystone', 'vy'], localMax: 40 },
+  { z: ['elbow.ant'], lax: 1.5, graft: 'joint', local: ['fct', 'rhomboid', 'zplasty'], localMax: 15 },
+  { z: ['elbow.post'], lax: 1, graft: 'bone', local: ['fct', 'rotation'], localMax: 15 },
+  { z: ['forearm.*'], lax: 2, graft: 'tendon', local: ['fct', 'rhomboid', 'rotation', 'keystone', 'vy'], localMax: 25 },
+  { z: ['wrist.*'], lax: 1, graft: 'tendon', local: ['fct', 'rotation', 'rhomboid'], localMax: 10 },
+  { z: ['hand.dorsum'], lax: 1.5, graft: 'tendon', local: ['rotation', 'rhomboid', 'bilobed', 'fct'], localMax: 10 },
+  { z: ['palm'], lax: 0.5, graft: 'ftsg', local: ['vy', 'advancement', 'zplasty'], localMax: 6 },
+  { z: ['fingertips'], lax: 0.2, graft: 'tip', local: ['vy'], localMax: 1.5 },
+  { z: ['thumb', 'fingers.*'], lax: 0.3, graft: 'digit', local: ['vy', 'advancement'], localMax: 3 },
+  { z: ['thigh.*'], lax: 4, graft: 'stsg', local: ['keystone', 'vy', 'rotation', 'fct', 'rhomboid'], localMax: 60 },
+  { z: ['knee.post'], lax: 2, graft: 'joint', local: ['fct', 'zplasty', 'rhomboid'], localMax: 20 },
+  { z: ['knee.*'], lax: 1.5, graft: 'bone', local: ['rotation', 'fct'], localMax: 15 },
+  { z: ['leg.dist.post'], lax: 0.5, graft: 'tendon', local: ['fct', 'rotation'], localMax: 10 },
+  { z: ['leg.*.post'], lax: 2.5, graft: 'stsg', local: ['keystone', 'vy', 'fct', 'rotation'], localMax: 30 },
+  { z: ['leg.*.ant'], lax: 1, graft: 'bone', local: ['fct', 'rotation', 'bipedicle', 'keystone'], localMax: 15, note: 'The tibia lies just under the skin: avoid designs whose donor site would expose bone.' },
+  { z: ['leg.*'], lax: 1.5, graft: 'bone', local: ['fct', 'keystone', 'vy', 'rotation', 'bipedicle'], localMax: 20 },
+  { z: ['ankle.*', 'heel.post'], lax: 0.5, graft: 'bone', local: ['rotation', 'fct', 'vy'], localMax: 8 },
+  { z: ['foot.dorsum'], lax: 1, graft: 'tendon', local: ['rotation', 'fct', 'rhomboid'], localMax: 10 },
+  { z: ['sole.mid'], lax: 0.5, graft: 'stsg', local: ['rotation', 'vy'], localMax: 8 },
+  { z: ['sole.*'], lax: 0.5, graft: 'weight', local: ['rotation', 'vy', 'rhomboid'], localMax: 8 },
+  { z: ['toes'], lax: 0.3, graft: 'digit', local: ['vy'], localMax: 2 }
+];
+const GRAFT = {
+  stsg: 'This area usually has good soft-tissue cover. If the bed is healthy – muscle, fascia or clean granulation, with no bare bone, tendon, joint or implant – could a split-thickness skin graft be enough?',
+  ftsg: 'If the bed allows, a full-thickness skin graft (for example from pre- or post-auricular or supraclavicular skin) gives the best colour and texture match here.',
+  pericranium: 'If the pericranium is intact, a skin graft will take – though it is thin and hairless. Bare outer table needs burring down to bleeding diploë first, or a flap.',
+  composite: 'Small full-thickness alar rim defects (up to about 1–1.5 cm) may suit a composite graft from the ear.',
+  poor: 'Grafts give a poor result on the lip; flaps that bring lip tissue are usually preferred.',
+  ear: 'A graft takes on intact perichondrium; bare cartilage needs a flap (or removal of the exposed cartilage and grafting the skin bed behind it).',
+  pressure: 'This is a pressure area: well-padded flaps are preferred over grafts for sacral pressure sores.',
+  joint: 'Flexor side of a joint: a graft may contract. A flap – or a graft with splinting and Z-plasties – is often better.',
+  bone: 'Bone often lies just under the skin here. A skin graft only takes if the periosteum is intact – bare bone needs a flap.',
+  tendon: 'Tendons lie close under the skin here. A graft takes on intact paratenon; bare tendon needs a flap.',
+  digit: 'On fingers and toes, a full-thickness graft suits a bed without exposed bone or tendon; otherwise use a local or regional flap.',
+  tip: 'Small fingertip defects without exposed bone (under about 1 cm²) often heal well by secondary intention or with a full-thickness graft.',
+  weight: 'Weight-bearing sole: grafts tend to break down here; glabrous local or regional flaps are preferred.'
+};
+function ruleFor(code) { return RULES.find(r => r.z.some(p => zoneMatches(code, p))) || null; }
+function laxWord(lax) { return lax < 1 ? 'tight' : lax < 2.5 ? 'only moderately mobile' : 'fairly lax'; }
+
 function zoneMatches(code, pattern) {
   const a = code.split('.'), b = pattern.split('.');
+  if (b.length > a.length) return false;
   return b.every((seg, i) => seg === '*' || seg === a[i]);
 }
+function flapList() {
+  return (typeof datasetMaster !== 'undefined' ? datasetMaster : []).filter(f => f.category !== 'System');
+}
 function findFlapByMatch(match) {
-  const list = (window.datasetMaster || (typeof datasetMaster !== 'undefined' ? datasetMaster : [])).filter(f => f.category !== 'System');
-  const hits = list.filter(f => String(f.name).toLowerCase().replace(/<[^>]*>/g, '').includes(match));
+  const hits = flapList().filter(f => String(f.name).toLowerCase().replace(/<[^>]*>/g, '').includes(match));
   hits.sort((a, b) => a.name.length - b.name.length);
   return hits[0] ? hits[0].name : null;
 }
@@ -484,38 +586,59 @@ function findFlaps() {
   const m = state.measure, area = m.areaCm2;
   const significant = m.zones.filter(z => z.f >= 0.12 || z.c >= 6);
   const codes = significant.map(z => ZONE_CODES[z.z]);
-  const unmapped = significant.some(z => z.z === 0);
   const local = [], free = [];
   for (const e of reach.flaps) {
     const name = findFlapByMatch(e.match);
-    const label = name || e.match.replace(/\b\w/g, c => c.toUpperCase());
-    if (!unmapped && e.zones.length && codes.every(c => e.zones.some(p => zoneMatches(c, p)))) {
-      local.push({ name, label, tier: e.tier, max: e.maxArea, fits: area <= e.maxArea });
-    }
-    if (e.free && area <= e.free) free.push({ name, label, max: e.free });
+    if (!name) continue;                       // only flaps that exist in the app
+    if (e.zones.length && codes.every(c => e.zones.some(p => zoneMatches(c, p)))) local.push({ name, tier: e.tier, max: e.maxArea, fits: area <= e.maxArea });
+    // free flaps: big enough, but not wildly oversized for a small defect
+    if (e.free && area <= e.free && e.free <= Math.max(40, area * 8)) free.push({ name, max: e.free });
   }
   local.sort((a, b) => (b.fits - a.fits) || (a.tier - b.tier) || (a.max - b.max));
   free.sort((a, b) => a.max - b.max);
-  return { local, free, unmapped, codes, significant };
+  return { local, free, codes, significant, rule: ruleFor(codes[0] || '') };
 }
 function showSheet() {
-  const r = findFlaps(), m = state.measure, body = ui.q('[data-r="sheetbody"]');
-  const tierName = t => t === 1 ? 'fasciocutaneous / perforator' : t === 2 ? 'muscle / musculocutaneous' : 'distant';
-  const item = (f, meta) => `<div class="dm-item${f.name ? '' : ' nolink'}" ${f.name ? `data-flap="${encodeURIComponent(f.name)}"` : ''}><div style="flex:1"><div class="dm-iname">${f.label}</div><div class="dm-imeta">${meta}</div></div>${f.name ? '<span>›</span>' : ''}</div>`;
-  let html = `<div class="dm-zones"><b>${m.areaCm2.toFixed(0)} cm²</b>, about ${m.L.toFixed(1)} × ${m.W.toFixed(1)} cm<br>` +
+  const r = findFlaps(), m = state.measure, body = ui.q('[data-r="sheetbody"]'), rule = r.rule;
+  const tierName = t => t === 1 ? 'fasciocutaneous / perforator / skin flap' : t === 2 ? 'muscle / musculocutaneous' : 'distant flap';
+  const item = (name, metaText, link) => `<div class="dm-item${link ? '' : ' nolink'}" ${link ? `data-flap="${encodeURIComponent(link)}"` : ''}><div style="flex:1"><div class="dm-iname">${name}</div>${metaText ? `<div class="dm-imeta">${metaText}</div>` : ''}</div>${link ? '<span>›</span>' : ''}</div>`;
+  let html = `<div class="dm-zones"><b>${m.areaCm2.toFixed(m.areaCm2 < 10 ? 1 : 0)} cm²</b>, about ${m.L.toFixed(1)} × ${m.W.toFixed(1)} cm<br>` +
     r.significant.map(z => `${zoneName(z.z)} <span style="color:#93a4bf">(${Math.round(z.f * 100)}%)</span>`).join('<br>') + '</div>';
-  if (r.unmapped) html += `<div class="dm-note">Part of this defect lies outside the lower limb. This prototype maps only the lower limb so far – other regions will follow.</div>`;
+  let step = 0;
+  if (rule) {
+    // 1. direct closure
+    if (m.W <= rule.lax * 1.6) {
+      step++;
+      const easy = m.W <= rule.lax;
+      html += `<div class="dm-step"><h4>${step} · Can it be closed directly?</h4><p>At about ${m.W.toFixed(1)} cm across, and with skin that is ${laxWord(rule.lax)} here, ${easy ? 'this may close directly – primarily, or as a delayed (secondary) closure after undermining.' : 'it may just close directly with wide undermining or as a delayed closure – check the laxity of this patient’s skin.'}</p></div>`;
+    }
+    // 2. skin graft
+    step++;
+    html += `<div class="dm-step"><h4>${step} · Will a skin graft do?</h4><p>${GRAFT[rule.graft]}</p></div>`;
+    // 3. local flaps
+    if (rule.local.length && m.areaCm2 <= rule.localMax * 1.5) {
+      step++;
+      html += `<div class="dm-sec">${step} · Local flaps for this site</div>` + (rule.note ? `<div class="dm-note">${rule.note}</div>` : '');
+      html += rule.local.map(k => { const t = LOCAL_TYPES[k], link = t.match ? findFlapByMatch(t.match) : null; return item(t.label, t.meta || '', link); }).join('');
+      if (m.areaCm2 > rule.localMax) html += `<div class="dm-note">This defect is at the upper end of what local flaps usually manage here.</div>`;
+    } else if (rule.note) html += `<div class="dm-note">${rule.note}</div>`;
+  }
+  // 4. named regional flaps
   const fits = r.local.filter(f => f.fits), tooSmall = r.local.filter(f => !f.fits);
-  html += `<div class="dm-sec">Local and regional flaps that reach this site</div>`;
-  html += fits.length ? fits.map(f => item(f, `${tierName(f.tier)} · usually up to ~${f.max} cm²`)).join('') : `<div class="dm-note">No pedicled flap in the current data covers a defect this size at this site.</div>`;
-  if (tooSmall.length) html += `<div class="dm-sec">Reach the site, but usually for smaller defects</div>` + tooSmall.map(f => item(f, `${tierName(f.tier)} · usually up to ~${f.max} cm²`)).join('');
-  // free flaps: the few whose usual size best suits this defect first; the rest behind "Show all"
-  const freeTop = r.free.slice(0, 5), freeRest = r.free.slice(5);
-  html += `<div class="dm-sec">Free flaps large enough${fits.length ? ' (if local options are unsuitable)' : ''}</div>` +
-    (r.free.length ? freeTop.map(f => item(f, `usually up to ~${f.max} cm²`)).join('') : '<div class="dm-note">None in the current data.</div>');
-  if (freeRest.length) html += `<div class="dm-more" data-more><button type="button" class="dm-tool" style="width:100%;margin-top:6px">Show all ${r.free.length} free flaps</button></div><div data-rest style="display:none">` +
-    freeRest.map(f => item(f, `usually up to ~${f.max} cm²`)).join('') + '</div>';
-  html += `<div class="dm-note">Prototype: the reach and size limits are a first draft and still need expert review. Always judge the actual defect, pedicle and patient.</div>`;
+  step++;
+  html += `<div class="dm-sec">${step} · Named flaps that reach this site</div>`;
+  html += fits.length ? fits.map(f => item(f.name, `${tierName(f.tier)} · usually up to ~${f.max} cm²`, f.name)).join('') : `<div class="dm-note">No named flap in the current draft covers a defect this size at this site.</div>`;
+  if (tooSmall.length) html += `<div class="dm-sec">Reach the site, but usually for smaller defects</div>` + tooSmall.map(f => item(f.name, `${tierName(f.tier)} · usually up to ~${f.max} cm²`, f.name)).join('');
+  // 5. free flaps
+  step++;
+  // when simpler options exist, free flaps wait behind a button
+  const simpler = fits.length > 0 || (rule && rule.local.length && m.areaCm2 <= rule.localMax);
+  const freeTop = simpler ? [] : r.free.slice(0, 5), freeRest = simpler ? r.free : r.free.slice(5);
+  html += `<div class="dm-sec">${step} · Free flaps${simpler ? ' – if the options above are unsuitable' : ' large enough'}</div>` +
+    (r.free.length ? freeTop.map(f => item(f.name, `usually up to ~${f.max} cm²`, f.name)).join('') : '<div class="dm-note">None in the current draft.</div>');
+  if (freeRest.length) html += `<div data-more><button type="button" class="dm-tool" style="width:100%;margin-top:.4em">${freeTop.length ? 'Show all ' + r.free.length + ' free flaps' : 'Show ' + r.free.length + ' free flap' + (r.free.length > 1 ? 's' : '')}</button></div><div data-rest style="display:none">` +
+    freeRest.map(f => item(f.name, `usually up to ~${f.max} cm²`, f.name)).join('') + '</div>';
+  html += `<div class="dm-note">Work in progress: these options are a first draft and still need expert review. Always judge the actual defect, the pedicle and the patient – plan in reverse.</div>`;
   body.innerHTML = html;
   const more = body.querySelector('[data-more]');
   if (more) more.onclick = () => { more.remove(); body.querySelector('[data-rest]').style.display = ''; };
@@ -578,6 +701,10 @@ function bindInput() {
   ui.root.querySelector('[data-a="view"]').onclick = () => frame(true);
   ui.root.querySelector('[data-a="close"]').onclick = () => close();
   ui.root.querySelector('[data-a="find"]').onclick = () => showSheet();
+  ui.root.querySelector('[data-a="note-ok"]').onclick = () => {
+    if (ui.q('[data-r="notehide"]').checked) { try { localStorage.setItem('dm_note_hide', '1'); } catch (e) {} }
+    ui.q('[data-r="note"]').classList.remove('show');
+  };
   ui.root.querySelector('[data-a="sheet-close"]').onclick = () => ui.q('[data-r="sheet"]').classList.remove('open');
   ui.root.querySelectorAll('[data-sex]').forEach(b => b.onclick = () => {
     if (s.sex === b.dataset.sex) return;
@@ -619,6 +746,8 @@ export async function open() {
   openFlag = true;
   ui.root.classList.add('open'); ui.root.setAttribute('aria-hidden', 'false');
   history.pushState({ view: 'defect' }, '', '#defect-mapper');
+  let hideNote = false; try { hideNote = localStorage.getItem('dm_note_hide') === '1'; } catch (e) {}
+  ui.q('[data-r="note"]').classList.toggle('show', !hideNote);
   requestAnimationFrame(() => { sizeRenderer(); state.dirty = true; });
   cancelAnimationFrame(state.raf); state.raf = requestAnimationFrame(loop);
   if (!state.mesh) {
@@ -639,5 +768,5 @@ export function sheetOpen() { return !!(ui && ui.q('[data-r="sheet"]').classList
 export function closeSheet() { if (ui) ui.q('[data-r="sheet"]').classList.remove('open'); }
 // for testing: the internal state and a helper that projects a body vertex to the screen
 export function _debug() {
-  return { state, meta, project(i) { const p = state.geo.getAttribute('position').array; const v = new THREE.Vector3(p[i * 3], p[i * 3 + 1], p[i * 3 + 2]).project(state.three.camera); const r = ui.canvas.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; } };
+  return { state, meta, measure, showSheet, paintColors, zoneView(on) { const s = state; if (!on) { s.mesh.material = s.three.skinMat; s.dirty = true; return; } const c = new Float32Array(s.B.n * 3), col = new THREE.Color(); for (let i = 0; i < s.B.n; i++) { const z = s.B.zone[i]; col.setHSL(((z * 0.618034) % 1), 0.75, z ? 0.55 : 0.15); c[i * 3] = col.r; c[i * 3 + 1] = col.g; c[i * 3 + 2] = col.b; } s.geo.setAttribute('color', new THREE.BufferAttribute(c, 3)); s.mesh.material = new THREE.MeshLambertMaterial({ vertexColors: true }); s.dirty = true; }, project(i) { const p = state.geo.getAttribute('position').array; const v = new THREE.Vector3(p[i * 3], p[i * 3 + 1], p[i * 3 + 2]).project(state.three.camera); const r = ui.canvas.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; } };
 }

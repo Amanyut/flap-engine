@@ -66,12 +66,15 @@
        they only shrink when the screen is too short to fit them, and any spare height stays empty below */
     .sidebar { width: clamp(296px, 50vw, 420px); max-width: 86vw; }
     .sidebar .sidebar-brand { padding: 16px 20px; }
-    .sidebar-system .menu-item.dm-entry { color: #f5c451; font-weight: 700; }
+    .region-tile.dm-tile { border-color: rgba(245, 196, 81, 0.55); }
+    .region-tile.dm-tile .region-icon { background-color: #f5c451; }
+    body.yellow-theme .region-tile.dm-tile { border-color: #141414; background: rgba(0, 0, 0, 0.08); }
+    body.yellow-theme .region-tile.dm-tile .region-icon { background-color: #141414; }
     .dm-entry-beta { display: inline-block; margin-left: 4px; padding: 0 5px; border-radius: 6px; background: #f5c451; color: #042551; font-size: 0.72rem; font-weight: 800; vertical-align: 1px; }
     .sidebar-menu.region-grid { container-type: size; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: max-content; align-content: start; gap: 10px; padding: 12px; }
     /* tiles fill their column; their height (--s) equals the column width (square), unless the screen is too short,
        in which case they get a third of the height left after the two wide bars */
-    .menu-item.region-tile { --w: clamp(58px, 13.5cqh, 86px); --s: max(80px, min(calc((100cqw - 10px) / 2), calc((100cqh - 40px - 2 * var(--w)) / 3))); height: var(--s); }
+    .menu-item.region-tile { --w: clamp(46px, 11.5cqh, 80px); --s: max(64px, min(calc((100cqw - 10px) / 2), calc((100cqh - 50px - 3 * var(--w)) / 3))); height: var(--s); }
     .menu-item.region-tile.wide { height: var(--w); }
     .menu-item.region-tile { margin: 0; padding: 4px 4px 6px; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; text-align: center; border-radius: 16px; background: rgba(148, 163, 184, 0.07); border: 1px solid #334155; color: #cbd5e1; font-size: clamp(0.75rem, calc((100cqw - 10px) * 0.052), 1.15rem); font-weight: 600; letter-spacing: 0.2px; line-height: 1.15; box-sizing: border-box; overflow: hidden; }
     .menu-item.region-tile.wide { grid-column: 1 / -1; flex-direction: row; justify-content: flex-start; gap: 14px; padding: 4px 18px 4px 10px; text-align: left; }
@@ -360,6 +363,52 @@
 
     .search-note { grid-column: 1 / -1; padding: 10px 14px; border-radius: 10px; background: rgba(245, 196, 81, 0.12); border: 1px solid rgba(245, 196, 81, 0.35); color: var(--text-dark); font-size: 0.92rem; line-height: 1.4; }
     .list-layout .search-note { border-radius: 0; border-width: 0 0 1px; }
+
+
+    /* ================= YELLOW THEME: bold cadmium yellow with black ================= */
+    body.yellow-theme {
+      --bg-main: #fff8cc; --panel-dark: #ffe600; --panel-light: #ffffff; --accent-blue: #141414;
+      --text-dark: #141414; --text-muted: #5f5638; --border-color: #ecd96a; --matrix-bg: #fff3a8; --matrix-card: #ffffff;
+      --brand-navy: #141414; --brand-flap: #ffe600;
+    }
+    body.yellow-theme .top-status-bar { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45); border-bottom: 2px solid #ffe600; }
+    body.yellow-theme .sidebar { color: #141414; }
+    body.yellow-theme .sidebar-brand { border-bottom-color: rgba(0, 0, 0, 0.15); }
+    body.yellow-theme .menu-item { color: #2a2a2a; }
+    body.yellow-theme .menu-item:hover { color: #000; background: rgba(0, 0, 0, 0.08); }
+    body.yellow-theme .menu-item.region-tile { background: rgba(255, 255, 255, 0.42); border-color: rgba(0, 0, 0, 0.2); color: #141414; }
+    body.yellow-theme .menu-item.region-tile:hover { background: rgba(255, 255, 255, 0.7); color: #000; }
+    body.yellow-theme .region-icon { background-color: #141414; }
+    body.yellow-theme .region-tile:hover .region-icon { background-color: #000; }
+    body.yellow-theme .menu-item.region-tile.active { background: #141414; border-color: #141414; color: #ffe600; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35); }
+    body.yellow-theme .region-tile.active .region-icon { background-color: #ffe600; }
+    body.yellow-theme .system-divider { color: #6b5d00; }
+    body.yellow-theme .sidebar-system, body.yellow-theme .sidebar-profile { border-top-color: rgba(0, 0, 0, 0.15); }
+    body.yellow-theme .sidebar-profile { background: rgba(0, 0, 0, 0.05); }
+    body.yellow-theme .profile-email { color: #141414; }
+    body.yellow-theme .btn-sidebar, body.yellow-theme .text-size-ctl button { border-color: rgba(0, 0, 0, 0.35); color: #141414; }
+    body.yellow-theme .btn-sidebar:hover { background: rgba(0, 0, 0, 0.1); color: #000; }
+    body.yellow-theme .btn-logout { border-color: #8f1d1d; color: #8f1d1d; }
+    body.yellow-theme .navbar { background: #ffe600; border-bottom-color: rgba(0, 0, 0, 0.14); }
+    body.yellow-theme .search-bar { background: #fffbe3; border-color: rgba(0, 0, 0, 0.18); }
+    body.yellow-theme .btn-outline { border-color: rgba(0, 0, 0, 0.3); background: rgba(255, 255, 255, 0.35); }
+    body.yellow-theme select { border-color: rgba(0, 0, 0, 0.2); }
+    body.yellow-theme .btn-primary, body.yellow-theme .matrix-fab, body.yellow-theme .login-container button:not(.link-btn) { background: #141414; color: #ffe600; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25); }
+    body.yellow-theme .flap-card { border-color: #ecd96a; box-shadow: 0 2px 6px rgba(120, 96, 0, 0.08); }
+    body.yellow-theme .flap-card:hover { border-color: #141414; }
+    body.yellow-theme .card-meta, body.yellow-theme .list-heading { color: #866a00; }
+    body.yellow-theme .row-label { color: #8a5300; border-bottom-color: rgba(138, 83, 0, 0.25); }
+    body.yellow-theme .dock-header { background: #141414; border-bottom-color: #ffe600; }
+    body.yellow-theme .matrix-table th { background: #ffe600; color: #141414; border-bottom-color: rgba(0, 0, 0, 0.15); box-shadow: 0 8px 18px -8px rgba(110, 90, 0, 0.45); }
+    body.yellow-theme .fp-header { background: #ffe600; border-bottom-color: rgba(0, 0, 0, 0.15); box-shadow: 0 8px 18px -8px rgba(110, 90, 0, 0.45); }
+    body.yellow-theme .fp-meta { color: #6b5600; }
+    body.yellow-theme .fp-icon-btn { border-color: rgba(0, 0, 0, 0.3); }
+    body.yellow-theme .fp-tab.active { background: #141414; border-color: #141414; color: #ffe600; }
+    body.yellow-theme .fp-section { border-color: #ecd96a; }
+    body.yellow-theme .system-page-view h2 { color: #141414; border-bottom-color: #ffe600; }
+    body.yellow-theme .fav-btn.on { color: #d18b00; }
+    body.yellow-theme .search-highlight { background: #141414; color: #ffe600; }
+    body.yellow-theme .list-layout { border-color: #ecd96a; }
 
     /* ---- SMALL TOUCHES ---- */
     .toast { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
@@ -833,13 +882,24 @@
       return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
+    // Themes cycle: light -> dark -> yellow
+    const THEMES = ['light', 'dark', 'yellow'];
+    function applyTheme(name) {
+      document.body.classList.toggle('dark-theme', name === 'dark');
+      document.body.classList.toggle('yellow-theme', name === 'yellow');
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', name === 'yellow' ? '#141414' : '#042551');
+    }
     function toggleTheme() {
-      const isDark = document.body.classList.toggle('dark-theme');
-      localStorage.setItem('flap_theme', isDark ? 'dark' : 'light');
+      let cur = 'light'; try { cur = localStorage.getItem('flap_theme') || 'light'; } catch (e) {}
+      const next = THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length];
+      applyTheme(next);
+      try { localStorage.setItem('flap_theme', next); } catch (e) {}
+      showToast(next === 'yellow' ? 'Yellow theme' : next === 'dark' ? 'Dark theme' : 'Light theme');
     }
 
     window.onload = function() {
-      if (localStorage.getItem('flap_theme') === 'dark') { document.body.classList.add('dark-theme'); }
+      applyTheme(localStorage.getItem('flap_theme') || 'light');
       const savedEmail = localStorage.getItem('flap_email');
       const savedToken = localStorage.getItem('flap_token');
       const cachedFlaps = localStorage.getItem('flap_data_cache');
@@ -1075,6 +1135,17 @@
       favTile.onclick = function() { filterCategory('FAVOURITES', favTile); };
       favTile.dataset.cat = 'FAVOURITES';
       chapterMenu.appendChild(favTile);
+
+      // Defect Mapper (prototype): paint a defect on a 3D body to see which flaps can cover it
+      const dmTile = makeRegionTile('Defect Mapper', true);
+      dmTile.classList.add('dm-tile');
+      dmTile.title = 'Paint a defect on a 3D body to see which flaps can cover it';
+      dmTile.querySelector('.region-icon').classList.remove('no-icon');
+      dmTile.querySelector('.region-icon').textContent = '';
+      dmTile.querySelector('.region-icon').style.setProperty('--icon', DM_ICON);
+      dmTile.querySelector('.region-label').insertAdjacentHTML('beforeend', '<span class="dm-entry-beta">β</span>');
+      dmTile.onclick = openDefectMapper;
+      chapterMenu.appendChild(dmTile);
       if (activeCategoryFilter === 'FAVOURITES') {
         document.querySelectorAll('#chapter-menu .menu-item').forEach(el => el.classList.remove('active'));
         favTile.classList.add('active');
@@ -1090,11 +1161,6 @@
         divider.innerText = "System";
         systemMenu.appendChild(divider);
         systemMenu.appendChild(ts);
-        const dm = document.createElement('div');
-        dm.className = 'menu-item dm-entry'; dm.title = 'Paint a defect on a 3D body to see which flaps can cover it';
-        dm.innerHTML = 'Defect Mapper<span class="dm-entry-beta">β</span>';
-        dm.onclick = openDefectMapper;
-        systemMenu.appendChild(dm);
 
         systemPages.forEach(page => {
            const cleanName = stripHTML(page.name).toLowerCase();
@@ -1718,6 +1784,7 @@
     function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms || 10); } catch (e) {} }
 
     // ---- DEFECT MAPPER (prototype, loaded on demand) ----
+    const DM_ICON = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\' fill=\'none\' stroke=\'white\' stroke-width=\'2.6\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><circle cx=\'32\' cy=\'9\' r=\'5\'/><path d=\'M24 18h16l2 16h-4l-1 24h-5l-1-17-1 17h-5l-1-24h-4z\'/><path d=\'M24 19l-9 14M40 19l9 14\'/><circle cx=\'40\' cy=\'48\' r=\'7.5\' stroke-dasharray=\'3.2 2.6\'/><path d=\'M40 38v-3M40 61v-3M30 48h-3M53 48h-3\'/></svg>')}")`;
     function openDefectMapper() {
       closeSidebarDrawer();
       if (window.defectMapper) { window.defectMapper.open(); return; }
