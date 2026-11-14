@@ -965,6 +965,12 @@
     body.offline .top-status-bar > .net-dot { display: block; }
     body.offline .toast { top: calc(var(--topbar-h) + 10px); }
 
+    /* ---- NO PRINTING ---- */
+    @media print {
+      body > * { display: none !important; }
+      body::before { content: 'Printing is not available for Amanyu’s Flapendium.'; display: block; padding: 40px; font: 600 16px sans-serif; color: #000; }
+    }
+
     /* ---- SMALL TOUCHES ---- */
     .toast-legacy { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
     .update-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; max-width: 560px; margin: 0 auto; z-index: 2500; display: none; align-items: center; gap: 12px; padding: 12px 12px 12px 16px; border-radius: 14px; background: #042551; color: #fff; border: 1px solid rgba(245, 196, 81, 0.45); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45); }
@@ -1507,7 +1513,6 @@
       if (needGate()) openGate();
       const savedEmail = localStorage.getItem('flap_email');
       const savedToken = localStorage.getItem('flap_token');
-      const cachedFlaps = localStorage.getItem('flap_data_cache');
 
       if (savedEmail && savedToken) {
         currentUserEmail = savedEmail;
@@ -1515,20 +1520,26 @@
         document.getElementById('action-btn').style.display = 'none';
         document.getElementById('login-desc').innerText = "Signing in...";
 
-        if (cachedFlaps) { initializeSystem(JSON.parse(cachedFlaps)); personalise(null, false); }
+        // the saved (encrypted) copy opens the app at once – but only within a week of the last online check
+        loadFlapCache().then(cached => {
+          if (!cached || document.getElementById('app-shell').style.display === 'flex') return;
+          if (offlineExpired()) { showOfflineExpired(); return; }
+          initializeSystem(cached); personalise(null, false);
+        });
 
         fetch(API_URL + "?action=auto_login&email=" + encodeURIComponent(savedEmail) + "&token=" + encodeURIComponent(savedToken))
           .then(res => res.json())
           .then(data => { 
             if (data.flaps && !data.locked) {
-                localStorage.setItem('flap_data_cache', JSON.stringify(data.flaps));
+                markVerified(); saveFlapCache(data.flaps);
                 applyServerFavourites(data.favourites);
                 initializeSystem(data.flaps);
                 personalise(data, true);
             } else { logOut(); } 
           })
           .catch(() => {
-              if(!cachedFlaps) {
+              if (hasFlapCache()) { if (offlineExpired()) showOfflineExpired(); }
+              else {
                  document.getElementById('login-desc').innerText = "Unable to reach the server. Please enter your email address to receive a new OTP.";
                  const emailBox = document.getElementById('email-input');
                  emailBox.style.display = 'inline-block';
@@ -1647,7 +1658,7 @@
             clearInterval(resendTimer);
             localStorage.setItem('flap_email', currentUserEmail);
             localStorage.setItem('flap_token', data.token);
-            localStorage.setItem('flap_data_cache', JSON.stringify(data.flaps));
+            markVerified(); saveFlapCache(data.flaps);
             applyServerFavourites(data.favourites);
             initializeSystem(data.flaps);
             personalise(data, true);
@@ -1661,7 +1672,7 @@
 
     function logOut() {
         const finish = () => {
-            ['flap_email', 'flap_token', 'flap_data_cache', 'flap_favs', 'flap_favs_dirty', 'flap_state', 'flap_profile', 'flap_msgs'].forEach(k => localStorage.removeItem(k));
+            ['flap_email', 'flap_token', 'flap_data_cache', 'flap_data_enc', 'flap_verified_at', 'flap_favs', 'flap_favs_dirty', 'flap_state', 'flap_profile', 'flap_msgs'].forEach(k => localStorage.removeItem(k));
             location.reload();
         };
         // Save any unsaved favourites first (waits at most 3 seconds)
@@ -2688,7 +2699,7 @@
         .then(res => res.json())
         .then(data => {
           if (!data.flaps || data.locked) return false;
-          localStorage.setItem('flap_data_cache', JSON.stringify(data.flaps));
+          markVerified(); saveFlapCache(data.flaps);
           applyServerFavourites(data.favourites);
           initializeSystem(data.flaps);
           personalise(data, true);
@@ -3710,6 +3721,62 @@
       if (window.visualViewport) window.visualViewport.addEventListener('resize', () => setTimeout(reset, 250));
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reset(); });
     })();
+
+
+    // ================= CONTENT PROTECTION =================
+    // The copy kept on the phone for offline use is compressed and encrypted (AES-GCM, key tied to this login),
+    // and it opens offline only for 7 days after the last successful online check.
+    const FLAP_CACHE_KEY = 'flap_data_enc', OFFLINE_DAYS = 7;
+    function markVerified() { try { localStorage.setItem('flap_verified_at', String(Date.now())); } catch (e) {} }
+    function offlineExpired() {
+      let v = 0; try { v = Number(localStorage.getItem('flap_verified_at') || 0); } catch (e) {}
+      if (!v) { markVerified(); return false; }   // first opening after this update
+      return Date.now() - v > OFFLINE_DAYS * 864e5;
+    }
+    function showOfflineExpired() {
+      document.getElementById('login-desc').innerText = 'For your security, Amanyu’s Flapendium checks in online once a week. Please connect to the internet – the app will open by itself as soon as you are online.';
+      window.addEventListener('online', () => location.reload(), { once: true });
+    }
+    function hasFlapCache() { try { return !!(localStorage.getItem(FLAP_CACHE_KEY) || localStorage.getItem('flap_data_cache')); } catch (e) { return false; } }
+    async function cacheKey() {
+      const tok = localStorage.getItem('flap_token') || '', em = localStorage.getItem('flap_email') || '';
+      const raw = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(tok + '|' + em + '|flapendium-cache-v1'));
+      return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+    }
+    function toB64(buf) { const b = new Uint8Array(buf); let s = ''; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); }
+    function fromB64(s) { const bin = atob(s), out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; }
+    async function gzip(bytes, inflate) {
+      if (typeof CompressionStream === 'undefined') return null;
+      const stream = new Blob([bytes]).stream().pipeThrough(inflate ? new DecompressionStream('gzip') : new CompressionStream('gzip'));
+      return new Uint8Array(await new Response(stream).arrayBuffer());
+    }
+    async function saveFlapCache(flaps) {
+      try {
+        if (!window.crypto || !crypto.subtle) throw new Error('no crypto');
+        let bytes = new TextEncoder().encode(JSON.stringify(flaps)), mode = 'p';
+        const z = await gzip(bytes, false); if (z) { bytes = z; mode = 'z'; }
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, await cacheKey(), bytes);
+        localStorage.setItem(FLAP_CACHE_KEY, mode + '.' + toB64(iv) + '.' + toB64(ct));
+        localStorage.removeItem('flap_data_cache');
+      } catch (e) {
+        try { localStorage.setItem('flap_data_cache', JSON.stringify(flaps)); } catch (e2) {}
+      }
+    }
+    async function loadFlapCache() {
+      try {
+        const s = localStorage.getItem(FLAP_CACHE_KEY);
+        if (s) {
+          const parts = s.split('.');
+          let bytes = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(parts[1]) }, await cacheKey(), fromB64(parts[2])));
+          if (parts[0] === 'z') bytes = await gzip(bytes, true);
+          return JSON.parse(new TextDecoder().decode(bytes));
+        }
+        const plain = localStorage.getItem('flap_data_cache');   // an older, unencrypted copy is converted once
+        if (plain) { const f = JSON.parse(plain); saveFlapCache(f); return f; }
+      } catch (e) {}
+      return null;
+    }
 
     // ---- DEFECT MAPPER (prototype, loaded on demand) ----
     const DM_ICON = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\' fill=\'none\' stroke=\'white\' stroke-width=\'2.6\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><circle cx=\'32\' cy=\'9\' r=\'5\'/><path d=\'M24 18h16l2 16h-4l-1 24h-5l-1-17-1 17h-5l-1-24h-4z\'/><path d=\'M24 19l-9 14M40 19l9 14\'/><circle cx=\'40\' cy=\'48\' r=\'7.5\' stroke-dasharray=\'3.2 2.6\'/><path d=\'M40 38v-3M40 61v-3M30 48h-3M53 48h-3\'/></svg>')}")`;
