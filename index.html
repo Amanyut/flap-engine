@@ -484,8 +484,7 @@
     .empty-state .es-title { font-size: 1.15rem; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
     .empty-state .es-text { font-size: 0.95rem; line-height: 1.5; max-width: 340px; margin: 0 auto; }
 
-    .title-hit { background: linear-gradient(transparent 58%, rgba(245, 196, 81, 0.6) 58%); color: inherit; border-radius: 2px; padding: 0 1px; }
-    body.yellow-theme .title-hit { background: linear-gradient(transparent 58%, rgba(14, 124, 134, 0.3) 58%); }
+    .search-highlight.title-hit { padding: 0 2px; font-weight: inherit; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
     .dym-chip { display: inline-block; margin: 0 2px; padding: 3px 12px; border-radius: 999px; border: 1px solid var(--accent-blue); background: var(--panel-light); color: var(--accent-blue); font: inherit; font-weight: 700; cursor: pointer; animation: chipIn 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
     @keyframes chipIn { from { opacity: 0; transform: scale(0.6); } }
 
@@ -978,6 +977,20 @@
       body > * { display: none !important; }
       body::before { content: 'Printing is not available for Amanyu’s Flapendium.'; display: block; padding: 40px; font: 600 16px sans-serif; color: #000; }
     }
+
+    /* ---- RECENT SEARCHES: light, translucent glass ---- */
+    .search-recent { background: rgba(255, 255, 255, 0.5); border-color: rgba(255, 255, 255, 0.6); -webkit-backdrop-filter: blur(12px) saturate(1.3); backdrop-filter: blur(12px) saturate(1.3);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 12px 28px rgba(0, 0, 0, 0.12); }
+    .search-recent .sr-chip { background: rgba(255, 255, 255, 0.72); border-color: rgba(15, 23, 42, 0.12); }
+    body.dark-theme .search-recent { background: rgba(17, 24, 39, 0.5); border-color: rgba(255, 255, 255, 0.12); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 12px 28px rgba(0, 0, 0, 0.35); }
+    body.dark-theme .search-recent .sr-chip { background: rgba(30, 41, 59, 0.75); border-color: rgba(255, 255, 255, 0.12); }
+    body.yellow-theme .search-recent { background: rgba(251, 250, 246, 0.5); }
+    body.yellow-theme .search-recent .sr-chip { background: rgba(255, 255, 255, 0.75); border-color: rgba(14, 59, 67, 0.18); }
+
+    /* ---- SELECT ALL: a toggle that remembers what it ticked ---- */
+    .icon-btn#select-all-btn.on { background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35); animation: selPop 0.4s cubic-bezier(0.2, 1.4, 0.4, 1); }
+    body.yellow-theme .icon-btn#select-all-btn.on { background: #0e3b43; border-color: #0e3b43; color: #fff000; box-shadow: 0 6px 16px rgba(14, 59, 67, 0.35); }
+    @keyframes selPop { 0% { transform: scale(0.85); } 60% { transform: scale(1.08); } 100% { transform: scale(1); } }
 
     /* ---- SMALL TOUCHES ---- */
     .toast-legacy { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
@@ -2054,7 +2067,7 @@
       canvas.className = isList ? 'list-layout' : 'grid-layout';
       const toggleBtn = document.getElementById('view-toggle-btn');
       if (toggleBtn) toggleBtn.innerHTML = isList ? VIEW_CARDS_SVG : VIEW_LIST_SVG;
-      renderSubChips(); updateSortUI();
+      renderSubChips(); updateSortUI(); updateSelectAllUI();
       document.getElementById('search-clear').classList.toggle('visible', searchQuery !== '');
 
       let viewData = getFilteredFlaps();
@@ -2292,12 +2305,37 @@
       updateCompareButton();
     }
 
+    // Select all ticks every flap on screen and remembers which ones it ticked; pressed again (same screen),
+    // it unticks only those, leaving the flaps you had picked yourself
+    let selAll = { ctx: '', added: [] };
+    function viewCtx() {
+      const sub = document.getElementById('subregion-dropdown');
+      return [activeCategoryFilter, sub && sub.style.display !== 'none' ? sub.value : '', document.getElementById('search-input').value.trim().toLowerCase()].join('|');
+    }
+    const plural = n => n + ' flap' + (n === 1 ? '' : 's');
     function selectAllInView() {
-      const before = selectedFlaps.size;
-      getFilteredFlaps().forEach(flap => selectedFlaps.add(flap.name));
-      renderWorkspaceGrid(); updateCompareButton();
-      buzz(10);
-      if (selectedFlaps.size > before) showToast((selectedFlaps.size - before) + ' flap' + (selectedFlaps.size - before === 1 ? '' : 's') + ' selected');
+      const ctx = viewCtx();
+      if (selAll.added.length && selAll.ctx === ctx && selAll.added.some(n => selectedFlaps.has(n))) {
+        let n = 0;
+        selAll.added.forEach(nm => { if (selectedFlaps.delete(nm)) n++; });
+        selAll = { ctx: '', added: [] };
+        renderWorkspaceGrid(); updateCompareButton(); buzz(8);
+        showToast(plural(n) + ' unselected');
+        return;
+      }
+      const added = [];
+      getFilteredFlaps().forEach(f => { if (!selectedFlaps.has(f.name)) { selectedFlaps.add(f.name); added.push(f.name); } });
+      selAll = added.length ? { ctx: ctx, added: added } : { ctx: '', added: [] };
+      renderWorkspaceGrid(); updateCompareButton(); buzz(10);
+      showToast(added.length ? plural(added.length) + ' selected' : 'Every flap here is already selected');
+    }
+    function updateSelectAllUI() {
+      const b = document.getElementById('select-all-btn');
+      if (!b) return;
+      const on = selAll.added.length > 0 && selAll.ctx === viewCtx() && selAll.added.some(n => selectedFlaps.has(n));
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.title = on ? 'Undo select all' : 'Select all';
     }
 
     function deselectAll() {
@@ -2314,10 +2352,11 @@
       const count = selectedFlaps.size;
       document.getElementById('fab-count').innerText = count;
       if (count === 0) {
+        selAll = { ctx: '', added: [] };
         isMatrixMinimized = false;
         document.getElementById('matrix-dock').classList.remove('open');
       }
-      updateTray();
+      updateTray(); updateSelectAllUI();
     }
 
     // A ticked flap opens the comparison matrix of all ticked flaps; any other flap opens its own page
@@ -2570,7 +2609,7 @@
       if (!toks.length) return;
       const re = new RegExp('(' + toks.sort((a, b) => b.length - a.length).map(escapeRegExp).join('|') + ')', 'gi');
       canvas.querySelectorAll('.card-title, .list-title').forEach(el => {
-        el.innerHTML = escapeAttr(el.textContent).replace(re, '<mark class="title-hit">$1</mark>');
+        el.innerHTML = escapeAttr(el.textContent).replace(re, '<mark class="search-highlight title-hit">$1</mark>');
       });
     }
 
@@ -3406,9 +3445,13 @@
       if (!box || input.value.trim() || !list.length || document.activeElement !== input) { hideRecentSearches(); return; }
       box.innerHTML = '<div class="sr-head"><span>Recent searches</span><button type="button" class="sr-clear">Clear</button></div><div class="sr-chips">' +
         list.map((q, i) => '<button type="button" class="sr-chip" data-i="' + i + '">' + escapeAttr(q) + '</button>').join('') + '</div>';
-      box.querySelectorAll('.sr-chip').forEach(b => b.onmousedown = b.ontouchstart = ev => ev.preventDefault());
-      box.querySelectorAll('.sr-chip').forEach(b => b.onclick = () => { input.value = list[Number(b.dataset.i)]; buzz(6); onSearchInput(); hideRecentSearches(); });
-      box.querySelector('.sr-clear').onmousedown = ev => ev.preventDefault();
+      // the search box keeps focus while a chip is pressed; the chip acts as soon as the finger lifts
+      const keep = ev => ev.preventDefault();
+      box.querySelectorAll('.sr-chip').forEach(b => {
+        b.addEventListener('pointerdown', keep);
+        b.onclick = () => { input.value = list[Number(b.dataset.i)]; buzz(6); onSearchInput(); hideRecentSearches(); };
+      });
+      box.querySelector('.sr-clear').addEventListener('pointerdown', keep);
       box.querySelector('.sr-clear').onclick = () => { try { localStorage.removeItem('flap_recent_q'); } catch (e) {} hideRecentSearches(); };
       box.classList.add('show');
     }
@@ -3417,7 +3460,7 @@
       const input = document.getElementById('search-input');
       if (!input) return;
       input.addEventListener('focus', showRecentSearches);
-      input.addEventListener('blur', () => setTimeout(hideRecentSearches, 150));
+      input.addEventListener('blur', () => setTimeout(hideRecentSearches, 300));
       input.addEventListener('keydown', e => { if (e.key === 'Enter') { saveRecentSearch(input.value); input.blur(); } });
     })();
 

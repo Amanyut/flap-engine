@@ -73,7 +73,7 @@
       text: 'Type a flap’s name, an artery, a nerve, an author – even fragments such as <b>“rev sur”</b>. The words you type are highlighted in the results, and your <b>recent searches</b> appear when you tap the empty box.<br>Spelling slips are forgiven, and a <b>Did you mean…?</b> button offers the right spelling.' },
 
     { target: () => $('#view-toggle-btn'), title: 'Cards or List', tryIt: true,
-      text: 'This button switches between <b>Cards</b> and a numbered <b>List</b>, like a book’s contents page. Tap it to try.<br><span class="tg-tip">The <b>☑</b> button beside it selects every flap on the screen for comparison.</span>',
+      text: 'This button switches between <b>Cards</b> and a numbered <b>List</b>, like a book’s contents page. Tap it to try.<br><span class="tg-tip">The <b>☑</b> button beside it ticks every flap on the screen for comparison – tap it again to untick just those, keeping the ones you picked yourself.</span>',
       onStart: () => { mem.view = viewMode; }, action: () => viewMode !== mem.view },
 
     { target: firstUnticked, title: 'Press and hold to peek', tryIt: true,
