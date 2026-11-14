@@ -414,6 +414,7 @@
     if (i >= STEPS.length) { end(true); return; }
     if (i < 0) i = 0;
     idx = i;
+    if (i === FINAL && window.sfx) window.sfx('finish');
     const s = STEPS[idx];
     mem = Object.assign({}, mem, { offSince: 0, recoverAt: 0 });
     try { ensureScreen(stepScreen(s)); } catch (e) {}
@@ -455,7 +456,7 @@
     document.documentElement.classList.remove('tg-room');
     if (root) root.classList.remove('tg-on');
     try { localStorage.setItem(DONE_KEY, '1'); } catch (e) {}
-    if (finished) { closeSidebar(); if (window.sfx) window.sfx('finish'); }
+    if (finished) { closeSidebar(); if (window.sfx) window.sfx('done'); }
   }
 
   // First login on this device: start once the opening animation has finished

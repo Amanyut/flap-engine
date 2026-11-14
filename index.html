@@ -999,6 +999,14 @@
     .fp-section.fp-flash { animation: fpFlash 1.2s ease-out; }
     @keyframes fpFlash { 0% { box-shadow: inset 3px 0 0 var(--kind, transparent), 0 0 0 3px rgba(245, 196, 81, 0.85); } 100% { box-shadow: inset 3px 0 0 var(--kind, transparent), 0 0 0 0 rgba(245, 196, 81, 0); } }
 
+    /* ---- page turn and checkbox wave ---- */
+    .fp-leaf { z-index: 40; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 0 24px rgba(0, 0, 0, 0.25); will-change: transform; }
+    .fp-leaf-shade { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+    .fp-leaf-cast { z-index: 39; }
+    #flap-page > .fp-nav { z-index: 41; }
+    input[type="checkbox"].cb-pop { animation: cbPop 0.3s cubic-bezier(0.2, 1.6, 0.4, 1); }
+    @keyframes cbPop { 0% { transform: scale(0.55); } 60% { transform: scale(1.3); } 100% { transform: scale(1); } }
+
     /* ---- SMALL TOUCHES ---- */
     .toast-legacy { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
     .update-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; max-width: 560px; margin: 0 auto; z-index: 2500; display: none; align-items: center; gap: 12px; padding: 12px 12px 12px 16px; border-radius: 14px; background: #042551; color: #fff; border: 1px solid rgba(245, 196, 81, 0.45); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45); }
@@ -1148,7 +1156,7 @@
     <div class="cmp-tray" id="cmp-tray" aria-live="polite">
       <button type="button" class="ct-stack" id="ct-stack" aria-label="Show the selected flaps"></button>
       <div class="ct-info"><b id="ct-count">0</b><span>selected</span></div>
-      <button type="button" class="ct-btn ct-clear" id="clear-btn" onclick="deselectAll()">Clear</button>
+      <button type="button" class="ct-btn ct-clear" id="clear-btn" onclick="eraseSelection()">Clear</button>
       <button type="button" class="ct-btn ct-go" id="launch-matrix-btn" onclick="openMatrix()">Compare</button>
     </div>
     <div class="matrix-fab" id="matrix-fab" onclick="openMatrix()">
@@ -2310,7 +2318,7 @@
       buzz(8);
       if (checkbox.checked) selectedFlaps.add(flapName);
       else selectedFlaps.delete(flapName);
-      sfx(checkbox.checked ? 'tick' : 'untick', selectedFlaps.size);
+      sfx(checkbox.checked ? 'tick' : 'untick');
       updateCompareButton();
     }
 
@@ -2327,15 +2335,16 @@
       if (selAll.added.length && selAll.ctx === ctx && selAll.added.some(n => selectedFlaps.has(n))) {
         let n = 0;
         selAll.added.forEach(nm => { if (selectedFlaps.delete(nm)) n++; });
+        const gone = new Set(selAll.added);
         selAll = { ctx: '', added: [] };
-        renderWorkspaceGrid(); updateCompareButton(); buzz(8); sfx('unsel');
+        renderWorkspaceGrid(); updateCompareButton(); buzz(8); sfx('unsel', checkWave(gone, false));
         showToast(plural(n) + ' unselected');
         return;
       }
       const added = [];
       getFilteredFlaps().forEach(f => { if (!selectedFlaps.has(f.name)) { selectedFlaps.add(f.name); added.push(f.name); } });
       selAll = added.length ? { ctx: ctx, added: added } : { ctx: '', added: [] };
-      renderWorkspaceGrid(); updateCompareButton(); buzz(10); if (added.length) sfx('selall');
+      renderWorkspaceGrid(); updateCompareButton(); buzz(10); if (added.length) sfx('selall', checkWave(new Set(added), true));
       showToast(added.length ? plural(added.length) + ' selected' : 'Every flap here is already selected');
     }
     function updateSelectAllUI() {
@@ -2514,8 +2523,10 @@
       const order = viewOrder(), idx = order.indexOf(flapPageName), target = order[idx + d];
       if (idx < 0) return;
       if (!target) { edgeBounce(d); return; }
-      sfx('swipe', d);
+      const turned = pageTurn(d);
+      sfx('page', d);
       renderFlapPage(target, d);
+      if (turned) document.getElementById('fp-inner').classList.remove('from-left', 'from-right');
       history.replaceState({ view: 'flap' }, '', flapHash(target));
       buzz(6); saveStateSoon();
     }
@@ -3739,7 +3750,7 @@
       const r = el.getBoundingClientRect();
       const fromTouch = tilePress.el === el && Date.now() - tilePress.t < 1500;
       if (!fromTouch) return;   // only a real tap animates (not the screen restored on opening)
-      sfx('tile');
+      sfx('tile', { root: tileKey(el), pan: Math.max(-0.8, Math.min(0.8, (r.left + r.width / 2) / innerWidth * 2 - 1)) });
       const x = fromTouch ? tilePress.x - r.left : r.width / 2, y = fromTouch ? tilePress.y - r.top : r.height / 2;
       const size = 2.1 * Math.hypot(Math.max(x, r.width - x), Math.max(y, r.height - y));
       el.querySelectorAll('.tile-ripple, .tile-ring, .tile-spark').forEach(n => n.remove());
@@ -3840,7 +3851,7 @@
     // Short, soft sounds made by the phone itself (no sound files, works offline).
     // Played only after a deliberate tap or when the connection changes. 🔊 Sounds in the side panel mutes them (flap_sound = 'off').
     const SFX = (function () {
-      let A = null, M = null, NB = null;
+      let A = null, M = null, NB = null, RV = null;
       const on = () => { try { return localStorage.getItem('flap_sound') !== 'off'; } catch (e) { return true; } };
       function unlock() {
         if (!on()) return;
@@ -3859,13 +3870,32 @@
         return false;
       }
       function out(pan) { if (pan === undefined || !A.createStereoPanner) return M; const p = A.createStereoPanner(); p.pan.value = pan; p.connect(M); return p; }
+      // a panner that glides from one side to the other (for sounds that travel with an animation)
+      function sweep(p0, p1, t, d) {
+        if (!A.createStereoPanner) return M;
+        const p = A.createStereoPanner(), T = A.currentTime + t;
+        p.pan.setValueAtTime(p0, T); p.pan.linearRampToValueAtTime(p1, T + d); p.connect(M); return p;
+      }
+      // a soft hall made on the phone (decaying noise), for the shimmering tails
+      function verb() {
+        if (RV) return RV;
+        const len = Math.floor(A.sampleRate * 2.2), ir = A.createBuffer(2, len, A.sampleRate);
+        for (let ch = 0; ch < 2; ch++) { const c = ir.getChannelData(ch); for (let i = 0; i < len; i++) c[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); }
+        RV = A.createConvolver(); RV.buffer = ir;
+        const g = A.createGain(); g.gain.value = 0.55; RV.connect(g); g.connect(M);
+        return RV;
+      }
+      function dest(g, o) {
+        g.connect(o.node || out(o.pan));
+        if (o.wet) { const s = A.createGain(); s.gain.value = o.wet; g.connect(s); s.connect(verb()); }
+      }
       function tone(f, t, d, o) {
         o = o || {}; const T = A.currentTime + t, os = A.createOscillator(), g = A.createGain();
         os.type = o.type || 'sine'; os.frequency.setValueAtTime(f, T);
         if (o.to) os.frequency.exponentialRampToValueAtTime(o.to, T + d);
         const v = o.vol || 0.2;
         g.gain.setValueAtTime(0.0001, T); g.gain.exponentialRampToValueAtTime(v, T + (o.att || 0.006)); g.gain.exponentialRampToValueAtTime(0.0001, T + d);
-        os.connect(g); g.connect(out(o.pan)); os.start(T); os.stop(T + d + 0.02);
+        os.connect(g); dest(g, o); os.start(T); os.stop(T + d + 0.02);
       }
       function nbuf() { if (!NB) { const n = A.sampleRate; NB = A.createBuffer(1, n, A.sampleRate); const c = NB.getChannelData(0); for (let i = 0; i < n; i++) c[i] = Math.random() * 2 - 1; } return NB; }
       function noise(t, d, o) {
@@ -3874,7 +3904,7 @@
         if (o.to) f.frequency.exponentialRampToValueAtTime(o.to, T + d);
         const v = o.vol || 0.2;
         g.gain.setValueAtTime(0.0001, T); g.gain.exponentialRampToValueAtTime(v, T + (o.att || 0.004)); g.gain.exponentialRampToValueAtTime(0.0001, T + d);
-        s.connect(f); f.connect(g); g.connect(out(o.pan)); s.start(T, Math.random() * 0.5); s.stop(T + d + 0.02);
+        s.connect(f); f.connect(g); dest(g, o); s.start(T, Math.random() * 0.5); s.stop(T + d + 0.02);
       }
       // a songbird call: a tiny chirp, then a whistle that holds, bends smoothly into the second note
       // (with a small overshoot) and ends in a soft vibrato
@@ -3907,20 +3937,57 @@
       const S = {
         offline() { bird(1480, 740); },
         online() { bird(740, 1480); },
-        deal(n) { n = Math.max(2, Math.min(6, n || 5)); for (let i = 0; i < n; i++) { const t = i * 0.075, p = -0.6 + 1.2 * i / (n - 1); noise(t, 0.07, { f: 3200, to: 1400, q: 0.9, vol: 0.5, pan: p }); tone(170, t + 0.03, 0.06, { vol: 0.12, pan: p }); } },
+        // one flick per card, on the same 45 ms beat the cards fly out on
+        deal(n) { n = Math.max(1, Math.min(10, n || 5)); for (let i = 0; i < n; i++) { const t = 0.015 + i * 0.045, p = n > 1 ? -0.6 + 1.2 * i / (n - 1) : 0; noise(t, 0.05, { f: 3200, to: 1500, q: 0.9, vol: 0.45, pan: p }); tone(180, t + 0.02, 0.045, { vol: 0.1, pan: p }); } },
         gather() { for (let i = 0; i < 3; i++) noise(i * 0.05, 0.05, { f: 1800, to: 2800, q: 0.9, vol: 0.22, pan: 0.5 - i * 0.5 }); },
         open() { noise(0, 0.3, { f: 350, to: 2600, q: 1.4, vol: 0.22, att: 0.08 }); tone(392, 0, 0.28, { to: 587, vol: 0.05, att: 0.06 }); },
-        close() { noise(0, 0.26, { f: 2400, to: 320, q: 1.4, vol: 0.22, att: 0.03 }); tone(587, 0, 0.22, { to: 392, vol: 0.05 }); tone(140, 0.22, 0.08, { vol: 0.14 }); },
-        swipe(d) { const p = d < 0 ? -0.5 : 0.5; noise(0, 0.18, { f: 900, to: 2800, q: 0.7, vol: 0.2, att: 0.03, pan: p }); noise(0.06, 0.16, { f: 2000, to: 700, q: 0.7, vol: 0.12, pan: -p * 0.8 }); },
-        tile() { noise(0, 0.35, { f: 600, to: 2600, q: 1.2, vol: 0.16, att: 0.1 }); tone(523, 0.05, 0.3, { to: 784, vol: 0.06, att: 0.08 }); tone(196, 0.38, 0.12, { vol: 0.16 }); },
-        tick(n) { const f = 880 * Math.pow(1.0595, Math.min(14, Math.max(0, (n || 1) - 1)) * 2); tone(f, 0, 0.05, { type: 'square', vol: 0.05 }); noise(0, 0.025, { ft: 'highpass', f: 4000, vol: 0.12 }); },
+        close() { noise(0, 0.26, { f: 2400, to: 320, q: 1.4, vol: 0.22, att: 0.03 }); tone(587, 0, 0.22, { to: 392, vol: 0.05 }); },
+        // a paper page turning (0.56 s, with the page-turn animation): it lifts with a soft rustle,
+        // sweeps across with an airy swish and settles with a gentle papery fwump, travelling across the stereo field
+        page(d) {
+          const fwd = d >= 0, pn = sweep(fwd ? 0.45 : -0.45, fwd ? -0.45 : 0.45, 0, 0.5);
+          noise(0, 0.34, { f: 900, to: 2400, q: 0.8, vol: 0.13, att: 0.12, node: pn });
+          for (let i = 0; i < 6; i++) noise(0.04 + Math.random() * 0.26, 0.014, { ft: 'highpass', f: 4500, vol: 0.05, node: pn });
+          noise(0.16, 0.28, { f: 2600, to: 1100, q: 0.6, vol: 0.2, att: 0.09, node: pn });
+          noise(0.45, 0.13, { ft: 'lowpass', f: 520, q: 0.7, vol: 0.12, att: 0.012 });
+        },
+        // choosing a region: each chapter has its own key. The tap is a droplet, the colour flooding the tile
+        // is a rising liquid swell over a low chord, the white ring is a glassy shimmer, the icon lifting off
+        // glides up, and as it grows towards the centre and dissolves, the chapter's chord blooms and drifts
+        // to the middle of the stereo field, leaving a soft hall tail
+        tile(o) {
+          o = o || {}; const r = o.root || 261.63, p0 = o.pan === undefined ? -0.5 : o.pan;
+          tone(1100, 0, 0.06, { to: 520, vol: 0.12, pan: p0 });                                   // droplet at the finger
+          noise(0, 0.015, { ft: 'highpass', f: 5000, vol: 0.05, pan: p0 });
+          noise(0.01, 0.62, { ft: 'lowpass', f: 300, to: 3200, q: 2.5, vol: 0.11, att: 0.25, pan: p0, wet: 0.2 });   // colour floods in
+          tone(r / 2, 0.02, 0.75, { type: 'triangle', vol: 0.07, att: 0.3, pan: p0, wet: 0.3 });
+          tone(r * 0.75, 0.04, 0.72, { type: 'triangle', vol: 0.05, att: 0.3, pan: p0, wet: 0.3 });
+          tone(r * 4, 0.05, 0.75, { to: r * 4.24, vol: 0.035, att: 0.02, pan: p0, wet: 0.5 });     // the white ring
+          tone(r * 6, 0.08, 0.7, { to: r * 6.36, vol: 0.02, att: 0.02, pan: p0, wet: 0.5 });
+          const lift = sweep(p0, p0 * 0.5, 0.52, 0.45);                                             // the icon lifts off
+          tone(r, 0.52, 0.5, { to: r * 1.5, vol: 0.06, att: 0.15, node: lift, wet: 0.3 });
+          noise(0.52, 0.5, { f: 800, to: 3000, q: 1, vol: 0.07, att: 0.2, node: lift, wet: 0.2 });
+          [1, 1.26, 1.5, 1.888, 2.245].forEach((m, i) => {                                           // it grows, dissolves – the chord blooms
+            const pan = p0 * 0.4 * (1 - i / 4);
+            tone(r * 2 * m, 0.92 + i * 0.045, 1.1, { vol: 0.045, att: 0.03, pan: pan, wet: 0.6 });
+          });
+          noise(0.95, 0.7, { f: 4000, to: 8000, q: 0.5, vol: 0.04, att: 0.1, wet: 0.4 });
+          tone(r * 8, 1.3, 0.3, { vol: 0.012, pan: p0, wet: 0.6 });                                 // the tile's icon returns
+        },
+        tick() { tone(880, 0, 0.05, { type: 'square', vol: 0.05 }); noise(0, 0.025, { ft: 'highpass', f: 4000, vol: 0.12 }); },
         untick() { tone(620, 0, 0.05, { type: 'triangle', vol: 0.1 }); noise(0, 0.02, { ft: 'highpass', f: 3000, vol: 0.06 }); },
-        selall() { for (let i = 0; i < 9; i++) tone(900 * Math.pow(1.09, i), i * 0.028, 0.04, { type: 'square', vol: 0.04 }); tone(1760, 0.27, 0.18, { vol: 0.08 }); },
-        unsel() { for (let i = 0; i < 9; i++) tone(1900 / Math.pow(1.09, i), i * 0.028, 0.04, { type: 'square', vol: 0.04 }); },
+        // one note per checkbox that ticks on screen, on the same beat (w = { n, gap })
+        selall(w) { const n = Math.max(2, (w && w.n) || 9), gap = (w && w.gap) || 0.028; for (let i = 0; i < n; i++) tone(900 * Math.pow(2, i / (n - 1)), i * gap, 0.04, { type: 'square', vol: 0.04 }); tone(1760, n * gap, 0.18, { vol: 0.08 }); },
+        unsel(w) { const n = Math.max(2, (w && w.n) || 9), gap = (w && w.gap) || 0.028; for (let i = 0; i < n; i++) tone(1900 / Math.pow(2, i / (n - 1)), i * gap, 0.04, { type: 'square', vol: 0.04 }); },
+        // Clear: three quick eraser strokes, the selection crumbling into falling glitter, and a soft puff of air
+        erase() {
+          for (let k = 0; k < 3; k++) noise(k * 0.08, 0.07, { f: 1300 + k * 300, to: 900 + k * 200, q: 1.2, vol: 0.22, att: 0.015, pan: k % 2 ? 0.35 : -0.35 });
+          for (let i = 0; i < 12; i++) tone(3000 * Math.pow(0.9, i) + Math.random() * 200, 0.2 + i * 0.028, 0.06, { vol: 0.03, pan: Math.random() * 1.2 - 0.6, wet: 0.4 });
+          noise(0.52, 0.22, { ft: 'lowpass', f: 900, to: 250, vol: 0.16, att: 0.03, wet: 0.3 });
+        },
         fav() { tone(1568, 0, 0.6, { vol: 0.11 }); tone(2093, 0.06, 0.7, { vol: 0.09 }); tone(3136, 0.12, 0.6, { vol: 0.05 }); tone(4186, 0.18, 0.5, { vol: 0.03 }); },
         undo() { tone(980, 0, 0.2, { type: 'triangle', to: 380, vol: 0.16 }); noise(0, 0.15, { f: 2500, to: 600, vol: 0.06 }); },
         scalpel() { noise(0, 0.42, { f: 5200, to: 8200, q: 6, vol: 0.3, att: 0.015 }); tone(4400, 0.02, 0.5, { vol: 0.025 }); tone(6600, 0.04, 0.45, { vol: 0.015 }); },
-        ladder(n) { [523, 587, 659, 784, 880].slice(0, Math.max(1, Math.min(5, n || 5))).forEach((f, i) => tone(f, i * 0.13, 0.35, { type: 'triangle', vol: 0.13 })); },
         msg() { tone(784, 0, 0.5, { type: 'triangle', vol: 0.14 }); tone(1175, 0.13, 0.7, { vol: 0.12 }); },
         bday() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.1, 0.3, { type: 'triangle', vol: 0.14 })); tone(1319, 0.42, 0.6, { type: 'triangle', vol: 0.13 }); tone(1568, 0.42, 0.6, { vol: 0.1 }); setTimeout(() => { if (ready()) S.fav(); }, 700); },
         done() { tone(880, 0, 0.16, { vol: 0.14 }); tone(1319, 0.09, 0.38, { vol: 0.14 }); },
@@ -3928,7 +3995,8 @@
         oops() { tone(330, 0, 0.16, { type: 'triangle', to: 262, vol: 0.15 }); },
         nomatch() { tone(196, 0, 0.09, { type: 'triangle', vol: 0.2 }); tone(165, 0.12, 0.13, { type: 'triangle', vol: 0.2 }); }
       };
-      function play(name, arg) { if (!S[name] || !ready()) return; try { S[name](arg); } catch (e) {} }
+      const inMapper = () => !!(window.defectMapper && window.defectMapper.isOpen && window.defectMapper.isOpen());
+      function play(name, arg) { if (!S[name] || inMapper() || !ready()) return; try { S[name](arg); } catch (e) {} }
       return { play: play, on: on, unlock: unlock };
     })();
     function sfx(name, arg) { SFX.play(name, arg); }
@@ -3949,6 +4017,70 @@
       showToast(on ? 'Sounds on' : 'Sounds off');
     }
     paintSoundBtn();
+
+    // Clear in the tray: the erase sound, then the selection goes
+    function eraseSelection() { if (selectedFlaps.size) sfx('erase'); deselectAll(); }
+
+    // Select all: the checkboxes on screen tick one after another, top to bottom, on the beat of the zip.
+    // (All the flaps are selected at once; this only shows it.) Returns { n, gap } for the sound.
+    function checkWave(names, on) {
+      const ws = document.querySelector('.workspace'), tray = document.getElementById('cmp-tray');
+      if (!ws || reducedMotion()) return null;
+      const wr = ws.getBoundingClientRect(), tr = tray ? tray.getBoundingClientRect() : null;
+      const bottom = Math.min(wr.bottom, tr && tr.height ? tr.top : innerHeight);
+      const boxes = Array.from(document.querySelectorAll('#flap-grid-canvas input[type="checkbox"]')).filter(cb => {
+        const host = cb.closest('[data-name]');
+        if (!host || !names.has(host.dataset.name)) return false;
+        const r = cb.getBoundingClientRect();
+        return r.width > 0 && r.bottom > wr.top + 4 && r.top < bottom - 4;
+      }).slice(0, 24);
+      if (!boxes.length) return null;
+      const gap = Math.min(0.034, 0.6 / boxes.length);
+      boxes.forEach((cb, i) => {
+        cb.checked = !on;
+        setTimeout(() => { cb.checked = on; cb.classList.remove('cb-pop'); void cb.offsetWidth; cb.classList.add('cb-pop'); }, Math.round(i * gap * 1000));
+      });
+      return { n: boxes.length, gap: gap };
+    }
+
+    // each chapter has its own musical key for the region-tile sound
+    function tileKey(el) {
+      const s = (el.textContent || '').toLowerCase();
+      if (/head/.test(s)) return 293.66;      // D
+      if (/upper/.test(s)) return 329.63;     // E
+      if (/trunk/.test(s)) return 349.23;     // F
+      if (/groin|perine/.test(s)) return 392; // G
+      if (/lower/.test(s)) return 220;        // A
+      if (/local/.test(s)) return 246.94;     // B
+      return 261.63;                          // C – All References and the rest
+    }
+
+    // Next / previous flap: the page you were reading turns over like a sheet of paper (0.56 s),
+    // revealing the new flap underneath
+    function pageTurn(d) {
+      const body = document.getElementById('fp-body'), page = document.getElementById('flap-page');
+      if (!body || !body.animate || reducedMotion()) return false;
+      const fwd = d > 0;
+      const leaf = document.createElement('div'), copy = body.cloneNode(true), shade = document.createElement('div'), cast = document.createElement('div');
+      copy.removeAttribute('id'); copy.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+      copy.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;overflow:hidden;';
+      const box = 'position:absolute;left:' + body.offsetLeft + 'px;top:' + body.offsetTop + 'px;width:' + body.offsetWidth + 'px;height:' + body.offsetHeight + 'px;pointer-events:none;';
+      leaf.className = 'fp-leaf'; leaf.setAttribute('aria-hidden', 'true');
+      leaf.style.cssText = box + 'overflow:hidden;background:' + (getComputedStyle(page).backgroundColor || 'var(--matrix-bg)') + ';transform-origin:' + (fwd ? 'left' : 'right') + ' center;';
+      shade.className = 'fp-leaf-shade'; shade.style.background = 'linear-gradient(' + (fwd ? 'to left' : 'to right') + ', rgba(0,0,0,.35), rgba(0,0,0,.05))';
+      cast.className = 'fp-leaf-cast'; cast.style.cssText = box; cast.style.background = 'linear-gradient(' + (fwd ? 'to right' : 'to left') + ', rgba(0,0,0,.28), rgba(0,0,0,0) 65%)';
+      leaf.appendChild(copy); leaf.appendChild(shade);
+      body.after(cast); cast.after(leaf);
+      copy.scrollTop = body.scrollTop;
+      const ease = 'cubic-bezier(0.55, 0.1, 0.35, 1)', ms = 560;
+      leaf.animate([
+        { transform: 'perspective(1500px) rotateY(0deg)' },
+        { transform: 'perspective(1500px) rotateY(' + (fwd ? -100 : 100) + 'deg)' }
+      ], { duration: ms, easing: ease }).onfinish = () => leaf.remove();
+      shade.animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: ease });
+      cast.animate([{ opacity: 0.9 }, { opacity: 0 }], { duration: ms, easing: 'ease-in' }).onfinish = () => cast.remove();
+      return true;
+    }
 
     // ================= CONTENT PROTECTION =================
     // The copy kept on the phone for offline use is compressed and encrypted (AES-GCM, key tied to this login),

@@ -644,7 +644,6 @@ function showSheet() {
   if (more) more.onclick = () => { more.remove(); body.querySelector('[data-rest]').style.display = ''; };
   body.querySelectorAll('[data-flap]').forEach(el => el.onclick = () => { if (window.openFlapPage) window.openFlapPage(decodeURIComponent(el.dataset.flap)); });
   ui.q('[data-r="sheet"]').classList.add('open');
-  if (window.sfx) window.sfx('ladder', step);
 }
 
 // ================= INPUT =================
