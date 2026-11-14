@@ -864,6 +864,21 @@
       .top-status-bar::before, .top-status-bar .brand-name, .top-status-bar .brand-name .brand-flap, .flap-card.is-fav::before, .flap-card.deal, .list-row.deal { animation: none !important; }
     }
 
+
+    /* ---- REGION COLOURS: muted accents tuned per theme ---- */
+    :root { --rc-all: #b08a2e; --rc-fav: #c99a1e; --rc-hn: #cf6a5c; --rc-ue: #2a9a90; --rc-tr: #7b6fc8; --rc-gp: #c0628f; --rc-le: #5f9a4c; --rc-lf: #3f88c9; }
+    body.dark-theme { --rc-all: #e7c66b; --rc-fav: #f5c451; --rc-hn: #f0998c; --rc-ue: #6fd3c8; --rc-tr: #aea4ef; --rc-gp: #ea9cc2; --rc-le: #9fd38b; --rc-lf: #8ec1f0; }
+    body.yellow-theme { --rc-all: #8a6a12; --rc-fav: #9a7300; --rc-hn: #a8493d; --rc-ue: #1c7068; --rc-tr: #5b4fa3; --rc-gp: #94406a; --rc-le: #456f35; --rc-lf: #2b6497; }
+    .flap-card.rc { border-top: 2px solid var(--rc); }
+    .flap-card.rc .card-meta { color: var(--rc); }
+    body.yellow-theme .flap-card.rc { box-shadow: inset 0 1.5px 0 var(--rc), 0 2px 6px rgba(14, 59, 67, 0.07); }
+    .list-heading[style*="--rc"], body.yellow-theme .list-heading[style*="--rc"] { color: var(--rc); }
+    .list-row .rc-label { color: var(--rc) !important; }
+    .sub-chips .sub-chip.on { background: var(--rc, var(--accent-blue)); border-color: var(--rc, var(--accent-blue)); color: #fff; box-shadow: none; }
+    body.dark-theme .sub-chips .sub-chip.on { color: #0b1220; }
+    #flap-page .fp-header { border-bottom: 3px solid var(--rc, var(--border-color)); }
+    #flap-page .fp-meta { color: var(--rc, inherit); }
+
     /* ---- SMALL TOUCHES ---- */
     .toast-legacy { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
     .update-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; max-width: 560px; margin: 0 auto; z-index: 2500; display: none; align-items: center; gap: 12px; padding: 12px 12px 12px 16px; border-radius: 14px; background: #042551; color: #fff; border: 1px solid rgba(245, 196, 81, 0.45); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45); }
@@ -1575,6 +1590,9 @@
     // Region icons live in icons/regions/<slug>.png (white lines on transparent).
     // They are used as a CSS mask, so the app colours them to match the theme.
     const REGION_ICONS = ['all-references', 'head-neck', 'upper-extremity', 'trunk', 'groin-perineum', 'lower-extremity', 'local-flaps', 'favourites'];
+    // The muted accent colour of a region (All References and Favourites are gold)
+    const REGION_KEYS = { 'head-neck': 'hn', 'upper-extremity': 'ue', 'trunk': 'tr', 'groin-perineum': 'gp', 'lower-extremity': 'le', 'local-flaps': 'lf', 'favourites': 'fav' };
+    function regionVar(cat) { return 'var(--rc-' + (REGION_KEYS[regionSlug(stripHTML(cat || ''))] || 'all') + ')'; }
     function regionSlug(name) { return String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
 
     function makeRegionTile(label, wide) {
@@ -1980,7 +1998,8 @@
 
       viewData.forEach(flap => {
         const card = document.createElement('div');
-        card.className = 'flap-card' + (isFavourite(flap.name) ? ' is-fav' : '');
+        card.className = 'flap-card rc' + (isFavourite(flap.name) ? ' is-fav' : '');
+        card.style.setProperty('--rc', regionVar(flap.category));
         card.dataset.name = flap.name;
         card.onclick = () => flapTap(flap.name, card);
 
@@ -2073,6 +2092,7 @@
           const h = document.createElement('div');
           h.className = 'list-heading';
           h.innerText = group.title;
+          h.style.setProperty('--rc', regionVar(activeCategoryFilter === 'ALL' || activeCategoryFilter === 'FAVOURITES' ? group.title : activeCategoryFilter));
           canvas.appendChild(h);
         }
         group.items.forEach(flap => {
@@ -2209,6 +2229,7 @@
       flapPageName = name;
       const tag = stripHTML(flap['Sub-Region Tag'] || '').split(',')[0].trim();
       document.getElementById('fp-meta').innerText = stripHTML(flap.category) + (tag ? ' · ' + tag : '');
+      document.getElementById('flap-page').style.setProperty('--rc', regionVar(flap.category));
       document.getElementById('fp-title').innerText = stripHTML(flap.name);
       const starSlot = document.getElementById('fp-star'); starSlot.innerHTML = ''; starSlot.appendChild(makeStarButton(flap.name, 'fp-fav'));
 
@@ -3322,6 +3343,7 @@
     function renderSubChips() {
       const sel = document.getElementById('subregion-dropdown'), row = document.getElementById('sub-chips');
       if (!sel || !row) return;
+      row.style.setProperty('--rc', regionVar(activeCategoryFilter));
       if (sel.style.display === 'none' || document.body.classList.contains('sys-page')) { row.innerHTML = ''; row.dataset.sig = ''; return; }
       const opts = Array.from(sel.options);
       const sig = opts.map(o => o.value).join('|') + '#' + sel.value;
