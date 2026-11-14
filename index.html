@@ -679,9 +679,78 @@
       .gate-card > * { opacity: 1; }
     }
 
+
+    /* ---- ISLAND TOASTS, UNDO, OFFLINE ---- */
+    .toast { position: fixed; left: 50%; top: calc(var(--topbar-h) + 10px); bottom: auto; z-index: 3100; display: flex; align-items: center; gap: 14px; max-width: calc(100vw - 32px); box-sizing: border-box;
+      padding: 11px 18px; border-radius: 999px; background: #070b14; color: #fff; font-weight: 600; font-size: 0.95rem; line-height: 1.3;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.07);
+      opacity: 0; pointer-events: none; transform: translate(-50%, -14px) scale(0.55, 0.7); transform-origin: 50% 0;
+      transition: transform 0.5s cubic-bezier(0.2, 1.35, 0.35, 1), opacity 0.22s ease-out; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    .toast.has-action { pointer-events: auto; }
+    .toast-undo { background: none; border: none; padding: 4px 2px; color: #f5c451; font: inherit; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; font-size: 0.85rem; cursor: pointer; }
+    body.offline .toast { top: calc(var(--topbar-h) + 54px); }
+    .net-island { position: fixed; left: 50%; top: calc(var(--topbar-h) + 10px); z-index: 3050; display: flex; align-items: center; gap: 9px; padding: 9px 16px; border-radius: 999px;
+      background: #070b14; color: #fff; font-weight: 600; font-size: 0.88rem; white-space: nowrap; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.07);
+      transform: translate(-50%, -14px) scale(0.5); opacity: 0; pointer-events: none; transition: transform 0.5s cubic-bezier(0.2, 1.35, 0.35, 1), opacity 0.22s; }
+    .net-island.show { transform: translate(-50%, 0) scale(1); opacity: 1; }
+    .net-island i { width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 10px #f59e0b; animation: netPulse 1.6s ease-in-out infinite; }
+    .net-island.online i { background: #22c55e; box-shadow: 0 0 10px #22c55e; animation: none; }
+    .net-island .net-more { overflow: hidden; max-width: 260px; transition: max-width 0.45s ease, opacity 0.3s; }
+    .net-island.small .net-more { max-width: 0; opacity: 0; }
+    @keyframes netPulse { 50% { opacity: 0.35; } }
+
+    /* ---- LINKED FLAP NAMES ---- */
+    .flap-link { color: var(--accent-blue); text-decoration: underline; text-decoration-style: dotted; text-decoration-thickness: 1.5px; text-underline-offset: 3px; font-weight: 600; cursor: pointer; }
+    .flap-link::after { content: ' \2197'; font-size: 0.8em; opacity: 0.7; }
+    body.dark-theme .flap-link { color: #7dd3fc; }
+    body.yellow-theme .flap-link { color: #0e7c86; }
+
+    /* ---- A-Z FAST SCROLLER ---- */
+    .az-bar { position: absolute; right: 2px; top: calc(var(--nav-h, 70px) + 12px); bottom: 70px; z-index: 22; width: 24px; display: none; flex-direction: column; justify-content: space-between; align-items: center;
+      padding: 6px 0; border-radius: 12px; background: color-mix(in srgb, var(--panel-light) 70%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); touch-action: none; user-select: none; -webkit-user-select: none; }
+    body.az-on .az-bar { display: flex; }
+    body.az-on .workspace { padding-right: 30px; }
+    .az-bar b { font-size: 10.5px; font-weight: 800; line-height: 1; color: var(--accent-blue); width: 100%; text-align: center; }
+    .az-bar b.off { color: var(--text-muted); opacity: 0.35; }
+    .az-bubble { position: absolute; right: 44px; z-index: 23; width: 64px; height: 64px; margin-top: -32px; border-radius: 50% 50% 8px 50%; display: flex; align-items: center; justify-content: center;
+      background: var(--accent-blue); color: #fff; font-size: 1.9rem; font-weight: 800; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3); opacity: 0; transform: scale(0.5); transition: opacity 0.15s, transform 0.2s cubic-bezier(0.2, 1.4, 0.4, 1); pointer-events: none; }
+    .az-bubble.show { opacity: 1; transform: scale(1); }
+    body.yellow-theme .az-bubble { background: #0e3b43; color: #fff000; }
+
+    /* ---- RECENT SEARCHES ---- */
+    .search-recent { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 30; padding: 10px; border-radius: 16px; background: var(--panel-light); border: 1px solid var(--border-color);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18); display: none; animation: peekIn 0.2s ease-out; }
+    .search-recent.show { display: block; }
+    .sr-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin: 0 2px 8px; }
+    .sr-clear { background: none; border: none; color: var(--text-muted); font: inherit; font-size: 0.72rem; font-weight: 700; text-decoration: underline; cursor: pointer; text-transform: none; letter-spacing: 0; }
+    .sr-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .sr-chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-dark); font: inherit; font-size: 0.9rem; cursor: pointer; }
+    .sr-chip::before { content: '\21BA'; opacity: 0.55; }
+
+    /* ---- DOUBLE-TAP FAVOURITE ---- */
+    .list-row { position: relative; }
+    .dt-burst { position: absolute; left: 50%; top: 50%; z-index: 5; pointer-events: none; font-size: 4.2rem; line-height: 1; color: #f5c451; text-shadow: 0 0 18px rgba(245, 196, 81, 0.9), 0 4px 14px rgba(0, 0, 0, 0.25);
+      transform: translate(-50%, -50%) scale(0.2); animation: dtBurst 0.85s cubic-bezier(0.2, 1.3, 0.3, 1) forwards; }
+    .list-row .dt-burst { font-size: 2.8rem; }
+    @keyframes dtBurst { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2) rotate(-25deg); } 30% { opacity: 1; transform: translate(-50%, -50%) scale(1.25) rotate(8deg); }
+      60% { opacity: 1; transform: translate(-50%, -50%) scale(0.95) rotate(0); } 100% { opacity: 0; transform: translate(-50%, -80%) scale(1.05); } }
+
+    /* ---- COMPARISON: reorder and pin columns ---- */
+    .th-tools { display: flex; justify-content: center; gap: 6px; margin: -6px 0 8px; }
+    .th-tool { width: 30px; height: 26px; border-radius: 8px; border: 1px solid var(--border-color); background: transparent; color: var(--text-muted); font: inherit; font-size: 0.95rem; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+    .th-tool:disabled { opacity: 0.25; cursor: default; }
+    .th-tool svg { width: 14px; height: 14px; }
+    .th-tool.on { background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; }
+    body.yellow-theme .th-tool { border-color: rgba(14, 59, 67, 0.4); color: #0e3b43; }
+    body.yellow-theme .th-tool.on { background: #0e3b43; border-color: #0e3b43; color: #fff000; }
+    .matrix-table th.pinned, .matrix-table td.pinned { position: sticky; left: 0; z-index: 3; box-shadow: 10px 0 18px -10px rgba(0, 0, 0, 0.35); }
+    .matrix-table th.pinned { z-index: 4; }
+    .matrix-table th.moved { animation: colPulse 0.6s ease-out; }
+    @keyframes colPulse { 0% { box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.9); } 100% { box-shadow: 0 0 0 0 rgba(245, 196, 81, 0); } }
+
     /* ---- SMALL TOUCHES ---- */
-    .toast { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
-    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .toast-legacy { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
     .update-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; max-width: 560px; margin: 0 auto; z-index: 2500; display: none; align-items: center; gap: 12px; padding: 12px 12px 12px 16px; border-radius: 14px; background: #042551; color: #fff; border: 1px solid rgba(245, 196, 81, 0.45); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45); }
     .update-bar.show { display: flex; animation: barUp 0.3s ease-out; }
     @keyframes barUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
@@ -782,6 +851,7 @@
         
         <div class="search-wrap" id="search-wrap">
           <input type="text" class="search-bar" id="search-input" oninput="onSearchInput()" onkeydown="if (event.key === 'Escape') clearSearch()" placeholder="Search" autocomplete="off">
+          <div class="search-recent" id="search-recent"></div>
           <button class="search-clear" id="search-clear" onclick="clearSearch(); document.getElementById('search-input').focus();" title="Clear search" aria-label="Clear search">✕</button>
         </div>
         
@@ -805,6 +875,7 @@
 
       <div class="ptr" id="ptr"><svg viewBox="0 0 48 48" aria-hidden="true"><g transform="rotate(-45 24 24)"><rect x="21.5" y="23" width="5" height="21" rx="2" fill="currentColor"/><rect x="22.5" y="26" width="3" height="14" rx="1.2" fill="rgba(255,255,255,0.35)"/><path d="M21.5 23 L21.5 12 Q21.5 3.5 27.5 4 Q27 14 26.5 23 Z" fill="#cfd8dc" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></g></svg></div>
       <div class="greet-pill" id="greet-pill"></div>
+      <div class="az-bar" id="az-bar" aria-hidden="true"></div><div class="az-bubble" id="az-bubble"></div>
       <div class="workspace">
         <div id="msg-banner"></div>
         <div class="grid-layout" id="flap-grid-canvas"></div>
@@ -853,6 +924,7 @@
     <button class="ub-close" onclick="document.getElementById('update-bar').classList.remove('show')" aria-label="Dismiss">✕</button>
   </div>
   <div class="toast" id="toast"></div>
+  <div class="net-island" id="net-island" role="status"><i></i><span class="net-text"></span></div>
 
   <!-- FULL-SCREEN IMAGE VIEWER -->
   <div class="lightbox" id="lightbox">
@@ -928,6 +1000,7 @@
       const adding = !favouriteFlaps.has(key);
       buzz(adding ? [10, 40, 16] : 10);
       if (adding) favouriteFlaps.add(key); else favouriteFlaps.delete(key);
+      if (!adding) setTimeout(() => showToast('Removed from Favourites', () => { if (!favouriteFlaps.has(key)) toggleFavourite(name); }), 0);
       storeFavouritesLocally(true);
       clearTimeout(favSyncTimer);
       favSyncTimer = setTimeout(saveFavouritesToServer, 1200);
@@ -1393,7 +1466,7 @@
     }
 
     function initializeSystem(flaps) {
-      spellVocab = null; spellCache.clear();
+      spellVocab = null; spellCache.clear(); linkIndex = null;
       // first start: the screen saved when the app was last closed; later refreshes: keep the current screen
       const screenToShow = stateRestored ? captureState() : loadSavedState();
       datasetMaster = flaps;
@@ -1597,6 +1670,7 @@
       document.getElementById('search-wrap').style.display = 'none';
       
       document.getElementById('system-page-view').style.display = 'block';
+      document.body.classList.remove('az-on');
 
       const pageData = datasetMaster.find(f => f.name === pageName && f.category === 'System');
       
@@ -1776,7 +1850,7 @@
         const card = document.createElement('div');
         card.className = 'flap-card';
         card.dataset.name = flap.name;
-        card.onclick = () => viewSingleFlap(flap.name, card);
+        card.onclick = () => flapTap(flap.name, card);
 
         let previewHtml = '';
         if (searchQuery && searchRanks.get(flap).tier > 0) {
@@ -1874,7 +1948,7 @@
           const row = document.createElement('div');
           row.className = 'list-row';
           row.dataset.name = flap.name;
-          row.onclick = () => viewSingleFlap(flap.name, row);
+          row.onclick = () => flapTap(flap.name, row);
 
           let sub = '';
           if (searchQuery && searchRanks.get(flap).tier > 0) {
@@ -1926,6 +2000,10 @@
         history.back(); // removes the extra history step; the popstate handler then has nothing to do
       }
       renderWorkspaceGrid();
+      hideRecentSearches();
+      clearTimeout(onSearchInput.saveTimer);
+      if (hasText) onSearchInput.saveTimer = setTimeout(() => saveRecentSearch(input.value), 1400);
+      else showRecentSearches();
     }
 
     // Clears the search and returns to the list the user was on before searching
@@ -1955,8 +2033,13 @@
     }
 
     function deselectAll() {
+      const before = Array.from(selectedFlaps);
       selectedFlaps.clear();
       renderWorkspaceGrid();
+      if (before.length) showToast('Comparison cleared', () => {
+        before.forEach(n => selectedFlaps.add(n));
+        renderWorkspaceGrid(); updateCompareButton();
+      });
     }
 
     function updateCompareButton() {
@@ -1981,6 +2064,8 @@
 
     // A ticked flap opens the comparison matrix of all ticked flaps; any other flap opens its own page
     function viewSingleFlap(flapName, fromEl) {
+      const q = document.getElementById('search-input').value;
+      if (q.trim()) saveRecentSearch(q);
       if (selectedFlaps.has(flapName)) openMatrix();
       else openFlapPage(flapName, { fromEl: fromEl });
     }
@@ -2048,6 +2133,7 @@
       pb.disabled = !prev; pb.innerText = prev ? '‹ ' + stripHTML(prev) : '‹ Previous';
       nb.disabled = !next; nb.innerText = next ? stripHTML(next) + ' ›' : 'Next ›';
       pushRecent(name); updateReadProgress(); refreshAskButton();
+      linkFlapNames(inner, name);
       return true;
     }
 
@@ -2069,6 +2155,7 @@
       if (!renderFlapPage(name)) return;
       const page = document.getElementById('flap-page');
       if (page.classList.contains('open')) { history.replaceState({ view: 'flap' }, '', flapHash(name)); return; }
+      flapBackStack = [];
       clearMorph(page);
       const start = morphInset(page, opts && opts.fromEl);
       if (start) {
@@ -2091,6 +2178,7 @@
       const page = document.getElementById('flap-page');
       if (!page.classList.contains('open')) return;
       clearMorph(page);
+      const extraSteps = flapBackStack.length; flapBackStack = [];
       const end = morph.name === flapPageName ? morphInset(page, morph.el) : null;
       if (end) {
         page.style.transition = 'clip-path 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.32s ease-in';
@@ -2103,7 +2191,7 @@
       morph.el = null; morph.name = null;
       page.setAttribute('aria-hidden', 'true');
       flapPageName = null;
-      if (fromBackButton !== true) history.back();
+      if (fromBackButton !== true) history.go(-(1 + extraSteps));
       saveStateSoon();
     }
 
@@ -2142,10 +2230,20 @@
       else prompt('Copy this link:', url);
     }
 
-    function showToast(text) {
+    // Island toast at the top; with an undo function it shows an UNDO button for a few seconds
+    function showToast(text, undo) {
       const el = document.getElementById('toast');
-      el.innerText = text; el.classList.add('show');
-      clearTimeout(showToast.timer); showToast.timer = setTimeout(() => el.classList.remove('show'), 1800);
+      el.classList.remove('show');
+      el.textContent = text;
+      el.classList.toggle('has-action', !!undo);
+      if (undo) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'toast-undo'; b.textContent = 'Undo';
+        b.onclick = () => { clearTimeout(showToast.timer); el.classList.remove('show', 'has-action'); buzz(8); try { undo(); } catch (e) {} };
+        el.appendChild(b);
+      }
+      void el.offsetWidth; el.classList.add('show');
+      clearTimeout(showToast.timer); showToast.timer = setTimeout(() => el.classList.remove('show', 'has-action'), undo ? 4500 : 1900);
     }
 
     // A short vibration on phones that support it
@@ -2247,6 +2345,7 @@
         });
       }
       lastGridCtx = ctx;
+      updateAzBar();
     }
 
     // Rubber-band bounce at the first / last flap
@@ -2406,6 +2505,7 @@
 
     // Called with every answer from the server (and once with the saved copy when the app opens)
     function personalise(data, fromServer) {
+      runLaunchAction();
       if (data && data.profile) { userProfile = data.profile; try { localStorage.setItem('flap_profile', JSON.stringify(userProfile)); } catch (e) {} }
       if (data && Array.isArray(data.messages)) { amanyuMessages = data.messages; try { localStorage.setItem('flap_msgs', JSON.stringify(amanyuMessages)); } catch (e) {} }
       paintProfile();
@@ -2833,6 +2933,233 @@
       setTimeout(() => g.remove(), 360);
     }
 
+
+    // ================= BATCH: shortcuts, island toasts, offline, links, A-Z, recent searches, double tap, columns =================
+    // ---- home-screen shortcuts (?go=search | favourites | mapper | last) ----
+    let launchActionDone = false;
+    function runLaunchAction() {
+      if (launchActionDone) return; launchActionDone = true;
+      const go = new URLSearchParams(location.search).get('go');
+      if (!go) return;
+      history.replaceState(history.state, '', location.pathname + location.hash);
+      setTimeout(() => {
+        if (go === 'search') {
+          const all = document.querySelector('#chapter-menu [data-cat="ALL"]'); if (all) all.click();
+          setTimeout(() => document.getElementById('search-input').focus(), 300);
+        } else if (go === 'favourites') {
+          const fav = document.querySelector('.fav-tile'); if (fav) fav.click();
+        } else if (go === 'mapper') {
+          openDefectMapper();
+        } else if (go === 'last') {
+          const r = getRecent().find(n => datasetMaster.some(f => f.name === n));
+          if (r) openFlapPage(r); else showToast('No flap opened yet');
+        }
+      }, 450);
+    }
+
+    // ---- offline island ----
+    (function () {
+      const el = document.getElementById('net-island');
+      if (!el) return;
+      const txt = el.querySelector('.net-text');
+      let timer = 0;
+      function update(first) {
+        clearTimeout(timer);
+        if (!navigator.onLine) {
+          document.body.classList.add('offline');
+          el.classList.remove('online', 'small');
+          txt.innerHTML = 'Offline<span class="net-more">&nbsp;– showing saved flaps</span>';
+          el.classList.add('show');
+          timer = setTimeout(() => el.classList.add('small'), 4000);
+        } else {
+          document.body.classList.remove('offline');
+          if (first) { el.classList.remove('show'); return; }
+          el.classList.remove('small'); el.classList.add('online', 'show');
+          txt.textContent = 'Back online';
+          timer = setTimeout(() => el.classList.remove('show'), 2500);
+        }
+      }
+      window.addEventListener('online', () => update(false));
+      window.addEventListener('offline', () => update(false));
+      update(true);
+    })();
+
+    // ---- linked flap names on flap pages ----
+    let linkIndex = null, flapBackStack = [];
+    function buildLinkIndex() {
+      const map = new Map();
+      const add = (s, name) => { s = s.replace(/\s+/g, ' ').trim(); if (s.length >= 8 && !map.has(s.toLowerCase())) map.set(s.toLowerCase(), name); };
+      datasetMaster.forEach(f => {
+        if (f.category === 'System') return;
+        const full = stripHTML(f.name).trim();
+        add(full, f.name);
+        add(full.replace(/\s*\([^)]*\)\s*/g, ' '), f.name);
+      });
+      const keys = Array.from(map.keys()).sort((a, b) => b.length - a.length).map(escapeRegExp);
+      linkIndex = { map: map, re: keys.length ? new RegExp('(^|[^A-Za-z0-9])(' + keys.join('|') + ')(?![A-Za-z0-9])', 'gi') : null };
+    }
+    function linkFlapNames(rootEl, selfName) {
+      if (!rootEl) return;
+      if (!linkIndex) buildLinkIndex();
+      if (!linkIndex.re) return;
+      const self = stripHTML(selfName).toLowerCase().trim(), done = new Set([selfName]);
+      const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT, {
+        acceptNode: n => (n.parentElement && n.parentElement.closest('a, button, .row-label, .ask-card, .fp-gallery')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+      });
+      const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach(node => {
+        const text = node.nodeValue, re = linkIndex.re;
+        re.lastIndex = 0;
+        let m, last = 0, frag = null;
+        while ((m = re.exec(text))) {
+          const target = linkIndex.map.get(m[2].toLowerCase());
+          if (!target || done.has(target) || stripHTML(target).toLowerCase().trim() === self) continue;
+          done.add(target);
+          frag = frag || document.createDocumentFragment();
+          const start = m.index + m[1].length;
+          frag.appendChild(document.createTextNode(text.slice(last, start)));
+          const a = document.createElement('a');
+          a.href = flapHash(target); a.className = 'flap-link'; a.dataset.flap = target; a.textContent = m[2];
+          frag.appendChild(a);
+          last = start + m[2].length;
+        }
+        if (frag) { frag.appendChild(document.createTextNode(text.slice(last))); node.parentNode.replaceChild(frag, node); }
+      });
+    }
+    document.addEventListener('click', e => {
+      const a = e.target.closest && e.target.closest('#fp-inner .flap-link');
+      if (!a) return;
+      e.preventDefault();
+      const target = a.dataset.flap;
+      if (!target || target === flapPageName) return;
+      if (flapPageName) flapBackStack.push(flapPageName);
+      renderFlapPage(target, 1);
+      history.pushState({ view: 'flap' }, '', flapHash(target));
+      buzz(8); saveStateSoon();
+    });
+
+    // ---- A-Z fast scroller (alphabetical order, no search) ----
+    function updateAzBar() {
+      const bar = document.getElementById('az-bar'), sort = document.getElementById('sort-dropdown').value;
+      const q = document.getElementById('search-input').value.trim();
+      const items = Array.from(document.querySelectorAll('#flap-grid-canvas [data-name]'));
+      const sysOpen = document.getElementById('system-page-view').style.display === 'block';
+      const on = !q && !sysOpen && (sort === 'asc' || sort === 'desc') && items.length >= 12;
+      document.body.classList.toggle('az-on', on);
+      if (!on) return;
+      const have = new Set(items.map(el => (stripHTML(el.dataset.name).trim()[0] || '#').toUpperCase()));
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+      if (sort === 'desc') letters.reverse();
+      bar.innerHTML = letters.map(l => '<b class="' + (have.has(l) ? '' : 'off') + '" data-l="' + l + '">' + l + '</b>').join('');
+    }
+    (function () {
+      const bar = document.getElementById('az-bar'), bubble = document.getElementById('az-bubble');
+      if (!bar) return;
+      let active = false, lastL = '';
+      function pick(e) {
+        const r = bar.getBoundingClientRect();
+        const letters = bar.querySelectorAll('b');
+        if (!letters.length) return;
+        const i = Math.max(0, Math.min(letters.length - 1, Math.floor((e.clientY - r.top) / r.height * letters.length)));
+        const L = letters[i].dataset.l;
+        bubble.textContent = L;
+        bubble.style.top = (letters[i].getBoundingClientRect().top + letters[i].offsetHeight / 2 - bar.parentElement.getBoundingClientRect().top) + 'px';
+        bubble.classList.add('show');
+        if (L === lastL) return;
+        lastL = L;
+        const ws = document.querySelector('.workspace');
+        const target = Array.from(document.querySelectorAll('#flap-grid-canvas [data-name]')).find(el => (stripHTML(el.dataset.name).trim()[0] || '').toUpperCase() === L);
+        if (target) {
+          const navH = document.querySelector('.navbar').offsetHeight;
+          ws.scrollTop = target.getBoundingClientRect().top - ws.getBoundingClientRect().top + ws.scrollTop - navH - 10;
+          buzz(4);
+        }
+      }
+      bar.addEventListener('pointerdown', e => { active = true; lastL = ''; try { bar.setPointerCapture(e.pointerId); } catch (err) {} pick(e); e.preventDefault(); });
+      bar.addEventListener('pointermove', e => { if (active) pick(e); });
+      const stop = () => { active = false; setTimeout(() => bubble.classList.remove('show'), 350); };
+      bar.addEventListener('pointerup', stop); bar.addEventListener('pointercancel', stop);
+    })();
+
+    // ---- recent searches ----
+    function getRecentSearches() { try { return JSON.parse(localStorage.getItem('flap_recent_q') || '[]'); } catch (e) { return []; } }
+    function saveRecentSearch(q) {
+      q = String(q || '').replace(/\s+/g, ' ').trim();
+      if (q.length < 3 || !document.querySelector('#flap-grid-canvas [data-name]')) return;
+      const lq = q.toLowerCase();
+      const list = [q].concat(getRecentSearches().filter(x => { const lx = x.toLowerCase(); return lx !== lq && !lq.startsWith(lx); })).slice(0, 6);
+      try { localStorage.setItem('flap_recent_q', JSON.stringify(list)); } catch (e) {}
+    }
+    function showRecentSearches() {
+      const box = document.getElementById('search-recent'), input = document.getElementById('search-input');
+      const list = getRecentSearches();
+      if (!box || input.value.trim() || !list.length || document.activeElement !== input) { hideRecentSearches(); return; }
+      box.innerHTML = '<div class="sr-head"><span>Recent searches</span><button type="button" class="sr-clear">Clear</button></div><div class="sr-chips">' +
+        list.map((q, i) => '<button type="button" class="sr-chip" data-i="' + i + '">' + escapeAttr(q) + '</button>').join('') + '</div>';
+      box.querySelectorAll('.sr-chip').forEach(b => b.onmousedown = b.ontouchstart = ev => ev.preventDefault());
+      box.querySelectorAll('.sr-chip').forEach(b => b.onclick = () => { input.value = list[Number(b.dataset.i)]; buzz(6); onSearchInput(); hideRecentSearches(); });
+      box.querySelector('.sr-clear').onmousedown = ev => ev.preventDefault();
+      box.querySelector('.sr-clear').onclick = () => { try { localStorage.removeItem('flap_recent_q'); } catch (e) {} hideRecentSearches(); };
+      box.classList.add('show');
+    }
+    function hideRecentSearches() { const box = document.getElementById('search-recent'); if (box) box.classList.remove('show'); }
+    (function () {
+      const input = document.getElementById('search-input');
+      if (!input) return;
+      input.addEventListener('focus', showRecentSearches);
+      input.addEventListener('blur', () => setTimeout(hideRecentSearches, 150));
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') { saveRecentSearch(input.value); input.blur(); } });
+    })();
+
+    // ---- double-tap a flap to add it to Favourites (a single tap still opens it) ----
+    let lastTap = { el: null, t: 0, timer: 0 };
+    function flapTap(name, el) {
+      const now = Date.now();
+      if (lastTap.el === el && now - lastTap.t < 320) {
+        clearTimeout(lastTap.timer); lastTap.el = null;
+        doubleTapFavourite(name, el);
+        return;
+      }
+      clearTimeout(lastTap.timer);
+      lastTap = { el: el, t: now, timer: setTimeout(() => { lastTap.el = null; viewSingleFlap(name, el); }, 270) };
+    }
+    function doubleTapFavourite(name, el) {
+      if (!isFavourite(name)) toggleFavourite(name); else buzz(10);
+      if (reducedMotion()) return;
+      const s = document.createElement('div');
+      s.className = 'dt-burst'; s.textContent = '★';
+      el.appendChild(s);
+      setTimeout(() => s.remove(), 900);
+    }
+
+    // ---- comparison: column order, moving and pinning ----
+    let matrixOrder = [], matrixPinned = null;
+    function orderedSelection() {
+      const sel = Array.from(selectedFlaps);
+      return matrixOrder.filter(n => selectedFlaps.has(n)).concat(sel.filter(n => !matrixOrder.includes(n)));
+    }
+    function rebuildMatrixKeepScroll(focusName) {
+      const c = document.getElementById('matrix-container'), x = c.scrollLeft, y = c.scrollTop;
+      buildMatrix(matrixOrder.slice());
+      c.scrollLeft = x; c.scrollTop = y;
+      const i = matrixOrder.indexOf(focusName);
+      const th = c.querySelector('th[data-col="' + i + '"]');
+      if (th) { th.classList.add('moved'); const r = th.getBoundingClientRect(), cr = c.getBoundingClientRect(); if (r.left < cr.left || r.right > cr.right) th.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' }); }
+    }
+    function moveMatrixColumn(i, d) {
+      const j = i + d;
+      if (j < 0 || j >= matrixOrder.length || matrixOrder[i] === matrixPinned || matrixOrder[j] === matrixPinned) return;
+      const name = matrixOrder[i];
+      matrixOrder.splice(i, 1); matrixOrder.splice(j, 0, name);
+      buzz(6); rebuildMatrixKeepScroll(name);
+    }
+    function pinMatrixColumn(i) {
+      const name = matrixOrder[i];
+      matrixPinned = matrixPinned === name ? null : name;
+      buzz(10); rebuildMatrixKeepScroll(name);
+      showToast(matrixPinned ? 'Column pinned' : 'Column unpinned');
+    }
+
     // ---- DEFECT MAPPER (prototype, loaded on demand) ----
     const DM_ICON = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\' fill=\'none\' stroke=\'white\' stroke-width=\'2.6\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><circle cx=\'32\' cy=\'9\' r=\'5\'/><path d=\'M24 18h16l2 16h-4l-1 24h-5l-1-17-1 17h-5l-1-24h-4z\'/><path d=\'M24 19l-9 14M40 19l9 14\'/><circle cx=\'40\' cy=\'48\' r=\'7.5\' stroke-dasharray=\'3.2 2.6\'/><path d=\'M40 38v-3M40 61v-3M30 48h-3M53 48h-3\'/></svg>')}")`;
     function openDefectMapper() {
@@ -2889,7 +3216,7 @@
       if (selectedFlaps.size === 0) return;
       history.pushState({ view: 'matrix' }, "Matrix", "#matrix");
       matrixSingleFlap = null;
-      buildMatrix(Array.from(selectedFlaps));
+      buildMatrix(orderedSelection());
       document.getElementById('matrix-dock').classList.add('open');
       document.getElementById('matrix-fab').style.display = 'none';
       isMatrixMinimized = false;
@@ -2912,6 +3239,9 @@
 
     function buildMatrix(flapNamesToCompare) {
       const container = document.getElementById('matrix-container');
+      if (matrixPinned && flapNamesToCompare.includes(matrixPinned)) flapNamesToCompare = [matrixPinned].concat(flapNamesToCompare.filter(n => n !== matrixPinned));
+      else matrixPinned = null;
+      matrixOrder = flapNamesToCompare.slice();
       const flaps = flapNamesToCompare.map(name => datasetMaster.find(f => f.name === name));
       
       let attributeSet = new Set();
@@ -2922,7 +3252,15 @@
 
       // INJECT COLUMN COUNT AS CSS VARIABLE FOR DYNAMIC SIZING
       let tableHtml = `<table class="matrix-table" style="--col-count: ${flaps.length}"><thead><tr>`;
-      flaps.forEach((f, i) => tableHtml += `<th><span class="th-name">${stripHTML(f.name)}</span><span class="th-fav-slot" data-i="${i}"></span></th>`);
+      const PIN_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 3l6 6-2.2.8-3.3 3.3.5 4.4-1.4 1.4-4.2-4.2L5 19.1 4.9 19l4.4-5.4-4.2-4.2L6.5 8l4.4.5 3.3-3.3z"/></svg>';
+      flaps.forEach((f, i) => {
+        const pinned = f.name === matrixPinned;
+        tableHtml += `<th class="${pinned ? 'pinned' : ''}" data-col="${i}">` + (flaps.length > 1 ? `<div class="th-tools">` +
+          `<button type="button" class="th-tool" data-move="-1" data-i="${i}" aria-label="Move left" ${i === 0 || pinned || (i === 1 && matrixPinned) ? 'disabled' : ''}>‹</button>` +
+          `<button type="button" class="th-tool${pinned ? ' on' : ''}" data-pin="${i}" aria-label="${pinned ? 'Unpin' : 'Pin'} this column" title="${pinned ? 'Unpin' : 'Pin'}">${PIN_SVG}</button>` +
+          `<button type="button" class="th-tool" data-move="1" data-i="${i}" aria-label="Move right" ${i === flaps.length - 1 || pinned ? 'disabled' : ''}>›</button></div>` : '') +
+          `<span class="th-name">${stripHTML(f.name)}</span><span class="th-fav-slot" data-i="${i}"></span></th>`;
+      });
       tableHtml += `</tr></thead><tbody>`;
 
       galleryStore = [];
@@ -2930,12 +3268,13 @@
         tableHtml += `<tr>`;
         flaps.forEach(f => {
           const val = f[attr] ? f[attr].trim() : '';
+          const pc = f.name === matrixPinned ? ' class="pinned"' : '';
           if (val && isImageKey(attr)) {
-             tableHtml += `<td><div class="row-label">${stripHTML(attr)}</div>${buildGalleryHtml(val, stripHTML(f.name))}</td>`;
+             tableHtml += `<td${pc}><div class="row-label">${stripHTML(attr)}</div>${buildGalleryHtml(val, stripHTML(f.name))}</td>`;
           } else if (val) {
-             tableHtml += `<td><div class="row-label">${stripHTML(attr)}</div><div class="cell-data">${val}</div></td>`;
+             tableHtml += `<td${pc}><div class="row-label">${stripHTML(attr)}</div><div class="cell-data">${val}</div></td>`;
           } else {
-             tableHtml += `<td></td>`;
+             tableHtml += `<td${pc}></td>`;
           }
         });
         tableHtml += `</tr>`;
@@ -2946,6 +3285,8 @@
       container.querySelectorAll('.th-fav-slot').forEach(slot => {
         slot.appendChild(makeStarButton(flaps[Number(slot.dataset.i)].name, 'th-fav'));
       });
+      container.querySelectorAll('[data-move]').forEach(b => b.onclick = () => moveMatrixColumn(Number(b.dataset.i), Number(b.dataset.move)));
+      container.querySelectorAll('[data-pin]').forEach(b => b.onclick = () => pinMatrixColumn(Number(b.dataset.pin)));
     }
 
     // ---- IMAGES ----
@@ -3111,7 +3452,8 @@
         if (document.getElementById('lightbox').classList.contains('open')) {
             closeLightbox(true);
         } else if (document.getElementById('flap-page').classList.contains('open')) {
-            closeFlapPage(true);
+            if (flapBackStack.length) renderFlapPage(flapBackStack.pop(), -1);   // back through linked flaps first
+            else closeFlapPage(true);
         } else if (window.defectMapper && window.defectMapper.isOpen()) {
             window.defectMapper.close(true);
         } else if (document.getElementById('matrix-dock').classList.contains('open')) {

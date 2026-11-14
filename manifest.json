@@ -7,8 +7,77 @@
   "background_color": "#042551",
   "theme_color": "#042551",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Search",
+      "short_name": "Search",
+      "description": "Search all flaps",
+      "url": "./?go=search",
+      "icons": [
+        {
+          "src": "icons/shortcuts/search.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Favourites",
+      "short_name": "Favourites",
+      "description": "Your starred flaps",
+      "url": "./?go=favourites",
+      "icons": [
+        {
+          "src": "icons/shortcuts/favourites.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Continue reading",
+      "short_name": "Continue",
+      "description": "The last flap you opened",
+      "url": "./?go=last",
+      "icons": [
+        {
+          "src": "icons/shortcuts/continue.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Defect Mapper",
+      "short_name": "Defect Mapper",
+      "description": "Paint a defect on a 3D body",
+      "url": "./?go=mapper",
+      "icons": [
+        {
+          "src": "icons/shortcuts/mapper.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }

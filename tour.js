@@ -67,10 +67,10 @@
       prepare: closeSidebar },
 
     { target: () => $('#sort-dropdown'), title: 'Sort order',
-      text: 'Keep the textbook order, or sort the flaps <b>A–Z</b> or <b>Z–A</b>.' },
+      text: 'Keep the textbook order, or sort the flaps <b>A–Z</b> or <b>Z–A</b>. In alphabetical order, a letter strip appears at the right edge – slide along it to jump to any letter.' },
 
     { target: () => $('#search-wrap'), title: 'Search anything',
-      text: 'Type a flap’s name, an artery, a nerve, an author – even fragments such as <b>“rev sur”</b>. The words you type are highlighted in the results.<br>Spelling slips are forgiven, and a <b>Did you mean…?</b> button offers the right spelling.' },
+      text: 'Type a flap’s name, an artery, a nerve, an author – even fragments such as <b>“rev sur”</b>. The words you type are highlighted in the results, and your <b>recent searches</b> appear when you tap the empty box.<br>Spelling slips are forgiven, and a <b>Did you mean…?</b> button offers the right spelling.' },
 
     { target: () => $('#view-toggle-btn'), title: 'Cards or List', tryIt: true,
       text: 'Switch between <b>Cards</b> and a numbered <b>List</b>, like a book’s contents page. Tap it to try.',
@@ -82,19 +82,25 @@
       onStart: () => { mem.peeked = false; },
       action: () => { if (peekShown()) mem.peeked = true; return mem.peeked && !peekShown(); } },
 
+    { target: firstUnticked, title: 'Double-tap to favourite', tryIt: true,
+      text: '<b>Double-tap</b> this flap to add it to your <b>Favourites</b> – a gold star bursts over it.<br><span class="tg-tip">A single tap still opens the flap.</span>',
+      prepare: () => { if (!pageOpen()) { mainScreen(); showFirst(); } },
+      onStart: () => { mem.favDt = favouriteFlaps.size; },
+      action: () => favouriteFlaps.size > mem.favDt },
+
     { target: firstUnticked, title: 'Open a flap', tryIt: true,
       text: 'A normal <b>tap</b> on any flap opens its own page.',
       prepare: () => { if (!pageOpen()) { mainScreen(); showFirst(); } },
       action: pageOpen },
 
     { target: () => $('#fp-tabs'), title: 'Jump to a section',
-      text: 'These chips take you straight to a section – Introduction, Arterial Anatomy, Flap Markings and more. The one you are reading lights up as you scroll, and the thin gold line beneath shows how far you have read.' },
+      text: 'These chips take you straight to a section – Introduction, Arterial Anatomy, Flap Markings and more. The one you are reading lights up as you scroll, and the thin gold line beneath shows how far you have read.<br><span class="tg-tip">When a flap mentions another flap, its name is a <b>link</b> – tap it to jump there, and Back returns you.</span>' },
 
     { target: () => $('.fp-nav'), title: 'Next and previous flap',
       text: '<b>Swipe left or right</b> on the page – or use these buttons – to move through the flaps of the list you came from.<br><span class="tg-tip">When you have zoomed in with two fingers, a sideways swipe simply scrolls the text.</span>' },
 
     { target: () => $('#fp-star .fav-btn'), title: 'Add to Favourites', tryIt: true,
-      text: 'Tap <b>☆</b> to star this flap. Starred flaps are saved to your account on every device and gathered under <b>Favourites</b>. Tap again any time to remove it.',
+      text: 'The star on a flap’s page does the same: tap <b>☆</b> to add it to <b>Favourites</b>, or <b>★</b> to remove it (an <b>Undo</b> button appears for a moment). Favourites are saved to your account on every device.',
       onStart: () => { mem.favs = favouriteFlaps.size; }, action: () => favouriteFlaps.size !== mem.favs },
 
     { target: () => $('.fp-header button[aria-label="Share this flap"]'), title: 'Share a flap',
@@ -121,7 +127,7 @@
       when: () => selectedFlaps.size >= 2, action: matrixOpen },
 
     { target: () => $('#matrix-container'), title: 'Comparative Overview',
-      text: 'Every section is lined up side by side. Scroll down to read on, and sideways when you compare more flaps than fit on the screen.',
+      text: 'Every section is lined up side by side. Scroll down to read on, and sideways when you compare more flaps than fit on the screen.<br><span class="tg-tip">The small buttons above each flap’s name move its column <b>‹ left</b> or <b>right ›</b>, and the <b>pin</b> keeps it fixed at the left while the others scroll.</span>',
       when: matrixOpen },
 
     { target: () => $('.dock-header button[onclick="minimizeMatrix()"]'), title: 'Keep it for later', tryIt: true,

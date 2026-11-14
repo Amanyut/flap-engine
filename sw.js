@@ -3,7 +3,7 @@
    works without a connection. A new version is downloaded in the background; the page then offers an
    "Update" button, and the new version takes over only when the user taps it.
    VERSION is a fingerprint of the app files (set by bump_sw.py) - any change to them makes a new version. */
-const VERSION = '9f706b2b9825';
+const VERSION = 'f3f35132e84d';
 const SHELL = 'flapendium-shell-' + VERSION;
 const RUNTIME = 'flapendium-runtime';
 const IMAGES = 'flapendium-images';
@@ -13,7 +13,7 @@ const SHELL_FILES = [
   './', 'index.html', 'intro.js', 'tour.js', 'manifest.json', 'icon.png',
   'defect/mapper.js', 'defect/reach.json', 'defect/body_meta.json',
   'icons/splash.webp', 'icons/logo-96.png', 'icons/favicon-32.png', 'icons/apple-touch-icon.png',
-  'icons/icon-192.png', 'icons/icon-maskable-512.png',
+  'icons/icon-192.png', 'icons/icon-maskable-512.png', 'icons/shortcuts/search.png', 'icons/shortcuts/favourites.png', 'icons/shortcuts/continue.png', 'icons/shortcuts/mapper.png',
   'icons/regions/all-references.png', 'icons/regions/favourites.png', 'icons/regions/groin-perineum.png',
   'icons/regions/head-neck.png', 'icons/regions/local-flaps.png', 'icons/regions/lower-extremity.png',
   'icons/regions/trunk.png', 'icons/regions/upper-extremity.png'
