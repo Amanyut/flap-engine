@@ -709,7 +709,8 @@
     /* ---- A-Z FAST SCROLLER ---- */
     .az-bar { position: fixed; right: 10px; top: 50%; height: min(60vh, 520px); transform: translateY(-42%); z-index: 760; width: 32px; display: none; flex-direction: column; justify-content: space-between; align-items: center;
       padding: 10px 0; border-radius: 16px; background: var(--panel-light); border: 1px solid var(--border-color); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
-      touch-action: none; user-select: none; -webkit-user-select: none; opacity: 0.55; transition: opacity 0.35s; }
+      touch-action: none; user-select: none; -webkit-user-select: none; opacity: 0.88; transition: opacity 0.35s;
+      border-color: rgba(59, 130, 246, 0.35); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22), 0 0 0 3px rgba(59, 130, 246, 0.08); }
     .az-bar.awake, .az-bar:active { opacity: 1; }
     body.az-on .az-bar { display: flex; }
     body.az-on .workspace { padding-right: 50px; }
@@ -824,17 +825,17 @@
     /* ---- LIVING HEADER: drifting aurora and a gold glint ---- */
     .top-status-bar { overflow: hidden; }
     .top-status-bar::before { content: ''; position: absolute; top: 0; bottom: 0; left: -100%; width: 300%; z-index: 0; pointer-events: none;
-      background: linear-gradient(110deg, #031b3d 0%, #0b3c7d 14%, #04285a 28%, #183a86 42%, #052a5e 56%, #0d4a8a 70%, #04234f 84%, #0a3577 100%);
-      animation: aurora 22s ease-in-out infinite alternate; will-change: transform; }
+      background: linear-gradient(110deg, #021632 0%, #0e58b0 14%, #03214c 28%, #2463c4 42%, #042656 56%, #1268bd 70%, #031c42 84%, #0f52a6 100%);
+      animation: aurora 14s ease-in-out infinite alternate; will-change: transform; }
     .top-status-bar > * { position: relative; z-index: 1; }
     body.dark-theme .top-status-bar::before { background: linear-gradient(110deg, #020814 0%, #0a1f45 14%, #030c1f 28%, #13245a 42%, #040f26 56%, #0b2652 70%, #020a1a 84%, #0e1d47 100%); }
     body.yellow-theme .top-status-bar::before { background: linear-gradient(110deg, #0a2e34 0%, #13525c 14%, #0b333a 28%, #1a6470 42%, #0c3940 56%, #145a64 70%, #0a2f35 84%, #12505a 100%); }
     @keyframes aurora { 0% { transform: translateX(0); } 100% { transform: translateX(33.3%); } }
-    .top-status-bar .brand-name { background: linear-gradient(100deg, #fff 0%, #fff 42%, #fff4cf 48%, #ffffff 54%, #fff 100%); background-size: 260% 100%;
-      -webkit-background-clip: text; background-clip: text; color: transparent; animation: glint 7s ease-in-out infinite; }
-    .top-status-bar .brand-name .brand-flap { background: linear-gradient(100deg, var(--brand-flap) 0%, var(--brand-flap) 42%, #fffdf2 48%, var(--brand-flap) 54%, var(--brand-flap) 100%); background-size: 260% 100%;
-      -webkit-background-clip: text; background-clip: text; color: transparent; animation: glint 7s ease-in-out infinite; filter: drop-shadow(0 0 6px rgba(245, 196, 81, 0.35)); }
-    @keyframes glint { 0%, 62% { background-position: 130% 0; } 88%, 100% { background-position: -30% 0; } }
+    .top-status-bar .brand-name { background: linear-gradient(100deg, #fff 0%, #fff 36%, #ffd36b 45%, #fff3c9 50%, #ffd36b 55%, #fff 64%, #fff 100%); background-size: 260% 100%;
+      -webkit-background-clip: text; background-clip: text; color: transparent; animation: glint 4.8s ease-in-out infinite; }
+    .top-status-bar .brand-name .brand-flap { background: linear-gradient(100deg, var(--brand-flap) 0%, var(--brand-flap) 36%, #fffaf0 45%, #ffffff 50%, #fffaf0 55%, var(--brand-flap) 64%, var(--brand-flap) 100%); background-size: 260% 100%;
+      -webkit-background-clip: text; background-clip: text; color: transparent; animation: glint 4.8s ease-in-out infinite; filter: drop-shadow(0 0 6px rgba(245, 196, 81, 0.4)); }
+    @keyframes glint { 0%, 30% { background-position: 130% 0; } 80%, 100% { background-position: -30% 0; } }
 
     /* ---- GLOWING FAVOURITES ---- */
     .flap-card.is-fav { isolation: isolate; overflow: hidden; background: transparent; border-color: transparent; box-shadow: 0 0 0 1px rgba(245, 196, 81, 0.35), 0 8px 22px rgba(245, 196, 81, 0.2); }
@@ -878,6 +879,42 @@
     body.dark-theme .sub-chips .sub-chip.on { color: #0b1220; }
     #flap-page .fp-header { border-bottom: 3px solid var(--rc, var(--border-color)); }
     #flap-page .fp-meta { color: var(--rc, inherit); }
+
+
+    /* ---- REGION TILES: uniform at rest; a hint of the region colour while pressed; ripple of colour when chosen ---- */
+    .menu-item.region-tile { position: relative; transition: background 0.35s, border-color 0.35s, color 0.35s, box-shadow 0.35s, transform 0.15s; }
+    .menu-item.region-tile > * { position: relative; z-index: 1; }
+    .menu-item.region-tile::before { content: ''; position: absolute; inset: 0; z-index: 0; border-radius: inherit; background: var(--rc); opacity: 0; transition: opacity 0.18s; pointer-events: none; }
+    .menu-item.region-tile.pressing:not(.active)::before { opacity: 0.24; }
+    .menu-item.region-tile.active:not(.rippling), body.yellow-theme .menu-item.region-tile.active:not(.rippling) { background: var(--rc); border-color: var(--rc); color: #fff; box-shadow: 0 10px 24px -8px var(--rc), 0 0 0 1px var(--rc); }
+    body.dark-theme .menu-item.region-tile.active:not(.rippling) { color: #0b1220; }
+    .region-tile.active:not(.rippling) .region-icon, body.yellow-theme .region-tile.active:not(.rippling) .region-icon { background-color: #ffffff; }
+    body.dark-theme .region-tile.active:not(.rippling) .region-icon { background-color: #0b1220; }
+    .menu-item.region-tile.active.rippling { background: rgba(148, 163, 184, 0.07); border-color: #334155; color: #cbd5e1; box-shadow: none; }
+    .region-tile.active.rippling .region-icon { background-color: #93c5fd; }
+    body.yellow-theme .menu-item.region-tile.active.rippling { background: #ffe600; border-color: rgba(14, 59, 67, 0.22); color: #0e3b43; box-shadow: none; }
+    body.yellow-theme .region-tile.active.rippling .region-icon { background-color: #0e3b43; }
+    .menu-item.region-tile > .tile-ripple { position: absolute; z-index: 0; border-radius: 50%; background: var(--rc); transform: translate(-50%, -50%) scale(0); animation: tileRipple 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; pointer-events: none; }
+    @keyframes tileRipple { to { transform: translate(-50%, -50%) scale(1); } }
+    .region-tile.pop .region-icon { animation: tileBounce 0.6s cubic-bezier(0.2, 1.6, 0.4, 1); }
+    .region-tile.pop::after { content: ''; position: absolute; top: 0; bottom: 0; width: 45%; left: -60%; z-index: 2; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent); transform: skewX(-18deg); animation: tileSweep 0.9s ease-out; pointer-events: none; }
+    @keyframes tileBounce { 0% { transform: scale(1); } 40% { transform: scale(1.3) translateY(-3px); } 70% { transform: scale(0.93); } 100% { transform: scale(1); } }
+    @keyframes tileSweep { to { left: 130%; } }
+
+    /* ---- HERO BANNER on flap pages ---- */
+    .fp-hero { position: relative; overflow: hidden; margin: -14px -14px 0; padding: 24px 18px 20px; min-height: 128px; box-sizing: border-box; background: var(--matrix-card); }
+    .fp-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, var(--rc, var(--accent-blue)), transparent 78%); opacity: 0.2; pointer-events: none; }
+    body.dark-theme .fp-hero::before { opacity: 0.28; }
+    .fh-icon { position: absolute; right: -16px; bottom: -26px; width: 150px; height: 150px; background: var(--rc, var(--accent-blue)); -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; opacity: 0.16; pointer-events: none; will-change: transform; }
+    .fh-in { position: relative; will-change: transform, opacity; transform-origin: 0 0; }
+    .fh-meta { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc, var(--accent-blue)); }
+    .fh-title { margin: 6px 0 0; font-size: calc(1.65rem * var(--rs, 1)); line-height: 1.15; font-weight: 800; letter-spacing: -0.01em; color: var(--text-dark); max-width: 88%; }
+    .fh-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .fh-pill { font-size: 0.78rem; font-weight: 700; padding: 4px 11px; border-radius: 999px; color: var(--rc, var(--accent-blue)); border: 1px solid var(--rc, var(--accent-blue)); background: var(--matrix-card); }
+    .fp-body > .fp-tabs { position: sticky; top: -14px; z-index: 3; margin: 0 -14px 12px; }
+    #flap-page .fp-title-wrap { transition: opacity 0.3s, transform 0.3s; }
+    #flap-page.hero-on .fp-title-wrap { opacity: 0; transform: translateY(6px); }
+    @media (prefers-reduced-motion: reduce) { .tile-ripple, .region-tile.pop .region-icon, .region-tile.pop::after { animation: none !important; } }
 
     /* ---- SMALL TOUCHES ---- */
     .toast-legacy { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
@@ -1058,9 +1095,8 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
       </button>
     </div>
-    <div class="fp-tabs" id="fp-tabs"></div>
     <div class="fp-progress" aria-hidden="true"><i id="fp-progress"></i></div>
-    <div class="fp-body" id="fp-body"><div class="fp-inner" id="fp-inner"></div></div>
+    <div class="fp-body" id="fp-body"><div class="fp-hero" id="fp-hero"></div><div class="fp-tabs" id="fp-tabs"></div><div class="fp-inner" id="fp-inner"></div></div>
     <div class="fp-nav"><button id="fp-prev" onclick="stepFlap(-1)"></button><button id="fp-next" onclick="stepFlap(1)"></button></div>
   </div>
 
@@ -1598,6 +1634,7 @@
     function makeRegionTile(label, wide) {
       const div = document.createElement('div');
       div.className = 'menu-item region-tile' + (wide ? ' wide' : '');
+      div.style.setProperty('--rc', regionVar(label));
       const icon = document.createElement('span');
       icon.className = 'region-icon';
       const slug = regionSlug(label);
@@ -1837,6 +1874,7 @@
       buzz(7);
       document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
       element.classList.add('active');
+      animateTileSelect(element);
       activeCategoryFilter = cat;
 
       document.getElementById('system-page-view').style.display = 'none';
@@ -2230,6 +2268,7 @@
       const tag = stripHTML(flap['Sub-Region Tag'] || '').split(',')[0].trim();
       document.getElementById('fp-meta').innerText = stripHTML(flap.category) + (tag ? ' · ' + tag : '');
       document.getElementById('flap-page').style.setProperty('--rc', regionVar(flap.category));
+      renderHero(flap);
       document.getElementById('fp-title').innerText = stripHTML(flap.name);
       const starSlot = document.getElementById('fp-star'); starSlot.innerHTML = ''; starSlot.appendChild(makeStarButton(flap.name, 'fp-fav'));
 
@@ -2253,7 +2292,8 @@
       tabBar.innerHTML = tabs;
       tabBar.querySelectorAll('.fp-tab').forEach(btn => btn.onclick = () => {
         const sec = document.getElementById(btn.dataset.target);
-        body.scrollTo({ top: sec.offsetTop - 10, behavior: 'smooth' });
+        const tabsH = document.getElementById('fp-tabs').offsetHeight;
+        body.scrollTo({ top: sec.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - tabsH - 8, behavior: 'smooth' });
       });
       inner.classList.remove('from-left', 'from-right');
       if (dir) { void inner.offsetWidth; inner.classList.add(dir > 0 ? 'from-right' : 'from-left'); }
@@ -2513,6 +2553,7 @@
       if (!b || !bar) return;
       const max = b.scrollHeight - b.clientHeight;
       bar.style.transform = 'scaleX(' + (max > 4 ? Math.min(1, b.scrollTop / max) : 0) + ')';
+      updateHero();
     }
     (function () {
       let raf = 0;
@@ -3194,7 +3235,7 @@
       const q = document.getElementById('search-input').value.trim();
       const items = Array.from(document.querySelectorAll('#flap-grid-canvas [data-name]'));
       const sysOpen = document.getElementById('system-page-view').style.display === 'block';
-      const on = !q && !sysOpen && (sort === 'asc' || sort === 'desc') && items.length >= 12;
+      const on = !q && !sysOpen && (sort === 'asc' || sort === 'desc') && items.length >= 8;
       document.body.classList.toggle('az-on', on);
       if (!on) return;
       const have = new Set(items.map(el => (stripHTML(el.dataset.name).trim()[0] || '#').toUpperCase()));
@@ -3205,6 +3246,8 @@
     (function () {
       const bar = document.getElementById('az-bar'), bubble = document.getElementById('az-bubble');
       if (!bar) return;
+      // positioned against the screen itself, whatever the page layout does
+      document.body.appendChild(bar); document.body.appendChild(bubble);
       let active = false, lastL = '';
       function pick(e) {
         const r = bar.getBoundingClientRect();
@@ -3471,6 +3514,63 @@
       if (/indicat|use|application|advantage|reconstruct/.test(l)) return 'use';
       if (/introduc|also known|history|original|described|source|reference|classif|type|variant/.test(l)) return 'info';
       return '';
+    }
+
+
+    // ================= HERO BANNER and REGION TILE ANIMATION =================
+    function renderHero(flap) {
+      const hero = document.getElementById('fp-hero');
+      if (!hero) return;
+      const slug = regionSlug(stripHTML(flap.category));
+      const tags = stripHTML(flap['Sub-Region Tag'] || '').split(',').map(s => s.trim()).filter(Boolean);
+      hero.innerHTML = (REGION_ICONS.includes(slug) ? '<span class="fh-icon" style="--icon:url(\'icons/regions/' + slug + '.png\')"></span>' : '') +
+        '<div class="fh-in"><div class="fh-meta">' + escapeAttr(stripHTML(flap.category)) + '</div>' +
+        '<h1 class="fh-title">' + escapeAttr(stripHTML(flap.name)) + '</h1>' +
+        (tags.length ? '<div class="fh-pills">' + tags.map(x => '<span class="fh-pill">' + escapeAttr(x) + '</span>').join('') + '</div>' : '') + '</div>';
+    }
+    // as the page scrolls, the banner drifts up and fades while the slim header title fades in
+    function updateHero() {
+      const b = document.getElementById('fp-body'), hero = document.getElementById('fp-hero'), page = document.getElementById('flap-page');
+      if (!b || !hero || !page) return;
+      const h = hero.offsetHeight || 1, p = Math.max(0, Math.min(1, b.scrollTop / (h * 0.85)));
+      const inn = hero.querySelector('.fh-in'), ic = hero.querySelector('.fh-icon');
+      if (!reducedMotion()) {
+        if (inn) { inn.style.transform = 'translateY(' + (p * h * 0.35).toFixed(1) + 'px) scale(' + (1 - p * 0.08).toFixed(3) + ')'; inn.style.opacity = (1 - p * 0.9).toFixed(2); }
+        if (ic) ic.style.transform = 'translateY(' + (p * 46).toFixed(0) + 'px) scale(' + (1 - p * 0.3).toFixed(2) + ')';
+      }
+      page.classList.toggle('hero-on', p < 0.72);
+    }
+
+    // a faint hint of the region colour while a tile is pressed
+    let tilePress = { el: null, x: 0, y: 0, t: 0 };
+    document.addEventListener('pointerdown', e => {
+      const tile = e.target.closest && e.target.closest('.menu-item.region-tile');
+      if (!tile) return;
+      tilePress = { el: tile, x: e.clientX, y: e.clientY, t: Date.now() };
+      tile.classList.add('pressing');
+    }, { passive: true });
+    ['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => {
+      document.querySelectorAll('.region-tile.pressing').forEach(el => setTimeout(() => el.classList.remove('pressing'), 120));
+    }, { passive: true }));
+    // choosing a tile: its colour spreads from the touch point, then the icon bounces and a light sweeps across
+    function animateTileSelect(el) {
+      if (!el || !el.classList.contains('region-tile') || reducedMotion()) return;
+      const r = el.getBoundingClientRect();
+      const fromTouch = tilePress.el === el && Date.now() - tilePress.t < 1500;
+      const x = fromTouch ? tilePress.x - r.left : r.width / 2, y = fromTouch ? tilePress.y - r.top : r.height / 2;
+      const size = 2.1 * Math.hypot(Math.max(x, r.width - x), Math.max(y, r.height - y));
+      el.querySelectorAll('.tile-ripple').forEach(n => n.remove());
+      const rip = document.createElement('span');
+      rip.className = 'tile-ripple';
+      rip.style.left = x + 'px'; rip.style.top = y + 'px'; rip.style.width = size + 'px'; rip.style.height = size + 'px';
+      el.classList.add('rippling');
+      el.insertBefore(rip, el.firstChild);
+      clearTimeout(el._rt);
+      el._rt = setTimeout(() => {
+        el.classList.remove('rippling', 'pressing'); rip.remove();
+        el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+        setTimeout(() => el.classList.remove('pop'), 1000);
+      }, 430);
     }
 
     // ---- DEFECT MAPPER (prototype, loaded on demand) ----

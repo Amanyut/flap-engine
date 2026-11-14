@@ -122,8 +122,13 @@
       text: 'Now tick <b>Compare</b> on a second flap – here, or any other.',
       action: () => selectedFlaps.size >= 2 },
 
-    { target: () => $('#cmp-tray'), title: 'Your comparison tray',
-      text: 'Ticked flaps gather in this tray. Tap the <b>stack of little cards</b> to fan them out – remove one with ✕, or tap it to open it. <b>Clear</b> unticks them all.',
+    { target: () => $('#ct-stack'), title: 'Your deck of selected flaps', tryIt: true,
+      text: 'Every flap you tick joins this little <b>deck of cards</b> at the bottom-left, so you always see how many you have picked. <b>Tap the deck</b> to fan the cards out.',
+      when: () => selectedFlaps.size >= 1,
+      action: () => !!document.querySelector('#ct-fan.open') },
+
+    { target: () => $('#ct-fan.open') || $('#cmp-tray'), title: 'Check before you compare',
+      text: 'Here you can see exactly which flaps are lined up. Tap <b>✕</b> to drop one you picked by mistake, or tap a card to read that flap <b>full screen</b> – your selection stays as it is.<br><span class="tg-tip"><b>Clear</b> in the tray unticks them all at once.</span>',
       when: () => selectedFlaps.size >= 1 },
 
     { target: () => $('#launch-matrix-btn'), title: 'Open the comparison', tryIt: true,
