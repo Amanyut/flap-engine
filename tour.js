@@ -172,6 +172,10 @@
       text: 'Each tap of <b>Theme</b> moves to the next look: <b>light</b>, <b>dark</b> and a bold <b>yellow</b>.',
       prepare: openSidebar },
 
+    { target: () => $('#sound-btn'), title: 'Sounds',
+      text: 'The app plays a few soft sounds – when a flap opens, cards are dealt, or the connection drops. Tap the speaker <b>🔊</b> to mute them – it changes to <b>🔇</b> – and tap it again to turn them back on.',
+      prepare: openSidebar },
+
     { target: () => $('#display-user-name'), title: 'Your details',
       text: 'Tap your name to change it, or to add or change your <b>birthday</b>.',
       prepare: openSidebar },
@@ -185,8 +189,8 @@
       prepare: () => { if (dmOpen()) window.defectMapper.close(); openSidebar(); } },
 
     // ----- optional Defect Mapper tour -----
-    { group: 'dm', target: () => dm('.dm-modal.show .dm-mcard'), title: 'A note before you begin', tryIt: true,
-      text: 'Please read this note, then tap <b>I understand</b>.',
+    { group: 'dm', target: () => dm('.dm-modal.show .dm-mcard'), title: 'A note before you begin', tryIt: true, makeRoom: true,
+      text: 'Scroll through the note below and read it, then tap <b>I understand</b> at its end.',
       when: dmOpen, wait: 4000, action: () => !dm('.dm-modal.show') },
 
     { group: 'dm', target: () => dm('.dm-patient'), title: 'Your patient',
@@ -240,7 +244,7 @@
     'Ask Amanyu': 'flap', 'Back to the list': 'flap', 'Compare flaps': 'list', 'And one more': 'list', 'Your deck of selected flaps': 'list',
     'Check before you compare': 'list', 'Open the comparison': 'list', 'Comparative Overview': 'matrix', 'Arrange and expand': 'matrix',
     'Keep it for later': 'matrix', 'Back to your comparison': 'list', 'Select everything at once': 'list', 'Pull down to refresh': 'list',
-    'Your Favourites': 'menu', 'Text size': 'menu', 'Three themes': 'menu', 'Your details': 'menu', 'Need a reminder?': 'menu',
+    'Your Favourites': 'menu', 'Text size': 'menu', 'Three themes': 'menu', 'Sounds': 'menu', 'Your details': 'menu', 'Need a reminder?': 'menu',
     'Defect Mapper (beta)': 'menu', 'You’re all set': 'any'
   };
   const HINT_OF = {
@@ -280,6 +284,7 @@
   }
   function recover(s) {
     mem.recoverAt = Date.now(); mem.offSince = 0;
+    if (window.sfx) window.sfx('oops');
     ensureScreen(stepScreen(s));
     if (s.prepare && stepScreen(s) === 'list') { try { s.prepare(); } catch (e) {} }
     const box = card && card.querySelector('.tg-text');
@@ -308,6 +313,10 @@
   function place() {
     if (!active) return;
     const s = STEPS[idx];
+    const room = !!s.makeRoom;
+    document.documentElement.classList.toggle('tg-room', room);
+    if (root) root.classList.toggle('tg-calm', room);   // no ripple over text that is being read
+    if (room) document.documentElement.style.setProperty('--tg-room', ((card && card.offsetHeight) || 180) + 26 + 'px');
     const el = s.target ? s.target() : null;
     const W = window.innerWidth, H = window.innerHeight;
     let r = null;
@@ -359,7 +368,7 @@
     }
     // done yet?
     if (ready && s.action && !advanceTimer && s.action()) {
-      card.classList.add('tg-done');
+      card.classList.add('tg-done'); if (window.sfx) window.sfx('done');
       advanceTimer = setTimeout(() => { advanceTimer = 0; go(idx + 1); }, 650);
     }
     raf = requestAnimationFrame(place);
@@ -443,9 +452,10 @@
   function end(finished) {
     active = false;
     cancelAnimationFrame(raf); clearTimeout(advanceTimer); advanceTimer = 0;
+    document.documentElement.classList.remove('tg-room');
     if (root) root.classList.remove('tg-on');
     try { localStorage.setItem(DONE_KEY, '1'); } catch (e) {}
-    if (finished) closeSidebar();
+    if (finished) { closeSidebar(); if (window.sfx) window.sfx('finish'); }
   }
 
   // First login on this device: start once the opening animation has finished
@@ -542,6 +552,9 @@
   @keyframes tgGrow { 0% { --tg-g: 0; animation-timing-function: cubic-bezier(.25, .6, .35, 1); } 70% { --tg-g: 1; } 100% { --tg-g: 1; } }
   @keyframes tgMorph { 0% { --tg-m: 0; } 24% { --tg-m: 0; animation-timing-function: cubic-bezier(.45, 0, .3, 1); } 76% { --tg-m: 1; } 100% { --tg-m: 1; } }
   @keyframes tgFade { 0% { opacity: 0; } 6% { opacity: .95; } 78% { opacity: .6; } 100% { opacity: 0; } }
+  .tg-root.tg-calm .tg-spot::before { display: none; }
+  html.tg-room .dm-root .dm-modal { padding-top: var(--tg-room, 200px); align-items: flex-start; }
+  html.tg-room .dm-root .dm-mcard { max-height: 100%; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
   .tg-oops { margin: 0 0 8px; padding: 8px 10px; border-radius: 10px; background: rgba(96, 165, 250, .14); border-left: 3px solid #60a5fa; font-size: .9rem; color: #e2ecfb; }
   .tg-oops-in { animation: tgIn .35s cubic-bezier(.2,.8,.2,1); }
   .tg-foot { margin-top: 10px; text-align: center; font-size: .8rem; color: #93a4bf; }

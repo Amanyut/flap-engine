@@ -107,7 +107,10 @@
     .sidebar-system { padding: 10px 12px; border-top: 1px solid #334155; display: none; }
     .sidebar-profile { padding: 20px; border-top: 1px solid #334155; display: none; flex-direction: column; gap: 12px; background: rgba(0,0,0,0.1); }
     .profile-email { font-size: 0.8rem; font-weight: 600; color: #cbd5e1; word-break: break-all; }
-    .profile-controls { display: flex; gap: 10px; }
+    .profile-controls { display: flex; gap: 8px; }
+    .profile-controls .btn-sidebar { white-space: nowrap; padding-left: 4px; padding-right: 4px; }
+    .profile-controls #sound-btn { flex: 0 0 auto; width: 3.1em; font-size: 1.05rem; line-height: 1; }
+    .profile-controls #sound-btn[aria-pressed="false"] { opacity: .75; }
     .btn-sidebar { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #475569; background: transparent; color: #cbd5e1; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: 0.2s; text-align: center; }
     .btn-sidebar:hover { background: #334155; color: white; }
     .btn-logout { border-color: #7f1d1d; color: #fca5a5; }
@@ -1087,6 +1090,7 @@
         <div class="profile-email" id="display-user-email"></div>
         <div class="profile-controls">
           <button class="btn-sidebar" onclick="toggleTheme(event)" title="Toggle Dark Mode">🌓 Theme</button>
+          <button class="btn-sidebar" id="sound-btn" onclick="toggleSound()" title="Sounds on – tap to mute" aria-label="Sounds on – tap to mute">🔊</button>
           <button class="btn-sidebar btn-logout" onclick="logOut()">Log Out</button>
         </div>
       </div>
@@ -1261,7 +1265,7 @@
     function toggleFavourite(name) {
       const key = favKey(name);
       const adding = !favouriteFlaps.has(key);
-      buzz(adding ? [10, 40, 16] : 10);
+      buzz(adding ? [10, 40, 16] : 10); sfx(adding ? 'fav' : 'untick');
       if (adding) favouriteFlaps.add(key); else favouriteFlaps.delete(key);
       if (!adding) setTimeout(() => showToast('Removed from Favourites', () => { if (!favouriteFlaps.has(key)) toggleFavourite(name); }), 0);
       storeFavouritesLocally(true);
@@ -2306,6 +2310,7 @@
       buzz(8);
       if (checkbox.checked) selectedFlaps.add(flapName);
       else selectedFlaps.delete(flapName);
+      sfx(checkbox.checked ? 'tick' : 'untick', selectedFlaps.size);
       updateCompareButton();
     }
 
@@ -2323,14 +2328,14 @@
         let n = 0;
         selAll.added.forEach(nm => { if (selectedFlaps.delete(nm)) n++; });
         selAll = { ctx: '', added: [] };
-        renderWorkspaceGrid(); updateCompareButton(); buzz(8);
+        renderWorkspaceGrid(); updateCompareButton(); buzz(8); sfx('unsel');
         showToast(plural(n) + ' unselected');
         return;
       }
       const added = [];
       getFilteredFlaps().forEach(f => { if (!selectedFlaps.has(f.name)) { selectedFlaps.add(f.name); added.push(f.name); } });
       selAll = added.length ? { ctx: ctx, added: added } : { ctx: '', added: [] };
-      renderWorkspaceGrid(); updateCompareButton(); buzz(10);
+      renderWorkspaceGrid(); updateCompareButton(); buzz(10); if (added.length) sfx('selall');
       showToast(added.length ? plural(added.length) + ' selected' : 'Every flap here is already selected');
     }
     function updateSelectAllUI() {
@@ -2462,6 +2467,7 @@
       if (!renderFlapPage(name)) return;
       const page = document.getElementById('flap-page');
       if (page.classList.contains('open')) { history.replaceState({ view: 'flap' }, '', flapHash(name)); return; }
+      sfx('open');
       flapBackStack = [];
       flapFromMatrix = !!(opts && opts.matrix);
       clearMorph(page);
@@ -2485,6 +2491,7 @@
     function closeFlapPage(fromBackButton) {
       const page = document.getElementById('flap-page');
       if (!page.classList.contains('open')) return;
+      sfx('close');
       clearMorph(page);
       const extraSteps = flapBackStack.length; flapBackStack = []; flapFromMatrix = false;
       const end = morph.name === flapPageName ? morphInset(page, morph.el) : null;
@@ -2507,6 +2514,7 @@
       const order = viewOrder(), idx = order.indexOf(flapPageName), target = order[idx + d];
       if (idx < 0) return;
       if (!target) { edgeBounce(d); return; }
+      sfx('swipe', d);
       renderFlapPage(target, d);
       history.replaceState({ view: 'flap' }, '', flapHash(target));
       buzz(6); saveStateSoon();
@@ -2547,7 +2555,7 @@
       if (undo) {
         const b = document.createElement('button');
         b.type = 'button'; b.className = 'toast-undo'; b.textContent = 'Undo';
-        b.onclick = () => { clearTimeout(showToast.timer); el.classList.remove('show', 'has-action'); buzz(8); try { undo(); } catch (e) {} };
+        b.onclick = () => { clearTimeout(showToast.timer); el.classList.remove('show', 'has-action'); buzz(8); sfx('undo'); try { undo(); } catch (e) {} };
         el.appendChild(b);
       }
       void el.offsetWidth; el.classList.add('show');
@@ -2584,6 +2592,7 @@
         favsearch: [star, 'No favourites match this search', 'Try another word, or clear the search to see all your favourites.'],
         none: [lens, 'No flaps found', 'Try another spelling, a vessel or a region, or clear the search.']
       }[kind];
+      if (kind === 'none') { if (Date.now() - (emptyStateHtml.at || 0) > 2500) sfx('nomatch'); emptyStateHtml.at = Date.now(); }
       return '<div class="empty-state">' + s[0] + '<div class="es-title">' + s[1] + '</div><div class="es-text">' + s[2] + '</div></div>';
     }
 
@@ -2796,7 +2805,7 @@
         if (y0 === null) return;
         y0 = null;
         if (pull < 70) { reset(); return; }
-        busy = true;
+        busy = true; sfx('scalpel');
         ind.classList.remove('dragging', 'ready'); ind.classList.add('spin');
         svg.style.transform = '';
         pull = 66; place();
@@ -2978,7 +2987,7 @@
       wrap.innerHTML = '<div class="pm-card letter"><div class="pm-kicker">A message from Amanyu</div>' + (next.title ? '<h3>' + fillNames(escapeAttr(next.title)) + '</h3>' : '<div style="height:10px"></div>') +
         '<div class="pm-body">' + fillNames(next.html) + '</div><div class="pm-sign">– Amanyu</div><button type="button" class="pm-btn">Thank you</button></div>';
       document.body.appendChild(wrap);
-      buzz([10, 50, 10]);
+      buzz([10, 50, 10]); sfx('msg');
       wrap.querySelector('.pm-btn').onclick = () => {
         lsAdd('flap_msgs_seen', next.id); reportSeen(next.id);
         wrap.remove(); popupOpen = false;
@@ -3084,7 +3093,7 @@
         '<button type="button" class="bday-btn">Thank you, Amanyu! 💛</button></div>';
       setTimeout(() => {
         document.body.appendChild(wrap);
-        buzz([30, 60, 30, 60, 80]);
+        buzz([30, 60, 30, 60, 80]); sfx('bday');
         wrap.querySelector('.bday-btn').onclick = () => {
           try { localStorage.setItem('flap_bday_wish', String(new Date().getFullYear())); } catch (e) {}
           wrap.remove(); confettiBurst(3500);
@@ -3303,7 +3312,7 @@
         return { x: window.innerWidth / 2, y: y };
       }
       function goOffline() {
-        clear(); resting = false;
+        clear(); resting = false; sfx('offline');
         document.body.classList.add('offline');
         dot.classList.remove('green', 'pulse', 'on');
         el.classList.remove('online');
@@ -3320,7 +3329,7 @@
         later(() => dot.classList.add('pulse'), 4450);
       }
       function goOnline() {
-        clear(); resting = false;
+        clear(); resting = false; sfx('online');
         dot.classList.remove('in-pill');
         document.body.classList.remove('offline');
         dot.classList.remove('pulse');
@@ -3598,8 +3607,8 @@
         c.onclick = () => { closeFan(); openFlapPage(nm, { fromEl: c }); };
       });
     }
-    function openFan() { const fan = document.getElementById('ct-fan'); renderFan(); void fan.offsetWidth; fan.classList.add('open'); fan.setAttribute('aria-hidden', 'false'); buzz(8); }
-    function closeFan() { const fan = document.getElementById('ct-fan'); fan.classList.remove('open'); fan.setAttribute('aria-hidden', 'true'); }
+    function openFan() { const fan = document.getElementById('ct-fan'); renderFan(); void fan.offsetWidth; fan.classList.add('open'); fan.setAttribute('aria-hidden', 'false'); buzz(8); sfx('deal', selectedFlaps.size); }
+    function closeFan() { const fan = document.getElementById('ct-fan'); if (fan.classList.contains('open')) sfx('gather'); fan.classList.remove('open'); fan.setAttribute('aria-hidden', 'true'); }
     document.getElementById('ct-stack').onclick = e => { e.stopPropagation(); if (document.getElementById('ct-fan').classList.contains('open')) closeFan(); else openFan(); };
     document.addEventListener('click', e => {
       const fan = document.getElementById('ct-fan');
@@ -3730,6 +3739,7 @@
       const r = el.getBoundingClientRect();
       const fromTouch = tilePress.el === el && Date.now() - tilePress.t < 1500;
       if (!fromTouch) return;   // only a real tap animates (not the screen restored on opening)
+      sfx('tile');
       const x = fromTouch ? tilePress.x - r.left : r.width / 2, y = fromTouch ? tilePress.y - r.top : r.height / 2;
       const size = 2.1 * Math.hypot(Math.max(x, r.width - x), Math.max(y, r.height - y));
       el.querySelectorAll('.tile-ripple, .tile-ring, .tile-spark').forEach(n => n.remove());
@@ -3825,6 +3835,120 @@
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reset(); });
     })();
 
+
+    // ================= SOUNDS =================
+    // Short, soft sounds made by the phone itself (no sound files, works offline).
+    // Played only after a deliberate tap or when the connection changes. 🔊 Sounds in the side panel mutes them (flap_sound = 'off').
+    const SFX = (function () {
+      let A = null, M = null, NB = null;
+      const on = () => { try { return localStorage.getItem('flap_sound') !== 'off'; } catch (e) { return true; } };
+      function unlock() {
+        if (!on()) return;
+        try {
+          if (!A) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return; A = new C(); M = A.createGain(); M.gain.value = 0.55; M.connect(A.destination); }
+          if (A.state === 'suspended') A.resume();
+        } catch (e) {}
+      }
+      ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, unlock, true));
+      document.addEventListener('visibilitychange', () => { if (document.hidden && A && A.state === 'running') A.suspend(); });
+      function ready() {
+        if (!on() || !A) return false;
+        if (A.state === 'running') return true;
+        if (navigator.userActivation && navigator.userActivation.isActive) { A.resume(); return true; }
+        if (!document.hidden) A.resume().catch(() => {});
+        return false;
+      }
+      function out(pan) { if (pan === undefined || !A.createStereoPanner) return M; const p = A.createStereoPanner(); p.pan.value = pan; p.connect(M); return p; }
+      function tone(f, t, d, o) {
+        o = o || {}; const T = A.currentTime + t, os = A.createOscillator(), g = A.createGain();
+        os.type = o.type || 'sine'; os.frequency.setValueAtTime(f, T);
+        if (o.to) os.frequency.exponentialRampToValueAtTime(o.to, T + d);
+        const v = o.vol || 0.2;
+        g.gain.setValueAtTime(0.0001, T); g.gain.exponentialRampToValueAtTime(v, T + (o.att || 0.006)); g.gain.exponentialRampToValueAtTime(0.0001, T + d);
+        os.connect(g); g.connect(out(o.pan)); os.start(T); os.stop(T + d + 0.02);
+      }
+      function nbuf() { if (!NB) { const n = A.sampleRate; NB = A.createBuffer(1, n, A.sampleRate); const c = NB.getChannelData(0); for (let i = 0; i < n; i++) c[i] = Math.random() * 2 - 1; } return NB; }
+      function noise(t, d, o) {
+        o = o || {}; const T = A.currentTime + t, s = A.createBufferSource(), f = A.createBiquadFilter(), g = A.createGain();
+        s.buffer = nbuf(); f.type = o.ft || 'bandpass'; f.Q.value = o.q || 1; f.frequency.setValueAtTime(o.f || 1500, T);
+        if (o.to) f.frequency.exponentialRampToValueAtTime(o.to, T + d);
+        const v = o.vol || 0.2;
+        g.gain.setValueAtTime(0.0001, T); g.gain.exponentialRampToValueAtTime(v, T + (o.att || 0.004)); g.gain.exponentialRampToValueAtTime(0.0001, T + d);
+        s.connect(f); f.connect(g); g.connect(out(o.pan)); s.start(T, Math.random() * 0.5); s.stop(T + d + 0.02);
+      }
+      // a songbird call: a tiny chirp, then a whistle that holds, bends smoothly into the second note
+      // (with a small overshoot) and ends in a soft vibrato
+      function chirp(f, T) {
+        const os = A.createOscillator(), g = A.createGain();
+        os.frequency.setValueAtTime(f, T); os.frequency.exponentialRampToValueAtTime(f * 1.35, T + 0.05);
+        g.gain.setValueAtTime(0.0001, T); g.gain.exponentialRampToValueAtTime(0.16, T + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, T + 0.07);
+        os.connect(g); g.connect(M); os.start(T); os.stop(T + 0.09);
+      }
+      function bird(f1, f2) {
+        const T0 = A.currentTime + 0.01, T = T0 + 0.11, D = 0.46, H = 0.04, G = 0.17, N = 96, curve = new Float32Array(N);
+        chirp(f2 > f1 ? 1180 : 1500, T0);
+        const ss = x => x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x);
+        for (let i = 0; i < N; i++) {
+          const s = i / (N - 1) * D, o = H + G - 0.04;
+          let k = ss((s - H) / G);
+          if (s > o) k += 0.06 * Math.sin(Math.PI * ss((s - o) / 0.12));   // overshoot, then settle
+          curve[i] = f1 * Math.pow(f2 / f1, k);
+        }
+        [[1, 0.24], [2, 0.035]].forEach(([mul, vol]) => {
+          const os = A.createOscillator(), g = A.createGain(), lfo = A.createOscillator(), lg = A.createGain();
+          os.frequency.setValueCurveAtTime(curve.map(x => x * mul), T, D);
+          lfo.frequency.value = 7; lg.gain.setValueAtTime(0, T); lg.gain.setValueAtTime(0, T + D * 0.6); lg.gain.linearRampToValueAtTime(f2 * mul * 0.018, T + D * 0.84);
+          lfo.connect(lg); lg.connect(os.frequency);
+          g.gain.setValueAtTime(0.0001, T); g.gain.exponentialRampToValueAtTime(vol, T + 0.02);
+          g.gain.setValueAtTime(vol, T + D * 0.6); g.gain.exponentialRampToValueAtTime(0.0001, T + D);
+          os.connect(g); g.connect(M); os.start(T); lfo.start(T); os.stop(T + D + 0.02); lfo.stop(T + D + 0.02);
+        });
+      }
+      const S = {
+        offline() { bird(1480, 740); },
+        online() { bird(740, 1480); },
+        deal(n) { n = Math.max(2, Math.min(6, n || 5)); for (let i = 0; i < n; i++) { const t = i * 0.075, p = -0.6 + 1.2 * i / (n - 1); noise(t, 0.07, { f: 3200, to: 1400, q: 0.9, vol: 0.5, pan: p }); tone(170, t + 0.03, 0.06, { vol: 0.12, pan: p }); } },
+        gather() { for (let i = 0; i < 3; i++) noise(i * 0.05, 0.05, { f: 1800, to: 2800, q: 0.9, vol: 0.22, pan: 0.5 - i * 0.5 }); },
+        open() { noise(0, 0.3, { f: 350, to: 2600, q: 1.4, vol: 0.22, att: 0.08 }); tone(392, 0, 0.28, { to: 587, vol: 0.05, att: 0.06 }); },
+        close() { noise(0, 0.26, { f: 2400, to: 320, q: 1.4, vol: 0.22, att: 0.03 }); tone(587, 0, 0.22, { to: 392, vol: 0.05 }); tone(140, 0.22, 0.08, { vol: 0.14 }); },
+        swipe(d) { const p = d < 0 ? -0.5 : 0.5; noise(0, 0.18, { f: 900, to: 2800, q: 0.7, vol: 0.2, att: 0.03, pan: p }); noise(0.06, 0.16, { f: 2000, to: 700, q: 0.7, vol: 0.12, pan: -p * 0.8 }); },
+        tile() { noise(0, 0.35, { f: 600, to: 2600, q: 1.2, vol: 0.16, att: 0.1 }); tone(523, 0.05, 0.3, { to: 784, vol: 0.06, att: 0.08 }); tone(196, 0.38, 0.12, { vol: 0.16 }); },
+        tick(n) { const f = 880 * Math.pow(1.0595, Math.min(14, Math.max(0, (n || 1) - 1)) * 2); tone(f, 0, 0.05, { type: 'square', vol: 0.05 }); noise(0, 0.025, { ft: 'highpass', f: 4000, vol: 0.12 }); },
+        untick() { tone(620, 0, 0.05, { type: 'triangle', vol: 0.1 }); noise(0, 0.02, { ft: 'highpass', f: 3000, vol: 0.06 }); },
+        selall() { for (let i = 0; i < 9; i++) tone(900 * Math.pow(1.09, i), i * 0.028, 0.04, { type: 'square', vol: 0.04 }); tone(1760, 0.27, 0.18, { vol: 0.08 }); },
+        unsel() { for (let i = 0; i < 9; i++) tone(1900 / Math.pow(1.09, i), i * 0.028, 0.04, { type: 'square', vol: 0.04 }); },
+        fav() { tone(1568, 0, 0.6, { vol: 0.11 }); tone(2093, 0.06, 0.7, { vol: 0.09 }); tone(3136, 0.12, 0.6, { vol: 0.05 }); tone(4186, 0.18, 0.5, { vol: 0.03 }); },
+        undo() { tone(980, 0, 0.2, { type: 'triangle', to: 380, vol: 0.16 }); noise(0, 0.15, { f: 2500, to: 600, vol: 0.06 }); },
+        scalpel() { noise(0, 0.42, { f: 5200, to: 8200, q: 6, vol: 0.3, att: 0.015 }); tone(4400, 0.02, 0.5, { vol: 0.025 }); tone(6600, 0.04, 0.45, { vol: 0.015 }); },
+        ladder(n) { [523, 587, 659, 784, 880].slice(0, Math.max(1, Math.min(5, n || 5))).forEach((f, i) => tone(f, i * 0.13, 0.35, { type: 'triangle', vol: 0.13 })); },
+        msg() { tone(784, 0, 0.5, { type: 'triangle', vol: 0.14 }); tone(1175, 0.13, 0.7, { vol: 0.12 }); },
+        bday() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.1, 0.3, { type: 'triangle', vol: 0.14 })); tone(1319, 0.42, 0.6, { type: 'triangle', vol: 0.13 }); tone(1568, 0.42, 0.6, { vol: 0.1 }); setTimeout(() => { if (ready()) S.fav(); }, 700); },
+        done() { tone(880, 0, 0.16, { vol: 0.14 }); tone(1319, 0.09, 0.38, { vol: 0.14 }); },
+        finish() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, i * 0.085, 0.4, { vol: 0.12 })); },
+        oops() { tone(330, 0, 0.16, { type: 'triangle', to: 262, vol: 0.15 }); },
+        nomatch() { tone(196, 0, 0.09, { type: 'triangle', vol: 0.2 }); tone(165, 0.12, 0.13, { type: 'triangle', vol: 0.2 }); }
+      };
+      function play(name, arg) { if (!S[name] || !ready()) return; try { S[name](arg); } catch (e) {} }
+      return { play: play, on: on, unlock: unlock };
+    })();
+    function sfx(name, arg) { SFX.play(name, arg); }
+    window.sfx = sfx;
+    function paintSoundBtn() {
+      const b = document.getElementById('sound-btn'); if (!b) return;
+      const on = SFX.on();
+      b.textContent = on ? '🔊' : '🔇';
+      b.title = on ? 'Sounds on – tap to mute' : 'Muted – tap to turn sounds on';
+      b.setAttribute('aria-label', b.title);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function toggleSound() {
+      const on = !SFX.on();
+      try { localStorage.setItem('flap_sound', on ? 'on' : 'off'); } catch (e) {}
+      paintSoundBtn(); buzz(8);
+      if (on) { SFX.unlock(); setTimeout(() => sfx('done'), 60); }
+      showToast(on ? 'Sounds on' : 'Sounds off');
+    }
+    paintSoundBtn();
 
     // ================= CONTENT PROTECTION =================
     // The copy kept on the phone for offline use is compressed and encrypted (AES-GCM, key tied to this login),
@@ -3956,17 +4080,19 @@
       buildMatrix(orderedSelection());
       document.getElementById('matrix-dock').classList.add('open');
       document.getElementById('matrix-fab').style.display = 'none';
-      isMatrixMinimized = false;
+      isMatrixMinimized = false; sfx('open');
       renderWorkspaceGrid(); 
     }
 
     function minimizeMatrix() {
+      if (document.getElementById('matrix-dock').classList.contains('open')) sfx('close');
       document.getElementById('matrix-dock').classList.remove('open');
       document.getElementById('matrix-fab').style.display = 'flex';
       isMatrixMinimized = true;
     }
 
     function closeMatrix() {
+      if (document.getElementById('matrix-dock').classList.contains('open')) sfx('close');
       matrixSingleFlap = null;
       document.getElementById('matrix-dock').classList.remove('open');
       document.getElementById('matrix-fab').style.display = 'none';
