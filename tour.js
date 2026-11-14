@@ -62,18 +62,18 @@
       },
       action: () => mem.tapped && !sidebarOpen() },
 
-    { target: () => $('#subregion-dropdown'), title: 'Narrow it down',
-      text: 'Pick a sub-region such as <b>Nose</b> or <b>Cheek</b> to see only those flaps – or leave it at <b>All Sub-Regions</b>.',
+    { target: () => $('#sub-chips'), title: 'Narrow it down',
+      text: 'Swipe along these chips and tap a sub-region such as <b>Nose</b> or <b>Cheek</b> to see only those flaps – or keep <b>All</b>.',
       prepare: closeSidebar },
 
-    { target: () => $('#sort-dropdown'), title: 'Sort order',
-      text: 'Keep the textbook order, or sort the flaps <b>A–Z</b> or <b>Z–A</b>. In alphabetical order, a letter strip appears at the right edge – slide along it to jump to any letter.' },
+    { target: () => $('#sort-btn'), title: 'Sort order',
+      text: 'Tap <b>⇅</b> to keep the textbook order, or sort the flaps <b>A–Z</b> or <b>Z–A</b>. In alphabetical order, a letter strip appears at the right side – slide along it to jump to any letter.' },
 
     { target: () => $('#search-wrap'), title: 'Search anything',
       text: 'Type a flap’s name, an artery, a nerve, an author – even fragments such as <b>“rev sur”</b>. The words you type are highlighted in the results, and your <b>recent searches</b> appear when you tap the empty box.<br>Spelling slips are forgiven, and a <b>Did you mean…?</b> button offers the right spelling.' },
 
     { target: () => $('#view-toggle-btn'), title: 'Cards or List', tryIt: true,
-      text: 'Switch between <b>Cards</b> and a numbered <b>List</b>, like a book’s contents page. Tap it to try.',
+      text: 'This button switches between <b>Cards</b> and a numbered <b>List</b>, like a book’s contents page. Tap it to try.<br><span class="tg-tip">The <b>☑</b> button beside it selects every flap on the screen for comparison.</span>',
       onStart: () => { mem.view = viewMode; }, action: () => viewMode !== mem.view },
 
     { target: firstUnticked, title: 'Press and hold to peek', tryIt: true,
@@ -122,20 +122,28 @@
       text: 'Now tick <b>Compare</b> on a second flap – here, or any other.',
       action: () => selectedFlaps.size >= 2 },
 
+    { target: () => $('#cmp-tray'), title: 'Your comparison tray',
+      text: 'Ticked flaps gather in this tray. Tap the <b>stack of little cards</b> to fan them out – remove one with ✕, or tap it to open it. <b>Clear</b> unticks them all.',
+      when: () => selectedFlaps.size >= 1 },
+
     { target: () => $('#launch-matrix-btn'), title: 'Open the comparison', tryIt: true,
-      text: 'Now tap <b>Compare Flaps</b>.<br><span class="tg-tip">Tip: tapping any <b>ticked</b> flap also opens the comparison, while an <b>unticked</b> flap opens its own page.</span>',
+      text: 'Now tap <b>Compare</b>.<br><span class="tg-tip">Tip: tapping any <b>ticked</b> flap also opens the comparison, while an <b>unticked</b> flap opens its own page.</span>',
       when: () => selectedFlaps.size >= 2, action: matrixOpen },
 
     { target: () => $('#matrix-container'), title: 'Comparative Overview',
-      text: 'Every section is lined up side by side. Scroll down to read on, and sideways when you compare more flaps than fit on the screen.<br><span class="tg-tip">The small buttons above each flap’s name move its column <b>‹ left</b> or <b>right ›</b>, and the <b>pin</b> keeps it fixed at the left while the others scroll.</span>',
+      text: 'Every section is lined up side by side. Scroll down to read on, and sideways when you compare more flaps than fit on the screen.',
+      when: matrixOpen },
+
+    { target: () => $('.matrix-table th .th-tools'), title: 'Arrange and expand',
+      text: '<b>‹</b> and <b>›</b> move this column left or right. <b>📌</b> pins it at the left while the others scroll.<br><b>⤢</b> – or tapping the flap’s name – opens it <b>full screen</b>; swipe there to move between the compared flaps, and <b>Back</b> returns you to this comparison.',
       when: matrixOpen },
 
     { target: () => $('.dock-header button[onclick="minimizeMatrix()"]'), title: 'Keep it for later', tryIt: true,
       text: '<b>Minimise</b> keeps this comparison ready for later; <b>Close &amp; Clear</b> ends it and unticks the flaps. Tap <b>Minimise</b>.',
       when: matrixOpen, action: () => !matrixOpen() },
 
-    { target: () => $('#matrix-fab'), title: 'Back to your comparison',
-      text: '<b>Show Comparison</b> brings it back at any time, from any screen.',
+    { target: () => $('#launch-matrix-btn'), title: 'Back to your comparison',
+      text: 'Your selection waits in the tray – tap <b>Compare</b> to bring the comparison back at any time.',
       when: () => !matrixOpen() && selectedFlaps.size > 0 },
 
     { target: () => $('.workspace'), title: 'Pull down to refresh',

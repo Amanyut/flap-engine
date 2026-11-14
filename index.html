@@ -707,13 +707,16 @@
     body.yellow-theme .flap-link { color: #0e7c86; }
 
     /* ---- A-Z FAST SCROLLER ---- */
-    .az-bar { position: absolute; right: 2px; top: calc(var(--nav-h, 70px) + 12px); bottom: 70px; z-index: 22; width: 24px; display: none; flex-direction: column; justify-content: space-between; align-items: center;
-      padding: 6px 0; border-radius: 12px; background: color-mix(in srgb, var(--panel-light) 70%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); touch-action: none; user-select: none; -webkit-user-select: none; }
+    .az-bar { position: fixed; right: 10px; top: 50%; height: min(60vh, 520px); transform: translateY(-42%); z-index: 760; width: 32px; display: none; flex-direction: column; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-radius: 16px; background: var(--panel-light); border: 1px solid var(--border-color); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+      touch-action: none; user-select: none; -webkit-user-select: none; opacity: 0.55; transition: opacity 0.35s; }
+    .az-bar.awake, .az-bar:active { opacity: 1; }
     body.az-on .az-bar { display: flex; }
-    body.az-on .workspace { padding-right: 30px; }
-    .az-bar b { font-size: 10.5px; font-weight: 800; line-height: 1; color: var(--accent-blue); width: 100%; text-align: center; }
+    body.az-on .workspace { padding-right: 50px; }
+    body.az-on.tray-on .az-bar { top: 46%; }
+    .az-bar b { font-size: 12px; font-weight: 800; line-height: 1; color: var(--accent-blue); width: 100%; text-align: center; }
     .az-bar b.off { color: var(--text-muted); opacity: 0.35; }
-    .az-bubble { position: absolute; right: 44px; z-index: 23; width: 64px; height: 64px; margin-top: -32px; border-radius: 50% 50% 8px 50%; display: flex; align-items: center; justify-content: center;
+    .az-bubble { position: fixed; right: 58px; z-index: 23; width: 64px; height: 64px; margin-top: -32px; border-radius: 50% 50% 8px 50%; display: flex; align-items: center; justify-content: center;
       background: var(--accent-blue); color: #fff; font-size: 1.9rem; font-weight: 800; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3); opacity: 0; transform: scale(0.5); transition: opacity 0.15s, transform 0.2s cubic-bezier(0.2, 1.4, 0.4, 1); pointer-events: none; }
     .az-bubble.show { opacity: 1; transform: scale(1); }
     body.yellow-theme .az-bubble { background: #0e3b43; color: #fff000; }
@@ -748,6 +751,118 @@
     .matrix-table th.pinned { z-index: 4; }
     .matrix-table th.moved { animation: colPulse 0.6s ease-out; }
     @keyframes colPulse { 0% { box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.9); } 100% { box-shadow: 0 0 0 0 rgba(245, 196, 81, 0); } }
+
+
+    /* ---- TOOLBAR: icon buttons, sort menu, sub-region chips ---- */
+    .navbar .control-group { display: none !important; }
+    .tool-icons { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .icon-btn { position: relative; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--panel-light); color: var(--text-dark); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; transition: transform 0.12s, background 0.2s; }
+    .icon-btn:active { transform: scale(0.92); }
+    .icon-btn svg { width: 22px; height: 22px; }
+    .sort-wrap { position: relative; }
+    .sort-badge { position: absolute; right: -5px; bottom: -6px; padding: 1px 5px; border-radius: 999px; background: var(--accent-blue); color: #fff; font-size: 9.5px; font-weight: 800; line-height: 1.5; display: none; }
+    .sort-badge.on { display: block; }
+    body.yellow-theme .sort-badge { background: #0e3b43; color: #fff000; }
+    .sort-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; min-width: 170px; padding: 6px; border-radius: 14px; background: var(--panel-light); border: 1px solid var(--border-color); box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+      display: none; transform-origin: top right; animation: peekIn 0.2s ease-out; }
+    .sort-menu.open { display: block; }
+    .sort-menu button { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 11px 12px; border: none; border-radius: 10px; background: transparent; color: var(--text-dark); font: inherit; font-size: 0.98rem; text-align: left; cursor: pointer; }
+    .sort-menu button.on { background: var(--bg-main); font-weight: 700; color: var(--accent-blue); }
+    .sort-menu button.on::after { content: '✓'; }
+    .navbar .search-wrap { min-width: 0; max-width: none; flex: 1 1 0; }
+    .sub-chips { flex-basis: 100%; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 1px 2px; margin: 0 -2px; }
+    .sub-chips::-webkit-scrollbar { display: none; }
+    .sub-chips:empty { display: none; }
+    .sub-chip { flex-shrink: 0; padding: 8px 15px; border-radius: 999px; border: 1px solid var(--border-color); background: var(--panel-light); color: var(--text-dark); font: inherit; font-size: 0.92rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.2s, color 0.2s, transform 0.12s; }
+    .sub-chip:active { transform: scale(0.94); }
+    .sub-chip.on { background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+    body.yellow-theme .sub-chip.on { background: #0e3b43; border-color: #0e3b43; color: #fff000; box-shadow: none; }
+    body.sys-page .tool-icons, body.sys-page .sub-chips { display: none; }
+    @media (max-width: 420px) { .icon-btn { width: 40px; height: 40px; border-radius: 11px; } .icon-btn svg { width: 20px; height: 20px; } .sub-chip { padding: 7px 13px; font-size: 0.88rem; } }
+
+    /* ---- COMPARISON TRAY (bottom) with a stack of mini cards ---- */
+    .matrix-fab { display: none !important; }
+    .cmp-tray { position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); z-index: 795; width: min(560px, calc(100vw - 20px)); box-sizing: border-box;
+      display: flex; align-items: center; gap: 10px; padding: 9px 10px 9px 12px; border-radius: 20px;
+      background: color-mix(in srgb, var(--panel-light) 88%, transparent); -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4);
+      border: 1px solid var(--border-color); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+      transform: translate(-50%, 140%); opacity: 0; pointer-events: none; transition: transform 0.45s cubic-bezier(0.2, 1.2, 0.3, 1), opacity 0.25s; }
+    body.tray-on .cmp-tray { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+    body.tray-on .workspace { padding-bottom: 120px; }
+    body.dark-theme .cmp-tray { background: rgba(17, 24, 39, 0.9); }
+    .ct-stack { position: relative; width: 66px; height: 46px; flex-shrink: 0; border: none; background: none; padding: 0; cursor: pointer; }
+    .ct-mini { position: absolute; left: 6px; top: 3px; width: 48px; height: 38px; border-radius: 7px; background: var(--panel-light); border: 1px solid var(--border-color); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+      font-size: 6.5px; line-height: 1.15; font-weight: 700; color: var(--text-dark); padding: 4px; box-sizing: border-box; overflow: hidden; text-align: left; transition: transform 0.35s cubic-bezier(0.2, 1.3, 0.3, 1); }
+    .ct-mini::before { content: ''; display: block; height: 3px; border-radius: 2px; margin-bottom: 3px; background: var(--accent-blue); opacity: 0.7; }
+    .ct-mini:nth-child(1) { transform: rotate(-9deg) translate(-4px, 1px); }
+    .ct-mini:nth-child(2) { transform: rotate(3deg) translate(3px, -1px); }
+    .ct-mini:nth-child(3) { transform: rotate(11deg) translate(9px, 1px); }
+    .ct-stack:active .ct-mini:nth-child(1) { transform: rotate(-16deg) translate(-8px, 2px); }
+    .ct-stack:active .ct-mini:nth-child(3) { transform: rotate(18deg) translate(14px, 2px); }
+    .ct-more { position: absolute; right: -2px; bottom: -3px; z-index: 2; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 9px; background: var(--accent-blue); color: #fff; font-size: 10px; font-weight: 800; line-height: 18px; text-align: center; }
+    .ct-info { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
+    .ct-info b { font-size: 1.15rem; color: var(--text-dark); }
+    .ct-info span { font-size: 0.78rem; color: var(--text-muted); }
+    .ct-btn { flex-shrink: 0; border-radius: 13px; padding: 11px 14px; font: inherit; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: transform 0.12s; }
+    .ct-btn:active { transform: scale(0.95); }
+    .ct-clear { background: transparent; border: 1px solid var(--border-color); color: var(--text-dark); }
+    .ct-go { background: var(--accent-blue); border: none; color: #fff; box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35); }
+    .ct-go::after { content: ' ›'; }
+    body.yellow-theme .ct-go, body.yellow-theme .ct-more { background: #0e3b43; color: #fff000; box-shadow: none; }
+    .ct-fan { position: fixed; left: 0; right: 0; bottom: 88px; z-index: 796; display: flex; gap: 10px; overflow-x: auto; padding: 18px 16px 14px; scrollbar-width: none; pointer-events: none; }
+    .ct-fan::-webkit-scrollbar { display: none; }
+    .ct-fan.open { pointer-events: auto; }
+    .ct-card { position: relative; flex-shrink: 0; width: 150px; min-height: 92px; box-sizing: border-box; padding: 12px 12px 10px; border-radius: 14px; background: var(--panel-light); border: 1px solid var(--border-color);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25); text-align: left; cursor: pointer; opacity: 0; transform: translate(var(--fx, 0), 70px) rotate(var(--fr, 0deg)) scale(0.6);
+      transition: transform 0.45s cubic-bezier(0.2, 1.25, 0.3, 1), opacity 0.25s; }
+    .ct-fan.open .ct-card { opacity: 1; transform: none; }
+    .ct-card .cc-cat { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent-blue); }
+    .ct-card .cc-name { font-size: 0.9rem; font-weight: 700; color: var(--text-dark); margin-top: 3px; line-height: 1.25; padding-right: 14px; }
+    .ct-card .cc-x { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; border: none; background: var(--bg-main); color: var(--text-muted); font-size: 0.75rem; cursor: pointer; }
+    body.sys-page .cmp-tray, body.sys-page .ct-fan { display: none; }
+
+    /* ---- LIVING HEADER: drifting aurora and a gold glint ---- */
+    .top-status-bar { overflow: hidden; }
+    .top-status-bar::before { content: ''; position: absolute; top: 0; bottom: 0; left: -100%; width: 300%; z-index: 0; pointer-events: none;
+      background: linear-gradient(110deg, #031b3d 0%, #0b3c7d 14%, #04285a 28%, #183a86 42%, #052a5e 56%, #0d4a8a 70%, #04234f 84%, #0a3577 100%);
+      animation: aurora 22s ease-in-out infinite alternate; will-change: transform; }
+    .top-status-bar > * { position: relative; z-index: 1; }
+    body.dark-theme .top-status-bar::before { background: linear-gradient(110deg, #020814 0%, #0a1f45 14%, #030c1f 28%, #13245a 42%, #040f26 56%, #0b2652 70%, #020a1a 84%, #0e1d47 100%); }
+    body.yellow-theme .top-status-bar::before { background: linear-gradient(110deg, #0a2e34 0%, #13525c 14%, #0b333a 28%, #1a6470 42%, #0c3940 56%, #145a64 70%, #0a2f35 84%, #12505a 100%); }
+    @keyframes aurora { 0% { transform: translateX(0); } 100% { transform: translateX(33.3%); } }
+    .top-status-bar .brand-name { background: linear-gradient(100deg, #fff 0%, #fff 42%, #fff4cf 48%, #ffffff 54%, #fff 100%); background-size: 260% 100%;
+      -webkit-background-clip: text; background-clip: text; color: transparent; animation: glint 7s ease-in-out infinite; }
+    .top-status-bar .brand-name .brand-flap { background: linear-gradient(100deg, var(--brand-flap) 0%, var(--brand-flap) 42%, #fffdf2 48%, var(--brand-flap) 54%, var(--brand-flap) 100%); background-size: 260% 100%;
+      -webkit-background-clip: text; background-clip: text; color: transparent; animation: glint 7s ease-in-out infinite; filter: drop-shadow(0 0 6px rgba(245, 196, 81, 0.35)); }
+    @keyframes glint { 0%, 62% { background-position: 130% 0; } 88%, 100% { background-position: -30% 0; } }
+
+    /* ---- GLOWING FAVOURITES ---- */
+    .flap-card.is-fav { isolation: isolate; overflow: hidden; background: transparent; border-color: transparent; box-shadow: 0 0 0 1px rgba(245, 196, 81, 0.35), 0 8px 22px rgba(245, 196, 81, 0.2); }
+    .flap-card.is-fav::before { content: ''; position: absolute; inset: -60%; z-index: -2; pointer-events: none;
+      background: conic-gradient(from 0deg, transparent 0 55%, rgba(245, 196, 81, 0.95) 68%, #fff3c4 75%, rgba(245, 196, 81, 0.95) 82%, transparent 94%); animation: spin 5.5s linear infinite; }
+    .flap-card.is-fav::after { content: ''; position: absolute; inset: 2px; z-index: -1; border-radius: 10px; background: var(--panel-light); pointer-events: none; }
+    body.yellow-theme .flap-card.is-fav { border-top-color: transparent; }
+    .list-row.is-fav { box-shadow: inset 3px 0 0 #f5c451; background: linear-gradient(90deg, rgba(245, 196, 81, 0.14), transparent 45%); }
+
+    /* ---- DEALT ENTRANCE (once per app open) ---- */
+    .pre-deal { opacity: 0 !important; }
+    .flap-card.deal { animation: dealIn 0.8s cubic-bezier(0.2, 0.9, 0.25, 1.04) backwards; }
+    @keyframes dealIn { 0% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.55); } 35% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+    .list-row.deal { animation: dealRow 0.7s cubic-bezier(0.2, 0.9, 0.25, 1.04) backwards; }
+    @keyframes dealRow { 0% { opacity: 0; transform: perspective(700px) translateX(70px) rotateY(-38deg); } 100% { opacity: 1; transform: none; } }
+
+    /* ---- SUBTLE SECTION COLOURS ---- */
+    .fp-section[data-kind] { --kind: transparent; box-shadow: inset 3px 0 0 var(--kind); }
+    .fp-section[data-kind="anatomy"] { --kind: rgba(214, 92, 92, 0.5); }
+    .fp-section[data-kind="technique"] { --kind: rgba(72, 128, 214, 0.5); }
+    .fp-section[data-kind="use"] { --kind: rgba(52, 160, 112, 0.5); }
+    .fp-section[data-kind="caution"] { --kind: rgba(222, 150, 50, 0.55); }
+    .fp-section[data-kind="pearl"] { --kind: rgba(245, 196, 81, 0.75); }
+    .fp-section[data-kind="info"] { --kind: rgba(130, 145, 170, 0.4); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .top-status-bar::before, .top-status-bar .brand-name, .top-status-bar .brand-name .brand-flap, .flap-card.is-fav::before, .flap-card.deal, .list-row.deal { animation: none !important; }
+    }
 
     /* ---- SMALL TOUCHES ---- */
     .toast-legacy { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
@@ -855,6 +970,18 @@
           <button class="search-clear" id="search-clear" onclick="clearSearch(); document.getElementById('search-input').focus();" title="Clear search" aria-label="Clear search">✕</button>
         </div>
         
+        <div class="tool-icons">
+          <div class="sort-wrap">
+            <button type="button" class="icon-btn" id="sort-btn" onclick="toggleSortMenu(event)" aria-label="Sort order" title="Sort order"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M3.5 16.5 7 20l3.5-3.5M17 20V4M13.5 7.5 17 4l3.5 3.5"/></svg><span class="sort-badge" id="sort-badge"></span></button>
+            <div class="sort-menu" id="sort-menu" role="menu">
+              <button type="button" role="menuitem" data-sort="default">Textbook order</button>
+              <button type="button" role="menuitem" data-sort="asc">A – Z</button>
+              <button type="button" role="menuitem" data-sort="desc">Z – A</button>
+            </div>
+          </div>
+          <button type="button" class="icon-btn" id="view-toggle-btn" onclick="toggleViewMode()" aria-label="Switch between cards and list" title="Cards or list"></button>
+          <button type="button" class="icon-btn" id="select-all-btn" onclick="selectAllInView()" aria-label="Select all flaps on screen" title="Select all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M8 12.3l2.8 2.8L16.2 9.5"/></svg></button>
+        </div>
         <div class="control-group">
           <select id="subregion-dropdown" onchange="renderWorkspaceGrid()" style="display: none;">
             <option value="ALL">All Sub-Regions</option>
@@ -866,11 +993,8 @@
             <option value="desc">Alphabetical (Z-A)</option>
           </select>
           
-          <button class="btn btn-outline" id="view-toggle-btn" onclick="toggleViewMode()" title="Switch between cards and a numbered list">☰ List</button>
-          <button class="btn btn-outline" id="select-all-btn" onclick="selectAllInView()">Select All</button>
-          <button class="btn btn-outline" id="clear-btn" onclick="deselectAll()" style="display: none;">Clear</button>
-          <button class="btn btn-primary" id="launch-matrix-btn" onclick="openMatrix()">Compare Flaps (0)</button>
         </div>
+        <div class="sub-chips" id="sub-chips"></div>
       </div>
 
       <div class="ptr" id="ptr"><svg viewBox="0 0 48 48" aria-hidden="true"><g transform="rotate(-45 24 24)"><rect x="21.5" y="23" width="5" height="21" rx="2" fill="currentColor"/><rect x="22.5" y="26" width="3" height="14" rx="1.2" fill="rgba(255,255,255,0.35)"/><path d="M21.5 23 L21.5 12 Q21.5 3.5 27.5 4 Q27 14 26.5 23 Z" fill="#cfd8dc" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></g></svg></div>
@@ -884,6 +1008,13 @@
       <button class="to-top" id="to-top" onclick="document.querySelector('.workspace').scrollTo({ top: 0, behavior: 'smooth' }); buzz(6);" aria-label="Back to top" title="Back to top">↑</button>
     </div> 
 
+    <div class="ct-fan" id="ct-fan" aria-hidden="true"></div>
+    <div class="cmp-tray" id="cmp-tray" aria-live="polite">
+      <button type="button" class="ct-stack" id="ct-stack" aria-label="Show the selected flaps"></button>
+      <div class="ct-info"><b id="ct-count">0</b><span>selected</span></div>
+      <button type="button" class="ct-btn ct-clear" id="clear-btn" onclick="deselectAll()">Clear</button>
+      <button type="button" class="ct-btn ct-go" id="launch-matrix-btn" onclick="openMatrix()">Compare</button>
+    </div>
     <div class="matrix-fab" id="matrix-fab" onclick="openMatrix()">
       <span style="font-size: 1.2rem;">◱</span> Show Comparison (<span id="fab-count">0</span>)
     </div>
@@ -1004,6 +1135,7 @@
       storeFavouritesLocally(true);
       clearTimeout(favSyncTimer);
       favSyncTimer = setTimeout(saveFavouritesToServer, 1200);
+      document.querySelectorAll('#flap-grid-canvas [data-name]').forEach(el => { if (favKey(el.dataset.name) === key) el.classList.toggle('is-fav', adding); });
       document.querySelectorAll('.fav-btn').forEach(btn => {
         if (btn.dataset.fav !== key) return;
         paintStar(btn);
@@ -1664,9 +1796,8 @@
       document.getElementById('subregion-dropdown').style.display = 'none';
       document.getElementById('sort-dropdown').style.display = 'none';
       document.getElementById('select-all-btn').style.display = 'none';
-      document.getElementById('clear-btn').style.display = 'none';
-      document.getElementById('launch-matrix-btn').style.display = 'none';
       document.getElementById('view-toggle-btn').style.display = 'none';
+      document.body.classList.add('sys-page'); updateTray(); renderSubChips();
       document.getElementById('search-wrap').style.display = 'none';
       
       document.getElementById('system-page-view').style.display = 'block';
@@ -1692,9 +1823,9 @@
 
       document.getElementById('system-page-view').style.display = 'none';
       document.getElementById('flap-grid-canvas').style.display = '';
-      document.getElementById('sort-dropdown').style.display = 'inline-block';
-      document.getElementById('select-all-btn').style.display = 'inline-block';
-      document.getElementById('view-toggle-btn').style.display = 'inline-block';
+      document.getElementById('select-all-btn').style.display = '';
+      document.getElementById('view-toggle-btn').style.display = '';
+      document.body.classList.remove('sys-page');
       document.getElementById('search-wrap').style.display = 'flex';
 
       const subDropdown = document.getElementById('subregion-dropdown');
@@ -1792,7 +1923,8 @@
 
       canvas.className = isList ? 'list-layout' : 'grid-layout';
       const toggleBtn = document.getElementById('view-toggle-btn');
-      if (toggleBtn) toggleBtn.innerHTML = isList ? '▦ Cards' : '☰ List';
+      if (toggleBtn) toggleBtn.innerHTML = isList ? VIEW_CARDS_SVG : VIEW_LIST_SVG;
+      renderSubChips(); updateSortUI();
       document.getElementById('search-clear').classList.toggle('visible', searchQuery !== '');
 
       let viewData = getFilteredFlaps();
@@ -1848,7 +1980,7 @@
 
       viewData.forEach(flap => {
         const card = document.createElement('div');
-        card.className = 'flap-card';
+        card.className = 'flap-card' + (isFavourite(flap.name) ? ' is-fav' : '');
         card.dataset.name = flap.name;
         card.onclick = () => flapTap(flap.name, card);
 
@@ -1946,7 +2078,7 @@
         group.items.forEach(flap => {
           n += 1;
           const row = document.createElement('div');
-          row.className = 'list-row';
+          row.className = 'list-row' + (isFavourite(flap.name) ? ' is-fav' : '');
           row.dataset.name = flap.name;
           row.onclick = () => flapTap(flap.name, row);
 
@@ -2028,8 +2160,11 @@
     }
 
     function selectAllInView() {
+      const before = selectedFlaps.size;
       getFilteredFlaps().forEach(flap => selectedFlaps.add(flap.name));
-      renderWorkspaceGrid();
+      renderWorkspaceGrid(); updateCompareButton();
+      buzz(10);
+      if (selectedFlaps.size > before) showToast((selectedFlaps.size - before) + ' flap' + (selectedFlaps.size - before === 1 ? '' : 's') + ' selected');
     }
 
     function deselectAll() {
@@ -2043,23 +2178,13 @@
     }
 
     function updateCompareButton() {
-      const btn = document.getElementById('launch-matrix-btn');
-      const clearBtn = document.getElementById('clear-btn');
       const count = selectedFlaps.size;
-      
-      if (count > 0) {
-        btn.innerText = `Compare Flaps (${count})`;
-        btn.classList.add('visible');
-        clearBtn.style.display = 'inline-block'; 
-        document.getElementById('fab-count').innerText = count;
-        if (isMatrixMinimized) document.getElementById('matrix-fab').style.display = 'flex';
-      } else {
-        btn.classList.remove('visible');
-        clearBtn.style.display = 'none'; 
-        document.getElementById('matrix-fab').style.display = 'none';
+      document.getElementById('fab-count').innerText = count;
+      if (count === 0) {
         isMatrixMinimized = false;
         document.getElementById('matrix-dock').classList.remove('open');
       }
+      updateTray();
     }
 
     // A ticked flap opens the comparison matrix of all ticked flaps; any other flap opens its own page
@@ -2073,7 +2198,7 @@
     // ---- SINGLE-FLAP PAGE ----
     let flapPageName = null;
     let fpObserver = null;
-    function viewOrder() { return Array.from(document.querySelectorAll('#flap-grid-canvas [data-name]')).map(el => el.dataset.name); }
+    function viewOrder() { if (flapFromMatrix && document.getElementById('matrix-dock').classList.contains('open')) return matrixOrder.slice(); return Array.from(document.querySelectorAll('#flap-grid-canvas [data-name]')).map(el => el.dataset.name); }
     function flapHash(name) { return '#flap=' + encodeURIComponent(name); }
 
     function renderFlapPage(name, dir) {
@@ -2099,7 +2224,7 @@
             tabs += `<button class="fp-tab" data-target="fps-${i}">Amanyu’s Pearl</button>`;
             return;
           }
-          html += `<section class="fp-section" id="fps-${i}"><div class="row-label">${label}</div>${content}</section>`;
+          html += `<section class="fp-section" id="fps-${i}" data-kind="${sectionKind(label)}"><div class="row-label">${label}</div>${content}</section>`;
           tabs += `<button class="fp-tab" data-target="fps-${i}">${label}</button>`;
         });
       inner.innerHTML = html;
@@ -2156,6 +2281,7 @@
       const page = document.getElementById('flap-page');
       if (page.classList.contains('open')) { history.replaceState({ view: 'flap' }, '', flapHash(name)); return; }
       flapBackStack = [];
+      flapFromMatrix = !!(opts && opts.matrix);
       clearMorph(page);
       const start = morphInset(page, opts && opts.fromEl);
       if (start) {
@@ -2178,7 +2304,7 @@
       const page = document.getElementById('flap-page');
       if (!page.classList.contains('open')) return;
       clearMorph(page);
-      const extraSteps = flapBackStack.length; flapBackStack = [];
+      const extraSteps = flapBackStack.length; flapBackStack = []; flapFromMatrix = false;
       const end = morph.name === flapPageName ? morphInset(page, morph.el) : null;
       if (end) {
         page.style.transition = 'clip-path 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.32s ease-in';
@@ -2336,7 +2462,10 @@
       else if (activeCategoryFilter === 'ALL') { addRecentStrip(canvas); addMessageNotes(canvas); }
       const sub = document.getElementById('subregion-dropdown');
       const ctx = [activeCategoryFilter, viewMode, sub ? sub.value : '', document.getElementById('sort-dropdown').value].join('|');
-      if (ctx !== lastGridCtx && !reducedMotion()) {
+      if (!dealDone && !reducedMotion() && canvas.querySelector('.flap-card, .list-row')) {
+        dealDone = true;
+        dealEntrance(canvas);
+      } else if (ctx !== lastGridCtx && !reducedMotion()) {
         canvas.querySelectorAll('.amanyu-note, .recent-strip, .flap-card, .list-row').forEach((el, i) => {
           if (i > 17) return;
           el.style.animationDelay = (i * 70) + 'ms';
@@ -3063,7 +3192,7 @@
         const i = Math.max(0, Math.min(letters.length - 1, Math.floor((e.clientY - r.top) / r.height * letters.length)));
         const L = letters[i].dataset.l;
         bubble.textContent = L;
-        bubble.style.top = (letters[i].getBoundingClientRect().top + letters[i].offsetHeight / 2 - bar.parentElement.getBoundingClientRect().top) + 'px';
+        bubble.style.top = (letters[i].getBoundingClientRect().top + letters[i].offsetHeight / 2) + 'px';
         bubble.classList.add('show');
         if (L === lastL) return;
         lastL = L;
@@ -3158,6 +3287,168 @@
       matrixPinned = matrixPinned === name ? null : name;
       buzz(10); rebuildMatrixKeepScroll(name);
       showToast(matrixPinned ? 'Column pinned' : 'Column unpinned');
+    }
+
+
+    // ================= TOOLBAR, TRAY, TILT, DEAL, MATRIX -> FLAP =================
+    const VIEW_LIST_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/></svg>';
+    const VIEW_CARDS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg>';
+
+    // ---- sort menu ----
+    function toggleSortMenu(e) {
+      if (e) e.stopPropagation();
+      const m = document.getElementById('sort-menu');
+      m.classList.toggle('open');
+      updateSortUI();
+    }
+    function updateSortUI() {
+      const v = document.getElementById('sort-dropdown').value, badge = document.getElementById('sort-badge');
+      if (badge) { badge.textContent = v === 'asc' ? 'A–Z' : v === 'desc' ? 'Z–A' : ''; badge.classList.toggle('on', v !== 'default'); }
+      document.querySelectorAll('#sort-menu [data-sort]').forEach(b => b.classList.toggle('on', b.dataset.sort === v));
+    }
+    document.addEventListener('click', e => {
+      const m = document.getElementById('sort-menu');
+      if (!m || !m.classList.contains('open')) return;
+      const b = e.target.closest && e.target.closest('#sort-menu [data-sort]');
+      if (b) {
+        document.getElementById('sort-dropdown').value = b.dataset.sort;
+        buzz(6); renderWorkspaceGrid();
+        document.querySelector('.workspace').scrollTop = 0;
+      }
+      if (!e.target.closest || !e.target.closest('#sort-btn')) m.classList.remove('open');
+    });
+
+    // ---- sub-region chips (mirror the hidden dropdown) ----
+    function renderSubChips() {
+      const sel = document.getElementById('subregion-dropdown'), row = document.getElementById('sub-chips');
+      if (!sel || !row) return;
+      if (sel.style.display === 'none' || document.body.classList.contains('sys-page')) { row.innerHTML = ''; row.dataset.sig = ''; return; }
+      const opts = Array.from(sel.options);
+      const sig = opts.map(o => o.value).join('|') + '#' + sel.value;
+      if (row.dataset.sig === sig) return;
+      row.dataset.sig = sig;
+      row.innerHTML = opts.map(o => '<button type="button" class="sub-chip' + (o.value === sel.value ? ' on' : '') + '" data-v="' + escapeAttr(o.value) + '">' + escapeAttr(o.value === 'ALL' ? 'All' : o.text) + '</button>').join('');
+      row.querySelectorAll('.sub-chip').forEach(b => b.onclick = () => {
+        sel.value = b.dataset.v; buzz(6); renderWorkspaceGrid();
+        document.querySelector('.workspace').scrollTop = 0;
+      });
+      const on = row.querySelector('.sub-chip.on');
+      if (on) on.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+    }
+
+    // ---- bottom comparison tray ----
+    function updateTray() {
+      const n = selectedFlaps.size, sys = document.body.classList.contains('sys-page');
+      document.body.classList.toggle('tray-on', n > 0 && !sys);
+      document.getElementById('ct-count').textContent = n;
+      const names = Array.from(selectedFlaps);
+      const stack = document.getElementById('ct-stack');
+      stack.innerHTML = names.slice(-3).map(nm => '<span class="ct-mini">' + escapeAttr(stripHTML(nm)) + '</span>').join('') + (n > 3 ? '<span class="ct-more">+' + (n - 3) + '</span>' : '');
+      const fan = document.getElementById('ct-fan');
+      if (fan.classList.contains('open')) { if (n) renderFan(); else closeFan(); }
+    }
+    function renderFan() {
+      const fan = document.getElementById('ct-fan'), names = Array.from(selectedFlaps);
+      fan.innerHTML = names.map((nm, i) => {
+        const f = datasetMaster.find(x => x.name === nm);
+        return '<div class="ct-card" data-n="' + encodeURIComponent(nm) + '" style="--fx:' + (-i * 40) + 'px;--fr:' + (((i % 2) ? 1 : -1) * (6 + i * 2)) + 'deg;transition-delay:' + (i * 45) + 'ms">' +
+          '<div class="cc-cat">' + escapeAttr(f ? stripHTML(f.category) : '') + '</div><div class="cc-name">' + escapeAttr(stripHTML(nm)) + '</div>' +
+          '<button type="button" class="cc-x" aria-label="Remove from comparison">✕</button></div>';
+      }).join('');
+      fan.querySelectorAll('.ct-card').forEach(c => {
+        const nm = decodeURIComponent(c.dataset.n);
+        c.querySelector('.cc-x').onclick = e => { e.stopPropagation(); selectedFlaps.delete(nm); buzz(6); renderWorkspaceGrid(); updateCompareButton(); };
+        c.onclick = () => { closeFan(); openFlapPage(nm, { fromEl: c }); };
+      });
+    }
+    function openFan() { const fan = document.getElementById('ct-fan'); renderFan(); void fan.offsetWidth; fan.classList.add('open'); fan.setAttribute('aria-hidden', 'false'); buzz(8); }
+    function closeFan() { const fan = document.getElementById('ct-fan'); fan.classList.remove('open'); fan.setAttribute('aria-hidden', 'true'); }
+    document.getElementById('ct-stack').onclick = e => { e.stopPropagation(); if (document.getElementById('ct-fan').classList.contains('open')) closeFan(); else openFan(); };
+    document.addEventListener('click', e => {
+      const fan = document.getElementById('ct-fan');
+      if (fan.classList.contains('open') && !(e.target.closest && e.target.closest('#ct-fan, #ct-stack'))) closeFan();
+    });
+
+    // ---- pressure tilt: a card leans toward the finger ----
+    (function () {
+      let el = null, sx = 0, sy = 0;
+      const release = () => {
+        if (!el) return;
+        const c = el; el = null;
+        c.style.transition = 'transform 0.5s cubic-bezier(0.2, 1.4, 0.3, 1)'; c.style.transform = '';
+        setTimeout(() => { if (c !== el) c.style.transition = ''; }, 520);
+      };
+      document.addEventListener('pointerdown', e => {
+        const card = e.target.closest && e.target.closest('#flap-grid-canvas .flap-card');
+        if (!card || e.target.closest('input, label, button') || reducedMotion()) return;
+        const r = card.getBoundingClientRect();
+        const dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2), dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
+        el = card; sx = e.clientX; sy = e.clientY;
+        card.style.transition = 'transform 0.14s ease-out';
+        card.style.transform = 'perspective(700px) rotateX(' + (-dy * 9).toFixed(1) + 'deg) rotateY(' + (dx * 9).toFixed(1) + 'deg) scale(0.97)';
+      }, { passive: true });
+      document.addEventListener('pointermove', e => { if (el && Math.hypot(e.clientX - sx, e.clientY - sy) > 10) release(); }, { passive: true });
+      document.addEventListener('pointerup', release, { passive: true });
+      document.addEventListener('pointercancel', release, { passive: true });
+    })();
+
+    // ---- dealt entrance: on each app open the first cards are dealt like playing cards ----
+    let dealDone = false;
+    function dealEntrance(canvas) {
+      const isList = canvas.classList.contains('list-layout');
+      const items = Array.from(canvas.querySelectorAll(isList ? '.list-row' : '.flap-card')).slice(0, isList ? 9 : 9);
+      const extras = Array.from(canvas.querySelectorAll('.amanyu-note, .recent-strip'));
+      const all = extras.concat(items);
+      all.forEach(el => el.classList.add('pre-deal'));
+      const play = () => {
+        const W = innerWidth, H = innerHeight;
+        extras.forEach((el, i) => { el.classList.remove('pre-deal'); el.style.animationDelay = (i * 80) + 'ms'; el.classList.add('enter'); });
+        items.forEach((el, i) => {
+          const r = el.getBoundingClientRect();
+          el.style.setProperty('--dx', (W / 2 - (r.left + r.width / 2)).toFixed(0) + 'px');
+          el.style.setProperty('--dy', (H + 30 - r.top).toFixed(0) + 'px');
+          el.style.setProperty('--rot', ((i % 2 ? 1 : -1) * (10 + (i % 3) * 6)) + 'deg');
+          el.style.animationDelay = (120 + i * (isList ? 70 : 95)) + 'ms';
+          el.classList.remove('pre-deal'); el.classList.add('deal');
+          setTimeout(() => { el.classList.remove('deal'); el.style.animationDelay = ''; }, 1100 + i * 95);
+        });
+        // the rest of the list follows with the usual gentle wave
+        Array.from(canvas.querySelectorAll(isList ? '.list-row' : '.flap-card')).slice(items.length, items.length + 9).forEach((el, i) => {
+          el.style.animationDelay = (120 + items.length * 95 + i * 60) + 'ms'; el.classList.add('enter');
+          setTimeout(() => { el.classList.remove('enter'); el.style.animationDelay = ''; }, 2400);
+        });
+      };
+      const wait = () => { if (window.__introRunning || document.getElementById('gate')) setTimeout(wait, 150); else requestAnimationFrame(play); };
+      wait();
+    }
+
+    // ---- comparison -> one flap full screen (Back returns to the comparison) ----
+    let flapFromMatrix = false;
+    function openFlapFromMatrix(i, el) {
+      const name = matrixOrder[i];
+      if (!name) return;
+      buzz(8);
+      openFlapPage(name, { fromEl: el.closest('th') || el, matrix: true });
+    }
+
+    // the A-Z pill wakes up while the list scrolls
+    (function () {
+      const ws = document.querySelector('.workspace'), bar = document.getElementById('az-bar');
+      if (!ws || !bar) return;
+      let t = 0;
+      ws.addEventListener('scroll', () => { if (!document.body.classList.contains('az-on')) return; bar.classList.add('awake'); clearTimeout(t); t = setTimeout(() => bar.classList.remove('awake'), 1800); }, { passive: true });
+    })();
+
+    // section type for the subtle colour edge on flap pages
+    function sectionKind(label) {
+      const l = label.toLowerCase();
+      if (/amanyu|pearl|tip/.test(l)) return 'pearl';
+      if (/complicat|disadvantage|pitfall|contraind|caution|risk|donor|morbid|limitation/.test(l)) return 'caution';
+      if (/arter|vein|venous|vascul|nerve|anatom|pedicle|supply|innerv|angiosome|perforator/.test(l)) return 'anatomy';
+      if (/mark|design|dimension|technique|elevat|harvest|dissect|rais|plan|inset|size|step|position/.test(l)) return 'technique';
+      if (/indicat|use|application|advantage|reconstruct/.test(l)) return 'use';
+      if (/introduc|also known|history|original|described|source|reference|classif|type|variant/.test(l)) return 'info';
+      return '';
     }
 
     // ---- DEFECT MAPPER (prototype, loaded on demand) ----
@@ -3255,11 +3546,13 @@
       const PIN_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 3l6 6-2.2.8-3.3 3.3.5 4.4-1.4 1.4-4.2-4.2L5 19.1 4.9 19l4.4-5.4-4.2-4.2L6.5 8l4.4.5 3.3-3.3z"/></svg>';
       flaps.forEach((f, i) => {
         const pinned = f.name === matrixPinned;
-        tableHtml += `<th class="${pinned ? 'pinned' : ''}" data-col="${i}">` + (flaps.length > 1 ? `<div class="th-tools">` +
+        const EXPAND_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/></svg>';
+        tableHtml += `<th class="${pinned ? 'pinned' : ''}" data-col="${i}"><div class="th-tools">` + (flaps.length > 1 ?
           `<button type="button" class="th-tool" data-move="-1" data-i="${i}" aria-label="Move left" ${i === 0 || pinned || (i === 1 && matrixPinned) ? 'disabled' : ''}>‹</button>` +
           `<button type="button" class="th-tool${pinned ? ' on' : ''}" data-pin="${i}" aria-label="${pinned ? 'Unpin' : 'Pin'} this column" title="${pinned ? 'Unpin' : 'Pin'}">${PIN_SVG}</button>` +
-          `<button type="button" class="th-tool" data-move="1" data-i="${i}" aria-label="Move right" ${i === flaps.length - 1 || pinned ? 'disabled' : ''}>›</button></div>` : '') +
-          `<span class="th-name">${stripHTML(f.name)}</span><span class="th-fav-slot" data-i="${i}"></span></th>`;
+          `<button type="button" class="th-tool" data-move="1" data-i="${i}" aria-label="Move right" ${i === flaps.length - 1 || pinned ? 'disabled' : ''}>›</button>` : '') +
+          `<button type="button" class="th-tool th-expand" data-open="${i}" aria-label="Open this flap full screen" title="Open full screen">${EXPAND_SVG}</button></div>` +
+          `<span class="th-name" data-open="${i}" role="button" tabindex="0" title="Open full screen">${stripHTML(f.name)}</span><span class="th-fav-slot" data-i="${i}"></span></th>`;
       });
       tableHtml += `</tr></thead><tbody>`;
 
@@ -3287,6 +3580,7 @@
       });
       container.querySelectorAll('[data-move]').forEach(b => b.onclick = () => moveMatrixColumn(Number(b.dataset.i), Number(b.dataset.move)));
       container.querySelectorAll('[data-pin]').forEach(b => b.onclick = () => pinMatrixColumn(Number(b.dataset.pin)));
+      container.querySelectorAll('[data-open]').forEach(b => b.onclick = () => openFlapFromMatrix(Number(b.dataset.open), b));
     }
 
     // ---- IMAGES ----
