@@ -958,11 +958,19 @@
     .to-top { box-sizing: border-box; }
     .toast, .net-island { width: max-content; max-width: calc(100vw - 32px); }
 
-    /* ---- OFFLINE DOT in the title bar ---- */
-    .top-status-bar > .net-dot { position: absolute; right: 9px; top: 50%; z-index: 2; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: #f59e0b;
-      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22), 0 0 10px #f59e0b; display: none; cursor: pointer; animation: netPulse 1.8s ease-in-out infinite; }
-    .top-status-bar > .net-dot::before { content: ''; position: absolute; inset: -14px; }
-    body.offline .top-status-bar > .net-dot { display: block; }
+    /* ---- OFFLINE: the travelling dot ---- */
+    .net-island i { visibility: hidden; }                 /* the travelling dot stands in for it */
+    .net-island .net-more { display: none; }
+    .net-island.measure { transition: none !important; transform: translate(-50%, 0) scale(1) !important; }
+    .net-traveller { position: fixed; left: 50%; top: 0; z-index: 880; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%; background: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25), 0 0 12px #f59e0b; opacity: 0; pointer-events: none; cursor: pointer;
+      transition: left 0.9s cubic-bezier(0.65, 0, 0.25, 1), top 0.9s cubic-bezier(0.65, 0, 0.25, 1), background 0.4s, box-shadow 0.4s, opacity 0.3s; }
+    .net-traveller::before { content: ''; position: absolute; inset: -14px; }
+    .net-traveller.on { opacity: 1; }
+    .net-traveller.in-pill { z-index: 3060; }
+    .net-traveller.pulse { pointer-events: auto; animation: travPulse 1.8s ease-in-out infinite; }
+    .net-traveller.green { background: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25), 0 0 12px #22c55e; }
+    @keyframes travPulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25), 0 0 12px #f59e0b; } 50% { transform: scale(1.25); box-shadow: 0 0 0 7px rgba(245, 158, 11, 0.12), 0 0 18px #f59e0b; } }
     body.offline .toast { top: calc(var(--topbar-h) + 10px); }
 
     /* ---- NO PRINTING ---- */
@@ -1014,7 +1022,7 @@
   </script>
 
   <!-- TOP CONSTANT BAR -->
-  <div class="top-status-bar"><div class="tb-aurora" aria-hidden="true"><i></i><i></i><i></i></div><span class="net-dot" id="net-dot" role="button" aria-label="Offline – showing the flaps saved on this phone" title="Offline – showing saved flaps"></span><img class="brand-logo" src="icons/logo-96.png" alt=""><span class="brand-name">Amanyu’s <span class="brand-flap">Flap</span>endium</span></div>
+  <div class="top-status-bar"><div class="tb-aurora" aria-hidden="true"><i></i><i></i><i></i></div><img class="brand-logo" src="icons/logo-96.png" alt=""><span class="brand-name">Amanyu’s <span class="brand-flap">Flap</span>endium</span></div>
   <div class="bday-bunting" aria-hidden="true"></div>
 
   <div class="login-container" id="login-screen">
@@ -1162,6 +1170,7 @@
   </div>
   <div class="toast" id="toast"></div>
   <div class="net-island" id="net-island" role="status"><i></i><span class="net-text"></span></div>
+  <span class="net-traveller" id="net-traveller" role="button" aria-label="Offline – showing the flaps saved on this phone" title="Offline – showing saved flaps"></span>
 
   <!-- FULL-SCREEN IMAGE VIEWER -->
   <div class="lightbox" id="lightbox">
@@ -3215,34 +3224,74 @@
       }, 450);
     }
 
-    // ---- offline island ----
+    // ---- offline: a pill announces it, then its dot travels to rest just below the title bar ----
     (function () {
-      const el = document.getElementById('net-island');
-      if (!el) return;
-      const txt = el.querySelector('.net-text');
-      let timer = 0;
-      function update(first) {
-        clearTimeout(timer);
-        if (!navigator.onLine) {
-          document.body.classList.add('offline');
-          el.classList.remove('online', 'small');
-          txt.textContent = 'Offline – showing saved flaps';
-          el.classList.add('show');
-          // after a moment the message leaves the toolbar; a small dot in the title bar stays while offline
-          timer = setTimeout(() => el.classList.remove('show'), 3500);
+      const el = document.getElementById('net-island'), dot = document.getElementById('net-traveller');
+      if (!el || !dot) return;
+      const txt = el.querySelector('.net-text'), slot = el.querySelector('i');
+      let timers = [], resting = false;
+      const later = (f, ms) => timers.push(setTimeout(f, ms));
+      const clear = () => { timers.forEach(clearTimeout); timers = []; };
+      function moveTo(x, y, animate) {
+        if (!animate) dot.style.transition = 'none';
+        dot.style.left = x + 'px'; dot.style.top = y + 'px';
+        if (!animate) { void dot.offsetWidth; dot.style.transition = ''; }
+      }
+      // where the pill's own dot sits once the pill has fully opened
+      function slotPoint() {
+        el.classList.add('measure');
+        const r = slot.getBoundingClientRect();
+        el.classList.remove('measure');
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      }
+      // resting place: centred, on the top edge of the search bar, a few pixels clear of the title bar
+      function restPoint() {
+        const top = document.querySelector('.top-status-bar').getBoundingClientRect().bottom;
+        const sw = document.getElementById('search-wrap');
+        const sr = sw && sw.offsetParent ? sw.getBoundingClientRect() : null;
+        const y = Math.max(top + 9, sr ? sr.top + 1 : top + 10);
+        return { x: window.innerWidth / 2, y: y };
+      }
+      function goOffline() {
+        clear(); resting = false;
+        document.body.classList.add('offline');
+        dot.classList.remove('green', 'pulse', 'on');
+        el.classList.remove('online');
+        txt.textContent = 'Offline – showing saved flaps';
+        const s = slotPoint(); moveTo(s.x, s.y, false);
+        dot.classList.add('in-pill');
+        el.classList.add('show');
+        later(() => dot.classList.add('on'), 220);
+        later(() => {
+          el.classList.remove('show'); dot.classList.remove('in-pill');
+          const r = restPoint(); moveTo(r.x, r.y, true);
+          resting = true;
+        }, 3500);
+        later(() => dot.classList.add('pulse'), 4450);
+      }
+      function goOnline() {
+        clear(); resting = false;
+        dot.classList.remove('in-pill');
+        document.body.classList.remove('offline');
+        dot.classList.remove('pulse');
+        el.classList.add('online');
+        txt.textContent = 'Back online';
+        const s = slotPoint();
+        if (dot.classList.contains('on')) {
+          moveTo(s.x, s.y, true);                       // glide to where the new pill's dot will be
+          later(() => { dot.classList.add('in-pill'); el.classList.add('show'); dot.classList.add('green'); }, 900);
+          later(() => { el.classList.remove('show'); dot.classList.remove('on'); }, 3500);
         } else {
-          document.body.classList.remove('offline');
-          if (first) { el.classList.remove('show'); return; }
-          el.classList.remove('small'); el.classList.add('online', 'show');
-          txt.textContent = 'Back online';
-          timer = setTimeout(() => el.classList.remove('show'), 2500);
+          moveTo(s.x, s.y, false); dot.classList.add('green', 'in-pill');
+          el.classList.add('show'); later(() => dot.classList.add('on'), 200);
+          later(() => { el.classList.remove('show'); dot.classList.remove('on'); }, 2700);
         }
       }
-      window.addEventListener('online', () => update(false));
-      window.addEventListener('offline', () => update(false));
-      const dot = document.getElementById('net-dot');
-      if (dot) dot.onclick = () => { buzz(6); showToast('Offline – showing the flaps saved on this phone'); };
-      update(true);
+      window.addEventListener('online', goOnline);
+      window.addEventListener('offline', goOffline);
+      window.addEventListener('resize', () => { if (resting) { const r = restPoint(); moveTo(r.x, r.y, false); } });
+      dot.onclick = () => { buzz(6); showToast('Offline – showing the flaps saved on this phone'); };
+      if (!navigator.onLine) goOffline();
     })();
 
     // ---- linked flap names on flap pages ----
