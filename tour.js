@@ -73,7 +73,7 @@
       text: 'Type a flap’s name, an artery, a nerve, an author – even fragments such as <b>“rev sur”</b>. The words you type are highlighted in the results, and your <b>recent searches</b> appear when you tap the empty box.<br>Spelling slips are forgiven, and a <b>Did you mean…?</b> button offers the right spelling.' },
 
     { target: () => $('#view-toggle-btn'), title: 'Cards or List', tryIt: true,
-      text: 'This button switches between <b>Cards</b> and a numbered <b>List</b>, like a book’s contents page. Tap it to try.<br><span class="tg-tip">The <b>☑</b> button beside it ticks every flap on the screen for comparison – tap it again to untick just those, keeping the ones you picked yourself.</span>',
+      text: 'This button switches between <b>Cards</b> and a numbered <b>List</b>, like a book’s contents page. Tap it to try.',
       onStart: () => { mem.view = viewMode; }, action: () => viewMode !== mem.view },
 
     { target: firstUnticked, title: 'Press and hold to peek', tryIt: true,
@@ -151,6 +151,11 @@
       text: 'Your selection waits in the tray – tap <b>Compare</b> to bring the comparison back at any time.',
       when: () => !matrixOpen() && selectedFlaps.size > 0 },
 
+    { target: () => $('#select-all-btn'), title: 'Select everything at once', tryIt: true,
+      text: 'Tap <b>☑</b> to tick <b>every flap on this screen</b> for comparison – the button lights up. Then tap it <b>again</b> to untick just those, keeping any flaps you had picked yourself.',
+      onStart: () => { mem.selOn = false; },
+      action: () => { const b = $('#select-all-btn'); if (b && b.classList.contains('on')) mem.selOn = true; return !!(mem.selOn && b && !b.classList.contains('on')); } },
+
     { target: () => $('.workspace'), title: 'Pull down to refresh',
       text: 'At the top of any list, <b>pull down</b> to fetch the newest flaps – watch the scalpel spin.<br>After a long scroll, the round <b>↑</b> button takes you back to the top.',
       prepare: mainScreen },
@@ -225,9 +230,67 @@
       text: () => 'Enjoy exploring the flaps.<br><br><span class="tg-tip">Notes from Amanyu appear at the top of <b>All References</b> from time to time.</span>' + (selectedFlaps.size ? '<span class="tg-tip">Your practice comparison is still waiting under <b>Show Comparison</b> – open it and tap <b>Close &amp; Clear</b> when you no longer need it.</span>' : ''),
       prepare: closeSidebar, startLabel: 'Finish' }
   ];
+  // The screen each step needs. If the user ends up somewhere else (a stray tap, the phone's Back button,
+  // going Back or skipping in the guide), the guide quietly returns to that screen.
+  // A new step only needs an entry here (or its own `screen`) to be protected the same way.
+  const SCREEN_OF = {
+    'Welcome to Amanyu’s Flapendium': 'list', 'Open the Flap Chapters': 'list', 'Choose a region': 'menu', 'Narrow it down': 'list',
+    'Sort order': 'list', 'Search anything': 'list', 'Cards or List': 'list', 'Press and hold to peek': 'list', 'Double-tap to favourite': 'list',
+    'Open a flap': 'list', 'Jump to a section': 'flap', 'Next and previous flap': 'flap', 'Add to Favourites': 'flap', 'Share a flap': 'flap',
+    'Ask Amanyu': 'flap', 'Back to the list': 'flap', 'Compare flaps': 'list', 'And one more': 'list', 'Your deck of selected flaps': 'list',
+    'Check before you compare': 'list', 'Open the comparison': 'list', 'Comparative Overview': 'matrix', 'Arrange and expand': 'matrix',
+    'Keep it for later': 'matrix', 'Back to your comparison': 'list', 'Select everything at once': 'list', 'Pull down to refresh': 'list',
+    'Your Favourites': 'menu', 'Text size': 'menu', 'Three themes': 'menu', 'Your details': 'menu', 'Need a reminder?': 'menu',
+    'Defect Mapper (beta)': 'menu', 'You’re all set': 'any'
+  };
+  const HINT_OF = {
+    'Double-tap to favourite': 'That single tap opened the flap. Try <b>two quick taps</b> on the same flap instead.',
+    'Press and hold to peek': 'That tap opened the flap. This time keep your finger <b>pressed down</b> for a moment.',
+    'Compare flaps': 'That opened the flap. Tick the small <b>Compare</b> box on the card instead.',
+    'And one more': 'That opened the flap. Tick the small <b>Compare</b> box on another card instead.'
+  };
   const FINAL = STEPS.length - 1;
   const MAIN = STEPS.filter(s => !s.center && s.group !== 'dm');
   const DMSTEPS = STEPS.filter(s => s.group === 'dm');
+
+  // ---------- keeping the guide on track ----------
+  const OVERLAYS = '#flap-page, #matrix-dock, .sidebar, .sidebar-overlay, .dm-root';
+  function currentScreen() { return dmOpen() ? 'dm' : pageOpen() ? 'flap' : matrixOpen() ? 'matrix' : sidebarOpen() ? 'menu' : 'list'; }
+  function stepScreen(s) { return s.screen || (s.group === 'dm' ? 'dm' : SCREEN_OF[s.title]) || 'any'; }
+  function ensureScreen(sc) {
+    if (!sc || sc === 'any' || currentScreen() === sc) return;
+    if (sc !== 'dm' && dmOpen()) window.defectMapper.close();
+    if (sc !== 'flap' && pageOpen()) closeFlapPage();
+    if (sc !== 'matrix' && matrixOpen()) minimizeMatrix();
+    if (sc === 'menu') { openSidebar(); return; }
+    closeSidebar();
+    if (sc === 'flap' && !pageOpen()) { const el = firstUnticked(); if (el) openFlapPage(el.dataset.name); }
+    else if (sc === 'matrix' && !matrixOpen() && selectedFlaps.size) openMatrix();
+    else if (sc === 'dm' && !dmOpen() && typeof openDefectMapper === 'function') openDefectMapper();
+  }
+  // is the step's element hidden behind another screen (a flap page, the comparison, the menu)?
+  function occluded(el) {
+    if (!el || !document.elementsFromPoint) return false;
+    const r = el.getBoundingClientRect();
+    const x = Math.min(Math.max(r.left + r.width / 2, 1), window.innerWidth - 1), y = Math.min(Math.max(r.top + Math.min(r.height / 2, 40), 1), window.innerHeight - 1);
+    const top = document.elementsFromPoint(x, y).find(n => !n.closest('.tg-root, .toast, .net-island, .net-traveller, .greet-pill, .tile-fly, .peek-backdrop, .tile-ripple'));
+    if (!top) return false;
+    const ov = top.closest(OVERLAYS);
+    return !!ov && !ov.contains(el) && !el.contains(ov);
+  }
+  function recover(s) {
+    mem.recoverAt = Date.now(); mem.offSince = 0;
+    ensureScreen(stepScreen(s));
+    if (s.prepare && stepScreen(s) === 'list') { try { s.prepare(); } catch (e) {} }
+    const box = card && card.querySelector('.tg-text');
+    if (box) {
+      let n = card.querySelector('.tg-oops');
+      if (!n) { n = document.createElement('div'); n.className = 'tg-oops'; box.parentNode.insertBefore(n, box); }
+      n.innerHTML = '↺ ' + (HINT_OF[s.title] || 'Back on track – the guide brought you back to this step.');
+      n.classList.remove('tg-oops-in'); void n.offsetWidth; n.classList.add('tg-oops-in');
+    }
+    if (typeof buzz === 'function') buzz([8, 40, 8]);
+  }
 
   // ---------- drawing ----------
   let root, spot, card, blockers, idx = -1, raf = 0, active = false, advanceTimer = 0, ready = false;
@@ -255,6 +318,9 @@
     root.classList.toggle('tg-centered', !r);
     if (r) {
       Object.assign(spot.style, { left: r.left + 'px', top: r.top + 'px', width: (r.right - r.left) + 'px', height: (r.bottom - r.top) + 'px' });
+      spot.style.setProperty('--rmin', Math.min(r.right - r.left, r.bottom - r.top) + 'px');
+      spot.style.setProperty('--rw', (r.right - r.left) + 'px');
+      spot.style.setProperty('--rh', (r.bottom - r.top) + 'px');
       // Try-it steps: everything but the highlighted element is blocked (or nothing, on "free" steps).
       // Reading steps: the whole screen is blocked, only the message card responds.
       let rects;
@@ -284,6 +350,13 @@
       Object.assign(card.style, { width: cw + 'px', left: (W - cw) / 2 + 'px', top: Math.max(12, (H - (card.offsetHeight || 260)) / 2) + 'px' });
       card.dataset.arrow = 'none';
     }
+    // gone somewhere else? (only while the step is waiting, and not straight after a correction)
+    if (ready && !advanceTimer && !(s.action && s.action()) && Date.now() - (mem.recoverAt || 0) > 900) {
+      const want = stepScreen(s);
+      const off = (want !== 'any' && currentScreen() !== want && !(s.center && want === 'list')) || (el && occluded(el));
+      if (off) { if (!mem.offSince) mem.offSince = Date.now(); else if (Date.now() - mem.offSince > 450) recover(s); }
+      else mem.offSince = 0;
+    }
     // done yet?
     if (ready && s.action && !advanceTimer && s.action()) {
       card.classList.add('tg-done');
@@ -300,9 +373,10 @@
     const k = list.indexOf(s) + 1, n = list.length;
     const label = s.group === 'dm' ? `Defect Mapper · ${k} of ${n}` : `Step ${k} of ${n}`;
     const pct = Math.round(Math.max(0, Math.min(1, k / n)) * 100);
-    card.className = 'tg-card' + (s.center ? ' tg-card-center' : '') + (s.tryIt ? ' tg-try' : '');
+    card.className = 'tg-card' + (s.center ? ' tg-card-center' : '') + (s.tryIt ? ' tg-try' : (s.center ? '' : ' tg-read')) + (s.choice ? ' tg-choice' : '');
+    root.classList.toggle('tg-tryon', !!s.tryIt);
     card.innerHTML = `
-      ${s.center ? `<div class="tg-icon">${s.icon || ''}</div>` : `<div class="tg-step"><span>${label}</span>${s.tryIt ? '<span class="tg-badge">Try it</span>' : ''}</div>`}
+      ${s.center ? `<div class="tg-icon">${s.icon || ''}</div>` : `<div class="tg-step"><span>${label}</span>${s.tryIt ? '<span class="tg-badge tg-badge-try"><i>👆</i>TRY IT</span>' : ''}</div>`}
       <div class="tg-title">${s.title}</div>
       <div class="tg-text">${text}</div>
       ${s.center ? '' : `<div class="tg-bar"><i style="width:${pct}%"></i></div>`}
@@ -332,8 +406,9 @@
     if (i < 0) i = 0;
     idx = i;
     const s = STEPS[idx];
+    mem = Object.assign({}, mem, { offSince: 0, recoverAt: 0 });
+    try { ensureScreen(stepScreen(s)); } catch (e) {}
     if (s.prepare) { try { s.prepare(); } catch (e) {} }
-    mem = Object.assign({}, mem);
     // give drawers and pages a moment to slide into place, then show the step – or pass it over when it does not apply
     const t0 = Date.now();
     const attempt = () => {
@@ -424,6 +499,51 @@
   .tg-ghost { border: 1px solid rgba(255, 255, 255, 0.22); background: transparent; color: #d6e0f0; }
   .tg-x { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%; border: none; background: rgba(255, 255, 255, 0.08); color: #cbd5e1; cursor: pointer; font-size: .9rem; }
   .tg-card .tg-actions .tg-btn { white-space: nowrap; }
+  .tg-badge-try { display: inline-flex; align-items: center; gap: 7px; font-size: .86rem; padding: 4px 14px 4px 4px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 800; background: linear-gradient(180deg, #ffe07a, #f5c451); animation: tgBadge 1.2s ease-in-out infinite; }
+  .tg-badge-try i { font-style: normal; width: 24px; height: 24px; border-radius: 50%; background: #0b2a5c; display: inline-flex; align-items: center; justify-content: center; font-size: .9rem; letter-spacing: 0; }
+  @keyframes tgBadge { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 210, 80, .85), 0 0 10px rgba(255, 210, 80, .6); } 50% { box-shadow: 0 0 0 7px rgba(255, 210, 80, 0), 0 0 22px rgba(255, 210, 80, .95); } }
+
+  /* reading steps: a cool steel-blue card, a calm steady outline */
+  .tg-card.tg-read { background: linear-gradient(160deg, rgba(44, 93, 146, 0.97), rgba(26, 60, 102, 0.98)); border-color: rgba(170, 205, 245, .5); }
+  .tg-card.tg-read .tg-step { color: #b9d4f4; }
+  .tg-card.tg-read .tg-text { color: #e3ecf8; }
+  .tg-card.tg-read::before { background: rgba(44, 93, 146, 0.97); border-color: rgba(170, 205, 245, .5); }
+  .tg-card.tg-read[data-arrow="down"]::before { background: rgba(26, 60, 102, 0.98); }
+  .tg-root:not(.tg-tryon) .tg-spot::after { display: none; }
+  .tg-root:not(.tg-tryon) .tg-spot { outline: 2px solid rgba(190, 218, 248, .85); box-shadow: 0 0 16px 2px rgba(170, 205, 245, .4), 0 0 0 9999px rgba(2, 6, 16, 0.72); }
+
+  /* try-it steps: a warm navy card with a strong pulsing gold glow */
+  .tg-card.tg-try { background: radial-gradient(130% 75% at 50% 0%, rgba(245, 180, 60, .26), rgba(245, 180, 60, 0) 70%), linear-gradient(160deg, rgba(29, 28, 70, 0.98), rgba(16, 15, 46, 0.98));
+    border: 2px solid #ffd34d; animation: tgIn .32s cubic-bezier(.2,.8,.2,1), tgTryGlow 1.4s ease-in-out .35s infinite; }
+  .tg-card.tg-try::before { background: rgba(58, 50, 76, 0.98); border-color: #ffd34d; border-width: 2px; }
+  .tg-card.tg-try[data-arrow="down"]::before { background: rgba(16, 15, 46, 0.98); }
+  @keyframes tgTryGlow {
+    0%, 100% { box-shadow: 0 18px 50px rgba(0, 0, 0, .55), 0 0 0 0 rgba(255, 211, 77, .0), 0 0 10px 0 rgba(255, 200, 60, .35); }
+    50% { box-shadow: 0 18px 50px rgba(0, 0, 0, .55), 0 0 0 4px rgba(255, 211, 77, .45), 0 0 42px 10px rgba(255, 200, 60, .75); } }
+  .tg-root.tg-tryon .tg-spot { outline: 3px solid #ffd34d; }
+  /* the ring around the highlighted area: a bright glow that swells and fades */
+  .tg-root.tg-tryon .tg-spot::after { inset: 0; border: none; border-radius: 14px; animation: tgRing 1.2s ease-out infinite; }
+  @keyframes tgRing {
+    0% { box-shadow: 0 0 0 0 rgba(255, 211, 77, .95), 0 0 18px 4px rgba(255, 200, 60, .85); }
+    100% { box-shadow: 0 0 0 16px rgba(255, 211, 77, 0), 0 0 40px 12px rgba(255, 200, 60, 0); } }
+  /* the ripple: grows as a circle for a moment, then smoothly stretches (circle → ellipse → rounded box)
+     so it meets every side and corner of the highlighted area at the same instant.
+     Two separate smooth curves – growing (--g) and reshaping (--m) – so there is no jolt in between. */
+  @property --tg-g { syntax: '<number>'; inherits: false; initial-value: 0; }
+  @property --tg-m { syntax: '<number>'; inherits: false; initial-value: 0; }
+  .tg-root.tg-tryon .tg-spot::before { content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none;
+    --tg-d: calc(10px + var(--tg-g) * (var(--rmin, 40px) - 10px));
+    width: calc(var(--tg-d) + var(--tg-m) * (var(--rw, 40px) - var(--tg-d)));
+    height: calc(var(--tg-d) + var(--tg-m) * (var(--rh, 40px) - var(--tg-d)));
+    border-radius: calc(50% * (1 - var(--tg-m)) + 14px * var(--tg-m));
+    background: radial-gradient(closest-side, rgba(255, 220, 100, .7), rgba(255, 196, 50, .5));
+    box-shadow: 0 0 22px 4px rgba(255, 200, 60, .55);
+    animation: tgGrow 1.2s infinite, tgMorph 1.2s infinite, tgFade 1.2s linear infinite; }
+  @keyframes tgGrow { 0% { --tg-g: 0; animation-timing-function: cubic-bezier(.25, .6, .35, 1); } 70% { --tg-g: 1; } 100% { --tg-g: 1; } }
+  @keyframes tgMorph { 0% { --tg-m: 0; } 24% { --tg-m: 0; animation-timing-function: cubic-bezier(.45, 0, .3, 1); } 76% { --tg-m: 1; } 100% { --tg-m: 1; } }
+  @keyframes tgFade { 0% { opacity: 0; } 6% { opacity: .95; } 78% { opacity: .6; } 100% { opacity: 0; } }
+  .tg-oops { margin: 0 0 8px; padding: 8px 10px; border-radius: 10px; background: rgba(96, 165, 250, .14); border-left: 3px solid #60a5fa; font-size: .9rem; color: #e2ecfb; }
+  .tg-oops-in { animation: tgIn .35s cubic-bezier(.2,.8,.2,1); }
   .tg-foot { margin-top: 10px; text-align: center; font-size: .8rem; color: #93a4bf; }
   .tg-card.tg-done { border-color: #4ade80; box-shadow: 0 0 0 3px rgba(74, 222, 128, .35), 0 18px 50px rgba(0, 0, 0, .55); }
   .tg-card.tg-done .tg-badge { background: #4ade80; }

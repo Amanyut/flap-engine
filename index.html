@@ -992,6 +992,10 @@
     body.yellow-theme .icon-btn#select-all-btn.on { background: #0e3b43; border-color: #0e3b43; color: #fff000; box-shadow: 0 6px 16px rgba(14, 59, 67, 0.35); }
     @keyframes selPop { 0% { transform: scale(0.85); } 60% { transform: scale(1.08); } 100% { transform: scale(1); } }
 
+    /* ---- a section glows briefly when its chip is tapped ---- */
+    .fp-section.fp-flash { animation: fpFlash 1.2s ease-out; }
+    @keyframes fpFlash { 0% { box-shadow: inset 3px 0 0 var(--kind, transparent), 0 0 0 3px rgba(245, 196, 81, 0.85); } 100% { box-shadow: inset 3px 0 0 var(--kind, transparent), 0 0 0 0 rgba(245, 196, 81, 0); } }
+
     /* ---- SMALL TOUCHES ---- */
     .toast-legacy { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 16px); background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 3000; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); white-space: nowrap; }
     .update-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; max-width: 560px; margin: 0 auto; z-index: 2500; display: none; align-items: center; gap: 12px; padding: 12px 12px 12px 16px; border-radius: 14px; background: #042551; color: #fff; border: 1px solid rgba(245, 196, 81, 0.45); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45); }
@@ -2404,8 +2408,12 @@
       inner.innerHTML = html;
       const tabBar = document.getElementById('fp-tabs');
       tabBar.innerHTML = tabs;
+      fpTabLock = false;
       tabBar.querySelectorAll('.fp-tab').forEach(btn => btn.onclick = () => {
         const sec = document.getElementById(btn.dataset.target);
+        setActiveTab(btn.dataset.target);
+        fpTabLock = true;                                   // the chip you tapped stays lit until you scroll yourself
+        sec.classList.remove('fp-flash'); void sec.offsetWidth; sec.classList.add('fp-flash');
         const tabsH = document.getElementById('fp-tabs').offsetHeight;
         body.scrollTo({ top: sec.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - tabsH - 8, behavior: 'smooth' });
       });
@@ -2417,12 +2425,10 @@
       // the chip of the section being read is highlighted
       if (fpObserver) fpObserver.disconnect();
       fpObserver = new IntersectionObserver(entries => {
-        entries.forEach(e => {
-          if (!e.isIntersecting) return;
-          tabBar.querySelectorAll('.fp-tab').forEach(b => b.classList.toggle('active', b.dataset.target === e.target.id));
-          const active = tabBar.querySelector('.fp-tab.active');
-          if (active) tabBar.scrollTo({ left: active.offsetLeft - 12, behavior: 'smooth' });
-        });
+        if (fpTabLock) return;
+        entries.forEach(e => { if (e.isIntersecting) setActiveTab(e.target.id); });
+        const bb = document.getElementById('fp-body'), mx = bb.scrollHeight - bb.clientHeight;
+        if (mx > 4 && bb.scrollTop >= mx - 4) { const secs = document.querySelectorAll('#fp-inner .fp-section'); if (secs.length) setActiveTab(secs[secs.length - 1].id); }
       }, { root: body, rootMargin: '0px 0px -75% 0px' });
       inner.querySelectorAll('.fp-section').forEach(s => fpObserver.observe(s));
 
@@ -2511,7 +2517,7 @@
       let sx = 0, sy = 0, st = 0;
       const body = () => document.getElementById('fp-body');
       const zoomed = () => !!(window.visualViewport && window.visualViewport.scale > 1.02);
-      document.addEventListener('touchstart', e => { if (!e.target.closest || !e.target.closest('#fp-body')) return; if (e.touches.length > 1 || zoomed()) { st = 0; return; } sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); }, { passive: true });
+      document.addEventListener('touchstart', e => { if (!e.target.closest || !e.target.closest('#fp-body')) return; if (e.target.closest('#fp-tabs, .fp-gallery, [data-no-swipe]') || e.touches.length > 1 || zoomed()) { st = 0; return; } sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); }, { passive: true });
       document.addEventListener('touchend', e => {
         if (!e.target.closest || !e.target.closest('#fp-body') || !st) return;
         if (e.touches.length > 0 || zoomed()) { st = 0; return; }   // pinch-zoomed: a swipe only scrolls
@@ -2669,6 +2675,11 @@
       const max = b.scrollHeight - b.clientHeight;
       bar.style.transform = 'scaleX(' + (max > 4 ? Math.min(1, b.scrollTop / max) : 0) + ')';
       updateHero();
+      // at the very bottom the last section counts as the one being read
+      if (!fpTabLock && max > 4 && b.scrollTop >= max - 4) {
+        const secs = document.querySelectorAll('#fp-inner .fp-section');
+        if (secs.length) setActiveTab(secs[secs.length - 1].id);
+      }
     }
     (function () {
       let raf = 0;
@@ -3869,6 +3880,22 @@
       } catch (e) {}
       return null;
     }
+
+    // ---- flap-page section chips ----
+    let fpTabLock = false;
+    function setActiveTab(id) {
+      const bar = document.getElementById('fp-tabs');
+      if (!bar) return;
+      bar.querySelectorAll('.fp-tab').forEach(b => b.classList.toggle('active', b.dataset.target === id));
+      const a = bar.querySelector('.fp-tab.active');
+      if (a && (a.offsetLeft < bar.scrollLeft || a.offsetLeft + a.offsetWidth > bar.scrollLeft + bar.clientWidth)) bar.scrollTo({ left: a.offsetLeft - 12, behavior: 'smooth' });
+    }
+    (function () {
+      const b = document.getElementById('fp-body');
+      if (!b) return;
+      const release = e => { if (!(e.target.closest && e.target.closest('#fp-tabs'))) fpTabLock = false; };
+      ['touchstart', 'wheel'].forEach(ev => b.addEventListener(ev, release, { passive: true }));
+    })();
 
     // ---- DEFECT MAPPER (prototype, loaded on demand) ----
     const DM_ICON = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\' fill=\'none\' stroke=\'white\' stroke-width=\'2.6\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><circle cx=\'32\' cy=\'9\' r=\'5\'/><path d=\'M24 18h16l2 16h-4l-1 24h-5l-1-17-1 17h-5l-1-24h-4z\'/><path d=\'M24 19l-9 14M40 19l9 14\'/><circle cx=\'40\' cy=\'48\' r=\'7.5\' stroke-dasharray=\'3.2 2.6\'/><path d=\'M40 38v-3M40 61v-3M30 48h-3M53 48h-3\'/></svg>')}")`;
