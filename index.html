@@ -712,7 +712,8 @@
       touch-action: none; user-select: none; -webkit-user-select: none; opacity: 0.55; transition: opacity 0.35s; }
     .az-bar.awake, .az-bar:active { opacity: 1; }
     body.az-on .az-bar { display: flex; }
-    body.az-on .workspace { padding-right: 50px; }
+    /* the strip floats over the right edge of the list; it does not take space from the cards */
+    @media (max-width: 420px) { .az-bar { width: 26px; height: min(52vh, 430px); right: 6px; padding: 8px 0; border-radius: 13px; } .az-bar b { font-size: 10.5px; } .az-bubble { right: 44px; width: 56px; height: 56px; margin-top: -28px; font-size: 1.6rem; } }
     body.az-on.tray-on .az-bar { top: 46%; }
     .az-bar b { font-size: 12px; font-weight: 800; line-height: 1; color: var(--accent-blue); width: 100%; text-align: center; }
     .az-bar b.off { color: var(--text-muted); opacity: 0.35; }
@@ -907,6 +908,7 @@
       animation: tileSpark 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) forwards; }
     @keyframes tileSpark { 0% { transform: translate(0, 0) scale(0.4); opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; } }
     #chapter-menu.tile-focus .region-tile:not(.active) { opacity: 0.5; transition: opacity 0.3s; }
+    .tile-fly { position: fixed; z-index: 2700; pointer-events: none; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; will-change: transform, opacity; }
     #chapter-menu .region-tile { transition: background 0.35s, border-color 0.35s, color 0.35s, box-shadow 0.35s, transform 0.15s, opacity 0.4s; }
 
     /* ---- HERO BANNER on flap pages ---- */
@@ -1934,7 +1936,7 @@
       const sb = document.querySelector('.sidebar');
       if (sb && sb.classList.contains('open') && element && element.classList.contains('region-tile') && !reducedMotion()) {
         clearTimeout(filterCategory.closeTimer);
-        filterCategory.closeTimer = setTimeout(closeSidebarDrawer, 1050);
+        filterCategory.closeTimer = setTimeout(closeSidebarDrawer, 780);
       } else closeSidebarDrawer(); // Auto-close global sidebar drawer
     }
 
@@ -3568,6 +3570,7 @@
       if (!el || !el.classList.contains('region-tile') || reducedMotion()) return;
       const r = el.getBoundingClientRect();
       const fromTouch = tilePress.el === el && Date.now() - tilePress.t < 1500;
+      if (!fromTouch) return;   // only a real tap animates (not the screen restored on opening)
       const x = fromTouch ? tilePress.x - r.left : r.width / 2, y = fromTouch ? tilePress.y - r.top : r.height / 2;
       const size = 2.1 * Math.hypot(Math.max(x, r.width - x), Math.max(y, r.height - y));
       el.querySelectorAll('.tile-ripple, .tile-ring, .tile-spark').forEach(n => n.remove());
@@ -3582,21 +3585,34 @@
       clearTimeout(el._rt);
       el._rt = setTimeout(() => {
         el.classList.remove('rippling', 'pressing'); rip.remove();
-        el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
-        // a little burst of sparks from the icon
-        const icon = el.querySelector('.region-icon'), tr = el.getBoundingClientRect(), ir = icon ? icon.getBoundingClientRect() : tr;
-        const cx = ir.left + ir.width / 2 - tr.left, cy = ir.top + ir.height / 2 - tr.top;
-        for (let k = 0; k < 10; k++) {
-          const a = (k / 10) * Math.PI * 2 + Math.random() * 0.4, d = 26 + Math.random() * 22;
-          const s = document.createElement('span');
-          s.className = 'tile-spark';
-          s.style.setProperty('--sx', cx + 'px'); s.style.setProperty('--sy', cy + 'px');
-          s.style.setProperty('--dx', (Math.cos(a) * d).toFixed(1) + 'px'); s.style.setProperty('--dy', (Math.sin(a) * d).toFixed(1) + 'px');
-          s.style.animationDelay = (Math.random() * 80) + 'ms';
-          el.appendChild(s);
-        }
-        setTimeout(() => { el.classList.remove('pop'); el.querySelectorAll('.tile-ring, .tile-spark').forEach(n => n.remove()); }, 1150);
+        setTimeout(() => ring.remove(), 300);
+        handOffIcon(el);
       }, 520);
+    }
+    // Hand-off: the tile's line icon lifts out, grows and glides into the flap list while fading,
+    // as if handing its flaps over; the tile's own icon fades back a moment later
+    function handOffIcon(tile) {
+      const icon = tile.querySelector('.region-icon');
+      const mask = icon && icon.style.getPropertyValue('--icon');
+      const ws = document.querySelector('.workspace');
+      if (!icon || !mask || !ws || !icon.animate) return;
+      const ir = icon.getBoundingClientRect(), wr = ws.getBoundingClientRect();
+      if (ir.width < 4) return;
+      const rc = getComputedStyle(tile).getPropertyValue('--rc').trim() || '#93c5fd';
+      const start = getComputedStyle(icon).backgroundColor;
+      const fly = document.createElement('div');
+      fly.className = 'tile-fly';
+      fly.style.cssText = 'left:' + ir.left + 'px;top:' + ir.top + 'px;width:' + ir.width + 'px;height:' + ir.height + 'px;';
+      fly.style.setProperty('--icon', mask);
+      document.body.appendChild(fly);
+      const dx = wr.left + wr.width * 0.55 - (ir.left + ir.width / 2), dy = wr.top + wr.height * 0.36 - (ir.top + ir.height / 2);
+      icon.style.transition = 'none'; icon.style.opacity = '0';
+      fly.animate([
+        { transform: 'translate(0, 0) scale(1)', opacity: 1, backgroundColor: start },
+        { transform: 'translate(' + (dx * 0.45).toFixed(0) + 'px, ' + (dy * 0.4).toFixed(0) + 'px) scale(2.2)', opacity: 0.85, backgroundColor: rc, offset: 0.45 },
+        { transform: 'translate(' + dx.toFixed(0) + 'px, ' + dy.toFixed(0) + 'px) scale(3.6)', opacity: 0, backgroundColor: rc }
+      ], { duration: 980, easing: 'cubic-bezier(0.45, 0, 0.2, 1)' }).onfinish = () => fly.remove();
+      setTimeout(() => { icon.style.transition = 'opacity 0.45s'; icon.style.opacity = ''; setTimeout(() => { icon.style.transition = ''; }, 500); }, 760);
     }
 
     // ---- DEFECT MAPPER (prototype, loaded on demand) ----
