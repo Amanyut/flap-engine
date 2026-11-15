@@ -1027,15 +1027,16 @@
     :root { --sel: #3b82f6; }
     body.dark-theme { --sel: #60a5fa; }
     body.yellow-theme { --sel: #0e7c86; }
-    .flap-card.is-sel { overflow: hidden; border-color: var(--sel); animation: selBreath 2.8s ease-in-out infinite; }
+    .flap-card.is-sel { overflow: hidden; border-color: var(--sel); animation: selBreath 3.2s ease-in-out infinite; }
+    /* two very soft layers of blue that reach a good way into the card, breathing slowly; never fully gone */
     @keyframes selBreath {
-      0%, 100% { box-shadow: 0 0 0 1px var(--sel), inset 0 0 10px color-mix(in srgb, var(--sel) 24%, transparent), 0 4px 12px color-mix(in srgb, var(--sel) 14%, transparent); }
-      50% { box-shadow: 0 0 0 1px var(--sel), inset 0 0 24px color-mix(in srgb, var(--sel) 42%, transparent), 0 6px 22px color-mix(in srgb, var(--sel) 30%, transparent); } }
+      0%, 100% { box-shadow: 0 0 0 1px var(--sel), inset 0 0 26px 4px color-mix(in srgb, var(--sel) 14%, transparent), inset 0 0 70px 18px color-mix(in srgb, var(--sel) 7%, transparent), 0 4px 12px color-mix(in srgb, var(--sel) 14%, transparent); }
+      50% { box-shadow: 0 0 0 1px var(--sel), inset 0 0 34px 8px color-mix(in srgb, var(--sel) 20%, transparent), inset 0 0 110px 34px color-mix(in srgb, var(--sel) 11%, transparent), 0 6px 22px color-mix(in srgb, var(--sel) 26%, transparent); } }
     .flap-card.is-fav.is-sel { animation: none; }
-    .flap-card.is-fav.is-sel::after { animation: selBreathIn 2.8s ease-in-out infinite; }
+    .flap-card.is-fav.is-sel::after { animation: selBreathIn 3.2s ease-in-out infinite; }
     @keyframes selBreathIn {
-      0%, 100% { box-shadow: inset 0 0 0 1.5px var(--sel), inset 0 0 10px color-mix(in srgb, var(--sel) 24%, transparent); }
-      50% { box-shadow: inset 0 0 0 1.5px var(--sel), inset 0 0 24px color-mix(in srgb, var(--sel) 44%, transparent); } }
+      0%, 100% { box-shadow: inset 0 0 0 1.5px var(--sel), inset 0 0 26px 4px color-mix(in srgb, var(--sel) 14%, transparent), inset 0 0 70px 18px color-mix(in srgb, var(--sel) 7%, transparent); }
+      50% { box-shadow: inset 0 0 0 1.5px var(--sel), inset 0 0 34px 8px color-mix(in srgb, var(--sel) 20%, transparent), inset 0 0 110px 34px color-mix(in srgb, var(--sel) 11%, transparent); } }
     .flap-card .sel-tab { position: absolute; right: 0; bottom: 0; width: 0; height: 0; border-style: solid; border-width: 0 0 28px 28px; border-color: transparent transparent var(--sel) transparent;
       opacity: 0; transform: scale(0.3); transform-origin: 100% 100%; transition: opacity 0.18s, transform 0.28s cubic-bezier(0.2, 1.5, 0.4, 1); pointer-events: none; z-index: 3; }
     .flap-card .sel-tab::after { content: ''; position: absolute; left: -12px; top: 13px; width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(40deg); }
@@ -1045,7 +1046,7 @@
     .list-row.is-fav.is-sel { box-shadow: inset 3px 0 0 #f5c451, inset -4px 0 0 var(--sel);
       background-image: linear-gradient(90deg, rgba(245, 196, 81, 0.14), transparent 40%), linear-gradient(270deg, color-mix(in srgb, var(--sel) 15%, transparent), transparent 55%); }
     body.anim-off .flap-card.is-sel, body.anim-off .flap-card.is-fav.is-sel::after { animation: none; }
-    body.anim-off .flap-card.is-sel { box-shadow: 0 0 0 1px var(--sel), inset 0 0 16px color-mix(in srgb, var(--sel) 32%, transparent); }
+    body.anim-off .flap-card.is-sel { box-shadow: 0 0 0 1px var(--sel), inset 0 0 30px 6px color-mix(in srgb, var(--sel) 17%, transparent), inset 0 0 90px 26px color-mix(in srgb, var(--sel) 9%, transparent); }
 
     /* ---- the tick on a flap page (item 2) ---- */
     .fh-row { display: flex; align-items: flex-start; gap: 10px; }
@@ -2620,6 +2621,96 @@
       page.style.transition = ''; page.style.clipPath = ''; page.style.opacity = '';
     }
 
+    // The page grows out of the item that was tapped.
+    //  card · lift and bloom: the card lifts towards you and becomes the page; its title glides into the page title
+    //         while the other cards sink back, soften and dim.
+    //  row  · the list parts: rows part away from the tapped one like a curtain, nearest first, as it unfolds.
+    let flourish = null;      // the opening in progress (so a quick Back can tidy it up)
+    function endFlourish() { if (flourish) { flourish(); flourish = null; } }
+    function openFlourish(el, page) {
+      if (!el || !el.isConnected || !el.animate) return false;
+      const isCard = el.classList.contains('flap-card'), isRow = el.classList.contains('list-row');
+      if (!isCard && !isRow) return false;
+      const r = el.getBoundingClientRect(), top = parseFloat(getComputedStyle(page).top) || 0;
+      if (r.width < 20 || r.bottom < top + 10 || r.top > innerHeight - 10) return false;
+      endFlourish();
+      const W = innerWidth, H = innerHeight - top, E = 'cubic-bezier(0.22, 1, 0.36, 1)';
+      const rc = getComputedStyle(page).getPropertyValue('--rc').trim() || '#c0563f';
+      // a solid surface for the bloom (list rows are see-through, so fall back to the page's own panel colour)
+      const bgOf = c => { const m = String(c).match(/rgba?\(([^)]+)\)/); return !m || (m[1].split(',')[3] !== undefined && parseFloat(m[1].split(',')[3]) === 0) ? '' : c; };
+      const solid = bgOf(getComputedStyle(el).backgroundColor) || getComputedStyle(document.querySelector('.fp-section') || document.body).backgroundColor || '#ffffff';
+      const anims = [], timers = [];
+      // the page is laid out (so the title's place is known) but hidden until the bloom has covered the screen
+      page.style.transition = 'none'; page.classList.add('open'); page.style.opacity = '0'; void page.offsetWidth;
+      const ghost = document.createElement('div');
+      ghost.style.cssText = 'position:fixed;left:0;top:0;z-index:870;pointer-events:none;transform-origin:0 0;overflow:hidden;will-change:transform;' +
+        'background:' + solid + ';width:' + r.width + 'px;height:' + r.height + 'px;border-radius:12px;box-shadow:0 18px 40px rgba(15,23,42,0.22);';
+      const tint = document.createElement('div');
+      tint.style.cssText = 'position:absolute;inset:0;opacity:0;background:linear-gradient(135deg,' + rc + ',transparent 72%);';
+      ghost.appendChild(tint); document.body.appendChild(ghost);
+      const delay = isCard ? 90 : 160, dur = 640;
+      if (isCard) {
+        anims.push(el.animate([{ transform: 'none' }, { transform: 'translateY(-4px) scale(1.05)', boxShadow: '0 16px 30px rgba(15,23,42,0.22)' }], { duration: 150, easing: 'ease-out', fill: 'forwards' }));
+        el.parentElement.querySelectorAll('.flap-card').forEach(c => {
+          if (c !== el) anims.push(c.animate([{ transform: 'none', opacity: 1, filter: 'blur(0px)' }, { transform: 'scale(0.93)', opacity: 0.35, filter: 'blur(1.5px)' }], { duration: 520, easing: E, fill: 'forwards' }));
+        });
+        ghost.animate([
+          { transform: 'translate(' + r.left + 'px,' + r.top + 'px) perspective(900px) rotateX(0deg)', width: r.width + 'px', height: r.height + 'px', borderRadius: '12px', opacity: 0 },
+          { offset: 0.12, opacity: 1, transform: 'translate(' + (r.left - 4) + 'px,' + (r.top - 8) + 'px) perspective(900px) rotateX(6deg)', width: (r.width + 8) + 'px', height: (r.height + 8) + 'px', borderRadius: '12px' },
+          { transform: 'translate(0px,' + top + 'px) perspective(900px) rotateX(0deg)', width: W + 'px', height: H + 'px', borderRadius: '0px', opacity: 1 }
+        ], { duration: dur, delay: delay, easing: E, fill: 'both' });
+      } else {
+        anims.push(el.animate([{ backgroundColor: getComputedStyle(el).backgroundColor }, { backgroundColor: 'color-mix(in srgb, var(--sel) 12%, ' + getComputedStyle(el).backgroundColor + ')' }], { duration: 140, fill: 'forwards' }));
+        const items = Array.from(el.parentElement.children).filter(c => c !== el && c.getBoundingClientRect().height > 0);
+        const idx = Array.from(el.parentElement.children).indexOf(el);
+        items.forEach(c => {
+          const cr = c.getBoundingClientRect(); if (cr.bottom < top - 40 || cr.top > innerHeight + 40) return;
+          const k = Array.from(el.parentElement.children).indexOf(c), up = k < idx;
+          const dist = up ? -(cr.bottom - top + 30) : (innerHeight - cr.top + 30);
+          // they accelerate away and fade early, so nothing lingers while the page unfolds
+          anims.push(c.animate([{ transform: 'none', opacity: 1 }, { offset: 0.55, opacity: 0 }, { transform: 'translateY(' + dist + 'px)', opacity: 0 }],
+            { duration: 440, delay: 70 + Math.min(10, Math.abs(k - idx)) * 28, easing: 'cubic-bezier(0.5, 0, 0.75, 0.2)', fill: 'forwards' }));
+        });
+        ghost.animate([
+          { transform: 'translate(' + r.left + 'px,' + r.top + 'px)', width: r.width + 'px', height: r.height + 'px', borderRadius: '12px' },
+          { offset: 0.25, transform: 'translate(' + (r.left - 6) + 'px,' + (r.top - 3) + 'px)', width: (r.width + 12) + 'px', height: (r.height + 6) + 'px', borderRadius: '12px' },
+          { transform: 'translate(0px,' + top + 'px)', width: W + 'px', height: H + 'px', borderRadius: '0px' }
+        ], { duration: dur, delay: delay, easing: 'cubic-bezier(0.45, 0, 0.2, 1)', fill: 'both' });
+      }
+      tint.animate([{ opacity: 0 }, { opacity: 0.18 }], { duration: 480, delay: delay + 200, fill: 'forwards' });
+      // the tapped item's own title glides and grows into the page title
+      const src = el.querySelector(isCard ? '.card-title' : '.list-title'), dst = page.querySelector('#fp-hero .fh-title');
+      let clone = null;
+      if (src && dst) {
+        const a = src.getBoundingClientRect(), b = dst.getBoundingClientRect(), cs = getComputedStyle(src), ds = getComputedStyle(dst);
+        const k = parseFloat(ds.fontSize) / (parseFloat(cs.fontSize) || 16);
+        clone = document.createElement('div');
+        clone.textContent = src.textContent;
+        clone.style.cssText = 'position:fixed;left:' + a.left + 'px;top:' + a.top + 'px;width:' + Math.min(a.width, b.width / k) + 'px;z-index:871;pointer-events:none;transform-origin:0 0;margin:0;' +
+          'font-family:' + ds.fontFamily + ';font-size:' + cs.fontSize + ';font-weight:' + ds.fontWeight + ';line-height:' + ds.lineHeight + ';letter-spacing:' + ds.letterSpacing + ';color:' + ds.color + ';';
+        document.body.appendChild(clone);
+        clone.animate([{ transform: 'translate(0,0) scale(1)' }, { transform: 'translate(' + (b.left - a.left) + 'px,' + (b.top - a.top) + 'px) scale(' + k + ')' }],
+          { duration: dur - (isCard ? 20 : 120), delay: delay + (isCard ? 20 : 120), easing: E, fill: 'both' });
+      }
+      const tidy = () => {
+        timers.forEach(clearTimeout);
+        anims.forEach(a => { try { a.cancel(); } catch (e) {} });
+        ghost.remove(); if (clone) clone.remove();
+        page.style.transition = ''; page.style.opacity = '';
+      };
+      flourish = tidy;
+      timers.push(setTimeout(() => {
+        // the page takes over from the bloom; its parts settle in one after another
+        page.style.transition = 'opacity 0.18s ease-out'; page.style.opacity = '1';
+        const parts = [page.querySelector('#fp-hero .fh-meta'), page.querySelector('#fp-hero .fh-pills'), page.querySelector('#fp-tabs')]
+          .concat(Array.from(page.querySelectorAll('#fp-inner .fp-section')).slice(0, 6)).filter(Boolean);
+        parts.forEach((n, i) => n.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], { duration: 420, delay: i * 55, easing: E, fill: 'backwards' }));
+        ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' });
+        if (clone) clone.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, delay: 60, fill: 'forwards' });
+        timers.push(setTimeout(() => { if (flourish === tidy) flourish = null; tidy(); }, 300));
+      }, delay + dur - 60));
+      return true;
+    }
     function openFlapPage(name, opts) {
       if (!renderFlapPage(name)) return;
       const page = document.getElementById('flap-page');
@@ -2630,8 +2721,11 @@
       flapFromMatrix = !!(opts && opts.matrix);
       flapFromDeck = !!(opts && opts.deck); deckOrder = flapFromDeck ? Array.from(selectedFlaps) : [];
       clearMorph(page);
-      const start = morphInset(page, opts && opts.fromEl);
-      if (start) {
+      const fromEl = opts && opts.fromEl;
+      const start = !fancyOff() && openFlourish(fromEl, page) ? 'flourish' : morphInset(page, fromEl);
+      if (start === 'flourish') {
+        morph.el = fromEl; morph.name = name;        // on closing, the page still shrinks back into the item
+      } else if (start) {
         morph.el = opts.fromEl; morph.name = name;
         page.style.transition = 'none'; page.style.clipPath = start; page.style.opacity = '0.55';
         page.classList.add('open'); void page.offsetWidth;
@@ -2651,6 +2745,7 @@
       const page = document.getElementById('flap-page');
       if (!page.classList.contains('open')) return;
       if (window.flapCurl) window.flapCurl.abort();
+      endFlourish();
       disarmLaunchBack();
       sfx('close');
       clearMorph(page);
@@ -4637,12 +4732,53 @@
       matrixSingleFlap = null;
       matrixHidden.clear();                 // Compare always opens the full selection again
       buildMatrix(orderedSelection());
+      const deckEl = document.getElementById('ct-stack'), deckR = deckEl && deckEl.getBoundingClientRect();
       document.getElementById('matrix-dock').classList.add('open');
+      if (!fancyOff() && deckR && deckR.width > 0) dealIntoMatrix(deckR);
       document.getElementById('matrix-fab').style.display = 'none';
       isMatrixMinimized = false; sfx('open');
       renderWorkspaceGrid(); 
     }
 
+    // Compare: the selected flaps fly out of the tray's deck in arcs, land as the column heads,
+    // and each column's content flows down beneath its head
+    function dealIntoMatrix(deckR) {
+      const dock = document.getElementById('matrix-dock');
+      const heads = Array.from(dock.querySelectorAll('.matrix-table thead th')).filter(h => { const r = h.getBoundingClientRect(); return r.right > 0 && r.left < innerWidth; }).slice(0, 5);
+      if (!heads.length || !document.body.animate) return;
+      const rows = Array.from(dock.querySelectorAll('.matrix-table tbody tr')).slice(0, 8);
+      // wait for the dock to be laid out, then deal
+      requestAnimationFrame(() => {
+        heads.forEach((h, k) => {
+          const col = Number(h.dataset.col), t = h.getBoundingClientRect();
+          h.style.opacity = '0';
+          rows.forEach(tr => { const td = tr.children[col]; if (td) td.style.opacity = '0'; });
+          const card = document.createElement('div');
+          card.textContent = (h.querySelector('.th-name') || h).textContent;
+          const hs = getComputedStyle(h);
+          card.style.cssText = 'position:fixed;left:0;top:0;z-index:950;pointer-events:none;box-sizing:border-box;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;' +
+            'width:' + t.width + 'px;height:' + Math.min(t.height, 90) + 'px;border-radius:12px;background:' + hs.backgroundColor + ';color:' + hs.color + ';font-weight:700;font-size:0.95rem;line-height:1.2;box-shadow:0 12px 28px rgba(0,0,0,0.35);';
+          document.body.appendChild(card);
+          const sx = deckR.left + deckR.width / 2 - t.width / 2, sy = deckR.top + deckR.height / 2 - 40;
+          const mx = (sx + t.left) / 2 + (k - (heads.length - 1) / 2) * 30, my = Math.min(sy, t.top) - 70;
+          const fly = card.animate([
+            { transform: 'translate(' + sx + 'px,' + sy + 'px) rotate(-14deg) scale(0.4)', opacity: 0.3 },
+            { offset: 0.55, transform: 'translate(' + mx + 'px,' + my + 'px) rotate(' + (8 - k * 6) + 'deg) scale(1.06)', opacity: 1 },
+            { transform: 'translate(' + t.left + 'px,' + t.top + 'px) rotate(0deg) scale(1)', opacity: 1 }
+          ], { duration: 700, delay: 160 + k * 120, easing: 'cubic-bezier(0.3, 0.7, 0.2, 1)', fill: 'both' });
+          fly.onfinish = () => {
+            card.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: 'forwards' }).onfinish = () => card.remove();
+            h.style.opacity = '';
+            h.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.05)' }, { transform: 'scale(1)' }], { duration: 260, easing: 'ease-out' });
+            rows.forEach((tr, j) => { const td = tr.children[col]; if (!td) return; td.style.opacity = '';
+              td.animate([{ opacity: 0, transform: 'translateY(-14px)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: j * 55, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'backwards' }); });
+            hapt(12);
+          };
+        });
+        // columns beyond the screen simply appear
+        Array.from(dock.querySelectorAll('.matrix-table thead th')).forEach(h => { if (!heads.includes(h)) h.style.opacity = ''; });
+      });
+    }
     function minimizeMatrix() {
       disarmLaunchBack();
       if (document.getElementById('matrix-dock').classList.contains('open')) sfx('close');
