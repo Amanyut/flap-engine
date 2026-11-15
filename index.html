@@ -1023,6 +1023,56 @@
     body.anim-off .icon-btn#select-all-btn.on, body.anim-off .fav-btn.pop, body.anim-off .fp-section.fp-flash, body.anim-off .region-tile.pop .region-icon { animation: none !important; }
     body.anim-off .ct-card { transition: opacity 0.12s !important; transition-delay: 0s !important; }
 
+    /* ---- selected flaps (item 4) ---- */
+    :root { --sel: #3b82f6; }
+    body.dark-theme { --sel: #60a5fa; }
+    body.yellow-theme { --sel: #0e7c86; }
+    .flap-card.is-sel { overflow: hidden; border-color: var(--sel); animation: selBreath 2.8s ease-in-out infinite; }
+    @keyframes selBreath {
+      0%, 100% { box-shadow: 0 0 0 1px var(--sel), inset 0 0 10px color-mix(in srgb, var(--sel) 24%, transparent), 0 4px 12px color-mix(in srgb, var(--sel) 14%, transparent); }
+      50% { box-shadow: 0 0 0 1px var(--sel), inset 0 0 24px color-mix(in srgb, var(--sel) 42%, transparent), 0 6px 22px color-mix(in srgb, var(--sel) 30%, transparent); } }
+    .flap-card.is-fav.is-sel { animation: none; }
+    .flap-card.is-fav.is-sel::after { animation: selBreathIn 2.8s ease-in-out infinite; }
+    @keyframes selBreathIn {
+      0%, 100% { box-shadow: inset 0 0 0 1.5px var(--sel), inset 0 0 10px color-mix(in srgb, var(--sel) 24%, transparent); }
+      50% { box-shadow: inset 0 0 0 1.5px var(--sel), inset 0 0 24px color-mix(in srgb, var(--sel) 44%, transparent); } }
+    .flap-card .sel-tab { position: absolute; right: 0; bottom: 0; width: 0; height: 0; border-style: solid; border-width: 0 0 28px 28px; border-color: transparent transparent var(--sel) transparent;
+      opacity: 0; transform: scale(0.3); transform-origin: 100% 100%; transition: opacity 0.18s, transform 0.28s cubic-bezier(0.2, 1.5, 0.4, 1); pointer-events: none; z-index: 3; }
+    .flap-card .sel-tab::after { content: ''; position: absolute; left: -12px; top: 13px; width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(40deg); }
+    body.yellow-theme .flap-card .sel-tab::after { border-color: #fff000; }
+    .flap-card.is-sel .sel-tab { opacity: 1; transform: none; }
+    .list-row.is-sel { box-shadow: inset -4px 0 0 var(--sel); background-image: linear-gradient(270deg, color-mix(in srgb, var(--sel) 15%, transparent), transparent 55%); }
+    .list-row.is-fav.is-sel { box-shadow: inset 3px 0 0 #f5c451, inset -4px 0 0 var(--sel);
+      background-image: linear-gradient(90deg, rgba(245, 196, 81, 0.14), transparent 40%), linear-gradient(270deg, color-mix(in srgb, var(--sel) 15%, transparent), transparent 55%); }
+    body.anim-off .flap-card.is-sel, body.anim-off .flap-card.is-fav.is-sel::after { animation: none; }
+    body.anim-off .flap-card.is-sel { box-shadow: 0 0 0 1px var(--sel), inset 0 0 16px color-mix(in srgb, var(--sel) 32%, transparent); }
+
+    /* ---- the tick on a flap page (item 2) ---- */
+    .fh-row { display: flex; align-items: flex-start; gap: 10px; }
+    .fp-tick { flex-shrink: 0; width: 22px; height: 22px; margin: 0; accent-color: var(--sel); cursor: pointer; }
+    .fh-row .fp-tick { margin-top: calc(0.42rem * var(--rs, 1)); }
+    .fp-tick-head { transition: opacity 0.25s; }
+    #flap-page.hero-on .fp-tick-head { opacity: 0; pointer-events: none; }
+
+    /* ---- comparison column header (item 1) ---- */
+    .th-tools { justify-content: space-between; align-items: center; }
+    .th-tools .th-left { display: inline-flex; gap: 6px; }
+    .th-tool.th-hide { margin-left: 18px; color: #dc2626; border-color: rgba(220, 38, 38, 0.35); }
+    body.dark-theme .th-tool.th-hide { color: #f87171; border-color: rgba(248, 113, 113, 0.4); }
+    .th-namerow { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .th-tick { flex-shrink: 0; width: 18px; height: 18px; margin: 0; accent-color: var(--sel); cursor: pointer; }
+
+    /* ---- Favourites: bulk remove (item 3) ---- */
+    .fav-bar { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
+    .fav-bar .fb-text { flex: 1; font-size: 0.85rem; color: var(--text-muted); }
+    .fav-bar .fb-btn { border: 1px solid var(--border-color); background: var(--panel-light); color: var(--text-dark); border-radius: 999px; padding: 7px 14px; font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+    .fav-bar .fb-btn:disabled { opacity: 0.4; cursor: default; }
+    .fav-bar .fb-danger { color: #dc2626; border-color: rgba(220, 38, 38, 0.4); }
+    body.fav-picking #flap-grid-canvas [data-name] { transition: transform 0.15s, opacity 0.15s; }
+    body.fav-picking #flap-grid-canvas [data-name]:not(.fav-pick) { opacity: 0.75; }
+    #flap-grid-canvas .fav-pick { outline: 2.5px solid #ef4444; outline-offset: -2.5px; transform: scale(0.97); opacity: 1; }
+    .pm-btn.pm-danger { background: #dc2626; }
+
     /* ---- page curl ---- */
     .curl-root { position: absolute; z-index: 40; overflow: hidden; pointer-events: none; contain: strict; }
     .curl-leaf { position: absolute; inset: 0; overflow: hidden; }
@@ -1032,9 +1082,9 @@
     .curl-bg { position: absolute; inset: 0; background-color: #b44c52; background-size: cover; background-position: right center; background-repeat: no-repeat; }
     .curl-vs { position: absolute; left: 0; top: 0; transform-origin: 0 0; background: linear-gradient(to right, rgba(20, 0, 5, 0.45) 0%, rgba(255, 225, 220, 0.28) 7%, rgba(255, 225, 220, 0.05) 26%, rgba(0, 0, 0, 0) 60%, rgba(20, 0, 5, 0.14) 100%); }
     .curl-edge { position: absolute; inset: 0; box-shadow: inset 0 0 0 1.5px #f3dccf, inset 0 0 0 3.5px #e9a99c, inset 0 0 0 5px #c9706b, inset 0 0 0 9px rgba(240, 196, 98, 0.95), inset 0 0 0 11px rgba(205, 140, 70, 0.6); }
-    .curl-logo { position: absolute; right: 20px; bottom: 22px; display: flex; align-items: center; gap: 7px; transform: scaleX(-1); font-family: var(--brand-font, Georgia, serif); font-size: 13px; letter-spacing: 0.05em; color: rgba(255, 242, 230, 0.92); text-shadow: 0 1px 2px rgba(50, 0, 8, 0.7); white-space: nowrap; }
-    .curl-logo.top { bottom: auto; top: 22px; }
-    .curl-logo img { width: 22px; height: 22px; border-radius: 6px; box-shadow: 0 1px 3px rgba(50, 0, 8, 0.5); }
+    .curl-logo { position: absolute; right: 24px; bottom: 28px; display: flex; align-items: center; gap: 10px; transform: scaleX(-1); font-family: var(--brand-font, Georgia, serif); font-size: 19px; letter-spacing: 0.05em; color: rgba(255, 242, 230, 0.92); text-shadow: 0 1px 2px rgba(50, 0, 8, 0.7); white-space: nowrap; }
+    .curl-logo.top { bottom: auto; top: 28px; }
+    .curl-logo img { width: 34px; height: 34px; border-radius: 9px; box-shadow: 0 1px 3px rgba(50, 0, 8, 0.5); }
 
     /* ---- page turn and checkbox wave ---- */
     .fp-leaf { z-index: 40; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 0 24px rgba(0, 0, 0, 0.25); will-change: transform; }
@@ -1220,6 +1270,7 @@
   <div class="flap-page" id="flap-page" aria-hidden="true">
     <div class="fp-header">
       <button class="fp-icon-btn" onclick="closeFlapPage()" aria-label="Back">‹</button>
+      <input type="checkbox" class="fp-tick fp-tick-head" aria-label="Tick for comparison" title="Tick for comparison">
       <div class="fp-title-wrap"><div class="fp-meta" id="fp-meta"></div><h2 class="fp-title" id="fp-title"></h2></div>
       <span id="fp-star"></span>
       <a class="fp-icon-btn ask-btn" id="fp-ask" target="_blank" rel="noopener" aria-label="Ask Amanyu about this flap" title="Ask Amanyu" style="display:none"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.1-.2-.2-.4-.3z"/></svg></a>
@@ -1313,7 +1364,7 @@
     function toggleFavourite(name) {
       const key = favKey(name);
       const adding = !favouriteFlaps.has(key);
-      buzz(adding ? [10, 40, 16] : 10); sfx(adding ? 'fav' : 'untick');
+      hapt(adding ? HAPTIC.fav : HAPTIC.unfav); sfx(adding ? 'fav' : 'unfav');
       if (adding) favouriteFlaps.add(key); else favouriteFlaps.delete(key);
       if (!adding) setTimeout(() => showToast('Removed from Favourites', () => { if (!favouriteFlaps.has(key)) toggleFavourite(name); }), 0);
       storeFavouritesLocally(true);
@@ -1940,13 +1991,14 @@
         const dock = document.getElementById('matrix-dock');
         if (s.matrix === 'open' && selectedFlaps.size) {
           if (dock.classList.contains('open')) buildMatrix(Array.from(selectedFlaps)); else openMatrix();
+          armLaunchBack();
         } else if (s.matrix === 'single' && s.single && exists(s.single)) {
-          openFlapPage(s.single);
+          openFlapPage(s.single); armLaunchBack();
         } else if (s.matrix === 'min' && selectedFlaps.size) {
           isMatrixMinimized = true; updateCompareButton();
         }
         if (s.page && exists(s.page)) {
-          openFlapPage(s.page);
+          openFlapPage(s.page); armLaunchBack();
           requestAnimationFrame(() => { document.getElementById('fp-body').scrollTop = s.pageTop || 0; });
         }
         requestAnimationFrame(() => {
@@ -2125,7 +2177,23 @@
       });
     }
 
-    function renderWorkspaceGrid() {
+    // after every redraw of the home grid: selected flaps get their highlight; Favourites get the bulk-remove bar
+    function renderWorkspaceGrid() { renderWorkspaceGridCore(); afterGridRender(); }
+    function markSel(name, on) {
+      document.querySelectorAll('#flap-grid-canvas [data-name]').forEach(el => {
+        if (el.dataset.name !== name) return;
+        el.classList.toggle('is-sel', on);
+        const cb = el.querySelector('input[type="checkbox"]'); if (cb) cb.checked = on;
+      });
+    }
+    function afterGridRender() {
+      document.querySelectorAll('#flap-grid-canvas .flap-card').forEach(c => {
+        if (!c.querySelector('.sel-tab')) c.insertAdjacentHTML('beforeend', '<span class="sel-tab" aria-hidden="true"></span>');
+      });
+      document.querySelectorAll('#flap-grid-canvas [data-name]').forEach(el => el.classList.toggle('is-sel', selectedFlaps.has(el.dataset.name)));
+      renderFavBar();
+    }
+    function renderWorkspaceGridCore() {
       const canvas = document.getElementById('flap-grid-canvas');
       canvas.innerHTML = '';
       const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
@@ -2378,6 +2446,7 @@
       buzz(8);
       if (checkbox.checked) selectedFlaps.add(flapName);
       else selectedFlaps.delete(flapName);
+      markSel(flapName, checkbox.checked);
       sfx(checkbox.checked ? 'tick' : 'untick');
       updateCompareButton();
     }
@@ -2442,6 +2511,20 @@
       updateTray(); updateSelectAllUI();
     }
 
+    function syncFpTicks() {
+      const on = !!(flapPageName && selectedFlaps.has(flapPageName));
+      document.querySelectorAll('#flap-page .fp-tick').forEach(c => { c.checked = on; });
+    }
+    document.addEventListener('change', e => {
+      if (!e.target.classList || !e.target.classList.contains('fp-tick') || !flapPageName) return;
+      const on = e.target.checked, nm = flapPageName;
+      if (on) selectedFlaps.add(nm); else selectedFlaps.delete(nm);
+      markSel(nm, on); syncFpTicks(); updateCompareButton();
+      sfx(on ? 'tick' : 'untick'); hapt(on ? HAPTIC.tick : HAPTIC.untick);
+      if (on && selectedFlaps.size === 1) showToast('Ticked – tick one more flap to compare');
+      saveStateSoon();
+    });
+
     // A ticked flap opens the comparison matrix of all ticked flaps; any other flap opens its own page
     function viewSingleFlap(flapName, fromEl) {
       const q = document.getElementById('search-input').value;
@@ -2453,7 +2536,7 @@
     // ---- SINGLE-FLAP PAGE ----
     let flapPageName = null;
     let fpObserver = null;
-    function viewOrder() { if (flapFromMatrix && document.getElementById('matrix-dock').classList.contains('open')) return matrixOrder.slice(); return Array.from(document.querySelectorAll('#flap-grid-canvas [data-name]')).map(el => el.dataset.name); }
+    function viewOrder() { if (flapFromDeck && deckOrder.length) return deckOrder.slice(); if (flapFromMatrix && document.getElementById('matrix-dock').classList.contains('open')) return matrixOrder.slice(); return Array.from(document.querySelectorAll('#flap-grid-canvas [data-name]')).map(el => el.dataset.name); }
     function flapHash(name) { return '#flap=' + encodeURIComponent(name); }
 
     function renderFlapPage(name, dir) {
@@ -2465,7 +2548,7 @@
       const tag = stripHTML(flap['Sub-Region Tag'] || '').split(',')[0].trim();
       document.getElementById('fp-meta').innerText = stripHTML(flap.category) + (tag ? ' · ' + tag : '');
       document.getElementById('flap-page').style.setProperty('--rc', regionVar(flap.category));
-      renderHero(flap);
+      renderHero(flap); syncFpTicks();
       document.getElementById('fp-title').innerText = stripHTML(flap.name);
       const starSlot = document.getElementById('fp-star'); starSlot.innerHTML = ''; starSlot.appendChild(makeStarButton(flap.name, 'fp-fav'));
 
@@ -2545,6 +2628,7 @@
       if (window.prepareUnderside) setTimeout(window.prepareUnderside, 1500);   // the back of the page, drawn once in the background
       flapBackStack = [];
       flapFromMatrix = !!(opts && opts.matrix);
+      flapFromDeck = !!(opts && opts.deck); deckOrder = flapFromDeck ? Array.from(selectedFlaps) : [];
       clearMorph(page);
       const start = morphInset(page, opts && opts.fromEl);
       if (start) {
@@ -2567,9 +2651,17 @@
       const page = document.getElementById('flap-page');
       if (!page.classList.contains('open')) return;
       if (window.flapCurl) window.flapCurl.abort();
+      disarmLaunchBack();
       sfx('close');
       clearMorph(page);
       const extraSteps = flapBackStack.length; flapBackStack = []; flapFromMatrix = false;
+      const fromDeck = flapFromDeck; flapFromDeck = false; deckOrder = [];
+      // back to the comparison: it reflects any tick changed on the page; back to the deck: it is open again
+      if (document.getElementById('matrix-dock').classList.contains('open')) {
+        const want = orderedSelection().filter(n => !matrixHidden.has(n));
+        if (want.length > 1 && want.join('|') !== matrixOrder.join('|')) buildMatrix(want);
+      }
+      if (fromDeck && selectedFlaps.size > 1) setTimeout(() => openFan(true), 340);
       const end = morph.name === flapPageName ? morphInset(page, morph.el) : null;
       if (end) {
         page.style.transition = 'clip-path 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.32s ease-in';
@@ -2627,13 +2719,44 @@
     }
 
     // A short vibration on phones that support it
-    function buzz(ms) {
+    // Vibration. Modern precise motors (e.g. OnePlus O-Haptics) don't register pulses shorter than ~15 ms, so the app's
+    // short taps are scaled up; richer effects use patterns timed to their animation and sound (HAPTIC below).
+    // Browsers only allow vibration right after a touch, so every effect starts from the tap that caused it.
+    function hapt(p) {
       try {
         if (!navigator.vibrate) return;
         if (navigator.userActivation && !navigator.userActivation.isActive) return;
-        navigator.vibrate(ms || 10);
+        navigator.vibrate(p);
       } catch (e) {}
     }
+    function buzz(ms) {
+      if (Array.isArray(ms)) hapt(ms.map((v, i) => i % 2 ? v : Math.max(16, Math.round(v * 1.6))));
+      else hapt(Math.max(18, Math.round((ms || 10) * 2)));
+    }
+    const HAPTIC = {
+      // one tap per card, on the cards' 45 ms beat
+      deal: n => { const p = [16]; for (let i = 1; i < Math.max(1, Math.min(10, n)); i++) p.push(29, 16); return p; },
+      // the cards drawn back in: quickening, strengthening pulses, then the tuck
+      gather: n => { const D = (0.16 + Math.min(10, Math.max(1, n)) * 0.035) * 1000, p = []; let t = 0;
+        while (t < D - 45) { const k = t / D, on = Math.round(6 + 12 * k), off = Math.round(Math.max(14, 38 - 24 * k)); p.push(on, off); t += on + off; }
+        p.push(28); return p; },
+      // one tap per ticking checkbox, on the beat of the zip
+      wave: (n, gap) => { const p = [12]; for (let i = 1; i < n; i++) p.push(Math.max(8, gap - 12), 12); return p; },
+      tile: [22, 880, 34],               // the droplet as you tap, then the bloom as the icon dissolves
+      erase: [24, 56, 24, 56, 24, 96, 8, 20, 8, 20, 8, 20, 8, 60, 30],
+      peek: [12, 40, 30],
+      fav: [18, 60, 30], unfav: [22],
+      tick: 20, untick: 14, land: 30, flop: 14, friction: 9
+    };
+    // Opening straight onto a flap page (or comparison), the app adds its "back" step before anyone has touched the page,
+    // and Chrome on Android skips such steps – so the back gesture closed the app. A CloseWatcher (made for exactly this)
+    // catches that first back gesture and steps back inside the app instead.
+    let launchCW = null;
+    function armLaunchBack() {
+      if (launchCW || !('CloseWatcher' in window)) return;
+      try { launchCW = new CloseWatcher(); launchCW.onclose = () => { launchCW = null; history.back(); }; } catch (e) { launchCW = null; }
+    }
+    function disarmLaunchBack() { if (!launchCW) return; try { launchCW.destroy(); } catch (e) {} launchCW = null; }
     function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
     // ✨ in the side panel turns the app's extra animations off (flap_anim = 'off'); the basics stay
     // (opening scene, header, toasts, offline pill, peek, messages)
@@ -2811,7 +2934,7 @@
       function show(el) {
         const flap = datasetMaster.find(f => f.name === el.dataset.name);
         if (!flap) return;
-        buzz(15);
+        hapt(HAPTIC.peek);
         let body = '', used = 0;
         PEEK_KEYS.forEach(k => {
           if (used >= 5) return;
@@ -2840,7 +2963,7 @@
       }
       document.addEventListener('pointerdown', e => {
         const el = e.target.closest && e.target.closest('#flap-grid-canvas .flap-card, #flap-grid-canvas .list-row');
-        if (!el || e.target.closest('input, label, .fav-btn, button, .card-actions') || (e.pointerType === 'mouse' && e.button !== 0)) return;
+        if (!el || favPick || e.target.closest('input, label, .fav-btn, button, .card-actions') || (e.pointerType === 'mouse' && e.button !== 0)) return;
         if (window.visualViewport && window.visualViewport.scale > 1.02) return;
         sx = e.clientX; sy = e.clientY; src = el;
         clearTimeout(timer); timer = setTimeout(() => { if (src === el) show(el); }, 430);
@@ -3756,11 +3879,11 @@
       fan.querySelectorAll('.ct-card').forEach(c => {
         const nm = decodeURIComponent(c.dataset.n);
         c.querySelector('.cc-x').onclick = e => { e.stopPropagation(); selectedFlaps.delete(nm); buzz(6); renderWorkspaceGrid(); updateCompareButton(); };
-        c.onclick = () => { closeFan(); openFlapPage(nm, { fromEl: c }); };
+        c.onclick = () => { closeFan(); openFlapPage(nm, { fromEl: c, deck: true }); };
       });
     }
-    function openFan() { const fan = document.getElementById('ct-fan'); renderFan(); void fan.offsetWidth; fan.classList.add('open'); fan.setAttribute('aria-hidden', 'false'); buzz(8); sfx('deal', selectedFlaps.size); }
-    function closeFan() { const fan = document.getElementById('ct-fan'); if (fan.classList.contains('open')) sfx('gather', selectedFlaps.size); fan.classList.remove('open'); fan.setAttribute('aria-hidden', 'true'); }
+    function openFan(quiet) { const fan = document.getElementById('ct-fan'); renderFan(); void fan.offsetWidth; fan.classList.add('open'); fan.setAttribute('aria-hidden', 'false'); if (!quiet) { hapt(HAPTIC.deal(selectedFlaps.size)); sfx('deal', selectedFlaps.size); } }
+    function closeFan() { const fan = document.getElementById('ct-fan'); if (fan.classList.contains('open')) { sfx('gather', selectedFlaps.size); hapt(HAPTIC.gather(selectedFlaps.size)); } fan.classList.remove('open'); fan.setAttribute('aria-hidden', 'true'); }
     document.getElementById('ct-stack').onclick = e => { e.stopPropagation(); if (document.getElementById('ct-fan').classList.contains('open')) closeFan(); else openFan(); };
     document.addEventListener('click', e => {
       const fan = document.getElementById('ct-fan');
@@ -3821,7 +3944,33 @@
     }
 
     // ---- comparison -> one flap full screen (Back returns to the comparison) ----
-    let flapFromMatrix = false;
+    let flapFromMatrix = false, flapFromDeck = false, deckOrder = [];
+    let matrixHidden = new Set();       // taken out of the current comparison with ✕, still ticked
+    function hideFromMatrix(i) {
+      const name = matrixOrder[i]; if (!name) return;
+      if (matrixOrder.length <= 2) { showToast('A comparison needs at least two flaps'); buzz([8, 40, 8]); return; }
+      matrixHidden.add(name); matrixOrder.splice(i, 1); if (matrixPinned === name) matrixPinned = null;
+      rebuildMatrixKeepScroll(); sfx('untick'); hapt(HAPTIC.untick);
+      showToast('Removed from this comparison – still ticked', () => {
+        matrixHidden.delete(name); matrixOrder.splice(Math.min(i, matrixOrder.length), 0, name); rebuildMatrixKeepScroll(name);
+      });
+    }
+    function untickFromMatrix(i) {
+      const name = matrixOrder[i]; if (!name) return;
+      selectedFlaps.delete(name); matrixOrder.splice(i, 1); if (matrixPinned === name) matrixPinned = null;
+      renderWorkspaceGrid(); updateCompareButton();
+      if (document.getElementById('matrix-dock').classList.contains('open')) {
+        // never a comparison of one: flaps taken out with ✕ come back if needed
+        if (matrixOrder.length < 2) { matrixHidden.clear(); matrixOrder = orderedSelection(); }
+        if (matrixOrder.length < 2) minimizeMatrix(); else rebuildMatrixKeepScroll();
+      }
+      sfx('untick'); hapt(HAPTIC.untick);
+      showToast('Unticked', () => {
+        selectedFlaps.add(name); renderWorkspaceGrid(); updateCompareButton();
+        if (document.getElementById('matrix-dock').classList.contains('open')) { matrixOrder.splice(Math.min(i, matrixOrder.length), 0, name); rebuildMatrixKeepScroll(name); }
+        else openMatrix();
+      });
+    }
     function openFlapFromMatrix(i, el) {
       const name = matrixOrder[i];
       if (!name) return;
@@ -3858,7 +4007,7 @@
       const tags = stripHTML(flap['Sub-Region Tag'] || '').split(',').map(s => s.trim()).filter(Boolean);
       hero.innerHTML = (REGION_ICONS.includes(slug) ? '<span class="fh-icon" style="--icon:url(\'icons/regions/' + slug + '.png\')"></span>' : '') +
         '<div class="fh-in"><div class="fh-meta">' + escapeAttr(stripHTML(flap.category)) + '</div>' +
-        '<h1 class="fh-title">' + escapeAttr(stripHTML(flap.name)) + '</h1>' +
+        '<div class="fh-row"><input type="checkbox" class="fp-tick" aria-label="Tick for comparison" title="Tick for comparison"><h1 class="fh-title">' + escapeAttr(stripHTML(flap.name)) + '</h1></div>' +
         (tags.length ? '<div class="fh-pills">' + tags.map(x => '<span class="fh-pill">' + escapeAttr(x) + '</span>').join('') + '</div>' : '') + '</div>';
     }
     // as the page scrolls, the banner drifts up and fades while the slim header title fades in
@@ -3891,6 +4040,7 @@
       const r = el.getBoundingClientRect();
       const fromTouch = tilePress.el === el && Date.now() - tilePress.t < 1500;
       if (!fromTouch) return;   // only a real tap animates (not the screen restored on opening)
+      hapt(HAPTIC.tile);
       sfx('tile', { root: tileKey(el), pan: Math.max(-0.8, Math.min(0.8, (r.left + r.width / 2) / innerWidth * 2 - 1)) });
       if (fancyOff()) return;
       const x = fromTouch ? tilePress.x - r.left : r.width / 2, y = fromTouch ? tilePress.y - r.top : r.height / 2;
@@ -4138,6 +4288,8 @@
           for (let i = 0; i < 12; i++) tone(3000 * Math.pow(0.9, i) + Math.random() * 200, 0.2 + i * 0.028, 0.06, { vol: 0.03, pan: Math.random() * 1.2 - 0.6, wet: 0.4 });
           noise(0.52, 0.22, { ft: 'lowpass', f: 900, to: 250, vol: 0.16, att: 0.03, wet: 0.3 });
         },
+        // un-favouriting: the sparkle in reverse, softer and falling
+        unfav() { tone(2637, 0, 0.32, { vol: 0.05 }); tone(1976, 0.07, 0.38, { vol: 0.045 }); tone(1319, 0.14, 0.5, { vol: 0.05 }); },
         fav() { tone(1568, 0, 0.6, { vol: 0.11 }); tone(2093, 0.06, 0.7, { vol: 0.09 }); tone(3136, 0.12, 0.6, { vol: 0.05 }); tone(4186, 0.18, 0.5, { vol: 0.03 }); },
         undo() { tone(980, 0, 0.2, { type: 'triangle', to: 380, vol: 0.16 }); noise(0, 0.15, { f: 2500, to: 600, vol: 0.06 }); },
         scalpel() { noise(0, 0.42, { f: 5200, to: 8200, q: 6, vol: 0.3, att: 0.015 }); tone(4400, 0.02, 0.5, { vol: 0.025 }); tone(6600, 0.04, 0.45, { vol: 0.015 }); },
@@ -4195,7 +4347,7 @@
     paintSoundBtn(); paintAnimBtn();
 
     // Clear in the tray: the erase sound, then the selection goes
-    function eraseSelection() { if (selectedFlaps.size) sfx('erase'); deselectAll(); }
+    function eraseSelection() { if (selectedFlaps.size) { sfx('erase'); hapt(HAPTIC.erase); } deselectAll(); }
 
     // Select all: the checkboxes on screen tick one after another, top to bottom, on the beat of the zip.
     // (All the flaps are selected at once; this only shows it.) Returns { n, gap } for the sound.
@@ -4213,9 +4365,11 @@
       if (!boxes.length) return null;
       const gap = Math.min(0.034, 0.6 / boxes.length);
       boxes.forEach((cb, i) => {
-        cb.checked = !on;
-        setTimeout(() => { cb.checked = on; cb.classList.remove('cb-pop'); void cb.offsetWidth; cb.classList.add('cb-pop'); }, Math.round(i * gap * 1000));
+        const host = cb.closest('[data-name]');
+        cb.checked = !on; if (host) host.classList.toggle('is-sel', !on);
+        setTimeout(() => { cb.checked = on; if (host) host.classList.toggle('is-sel', on); cb.classList.remove('cb-pop'); void cb.offsetWidth; cb.classList.add('cb-pop'); }, Math.round(i * gap * 1000));
       });
+      hapt(HAPTIC.wave(boxes.length, Math.round(gap * 1000)));
       return { n: boxes.length, gap: gap };
     }
 
@@ -4356,6 +4510,70 @@
     }
     applyTextSize();
 
+    // ---- Favourites: remove several at once, or all of them (always asked first; Undo afterwards) ----
+    let favPick = null;            // a Set of flap names while picking, otherwise null
+    function confirmBox(title, text, okLabel, onOk) {
+      const wrap = document.createElement('div'); wrap.className = 'pm-backdrop';
+      wrap.innerHTML = '<div class="pm-card"><div class="pm-kicker">Please confirm</div><h3></h3><div class="pm-body"></div>' +
+        '<button type="button" class="pm-btn pm-danger"></button><button type="button" class="pm-link">Cancel</button></div>';
+      wrap.querySelector('h3').textContent = title; wrap.querySelector('.pm-body').textContent = text;
+      const ok = wrap.querySelector('.pm-btn'); ok.textContent = okLabel;
+      ok.onclick = () => { wrap.remove(); onOk(); };
+      wrap.querySelector('.pm-link').onclick = () => wrap.remove();
+      document.body.appendChild(wrap); buzz(8);
+    }
+    function removeFavourites(keys) {
+      if (!keys.length) return;
+      keys.forEach(k => favouriteFlaps.delete(k));
+      storeFavouritesLocally(true); clearTimeout(favSyncTimer); favSyncTimer = setTimeout(saveFavouritesToServer, 800);
+      sfx('unfav'); hapt([22, 50, 22]);
+      favPick = null; renderWorkspaceGrid();
+      showToast(keys.length + ' removed from Favourites', () => {
+        keys.forEach(k => favouriteFlaps.add(k));
+        storeFavouritesLocally(true); clearTimeout(favSyncTimer); favSyncTimer = setTimeout(saveFavouritesToServer, 800);
+        renderWorkspaceGrid();
+      });
+    }
+    function renderFavBar() {
+      const canvas = document.getElementById('flap-grid-canvas');
+      const old = canvas.querySelector('.fav-bar'); if (old) old.remove();
+      if (activeCategoryFilter !== 'FAVOURITES') { favPick = null; document.body.classList.remove('fav-picking'); return; }
+      const items = canvas.querySelectorAll('[data-name]');
+      if (!items.length) { favPick = null; document.body.classList.remove('fav-picking'); return; }
+      document.body.classList.toggle('fav-picking', !!favPick);
+      items.forEach(el => el.classList.toggle('fav-pick', !!(favPick && favPick.has(el.dataset.name))));
+      const bar = document.createElement('div'); bar.className = 'fav-bar';
+      bar.innerHTML = favPick
+        ? '<span class="fb-text">' + (favPick.size ? favPick.size + ' chosen' : 'Tap the flaps to remove') + '</span>' +
+          '<button type="button" class="fb-btn fb-danger" data-fb="remove"' + (favPick.size ? '' : ' disabled') + '>Remove</button><button type="button" class="fb-btn" data-fb="cancel">Cancel</button>'
+        : '<span class="fb-text">' + items.length + ' favourite' + (items.length === 1 ? '' : 's') + '</span>' +
+          '<button type="button" class="fb-btn" data-fb="pick">Select</button><button type="button" class="fb-btn fb-danger" data-fb="all">Remove all</button>';
+      bar.querySelectorAll('[data-fb]').forEach(b => b.onclick = () => {
+        const a = b.dataset.fb; buzz(8);
+        if (a === 'pick') { favPick = new Set(); renderFavBar(); }
+        else if (a === 'cancel') { favPick = null; renderFavBar(); }
+        else if (a === 'remove') {
+          const names = Array.from(favPick), n = names.length;
+          confirmBox('Remove ' + n + ' flap' + (n === 1 ? '' : 's') + ' from Favourites?', names.map(x => stripHTML(x)).join(', '), 'Remove', () => removeFavourites(names.map(favKey)));
+        } else if (a === 'all') {
+          const keys = Array.from(favouriteFlaps);
+          confirmBox('Remove all ' + keys.length + ' favourites?', 'Every flap will be taken out of Favourites. You can undo this for a few seconds afterwards.', 'Remove all', () => removeFavourites(keys));
+        }
+      });
+      canvas.insertBefore(bar, canvas.firstChild);
+    }
+    // while picking, a tap marks a favourite instead of opening it
+    document.addEventListener('click', e => {
+      if (!favPick || !e.target.closest) return;
+      const el = e.target.closest('#flap-grid-canvas [data-name]');
+      if (!el || e.target.closest('.fav-bar')) return;
+      e.preventDefault(); e.stopPropagation();
+      const nm = el.dataset.name;
+      if (favPick.has(nm)) favPick.delete(nm); else favPick.add(nm);
+      buzz(favPick.has(nm) ? 10 : 6); sfx(favPick.has(nm) ? 'tick' : 'untick');
+      renderFavBar();
+    }, true);
+
     // ---- the version running on this device (from the service worker), shown in the side panel and on About ----
     let appVersionText = 'Version …';
     function showAppVersion(v) {
@@ -4417,6 +4635,7 @@
       if (selectedFlaps.size < 2) { if (selectedFlaps.size === 1) showToast('Tick one more flap to compare'); return; }
       history.pushState({ view: 'matrix' }, "Matrix", "#matrix");
       matrixSingleFlap = null;
+      matrixHidden.clear();                 // Compare always opens the full selection again
       buildMatrix(orderedSelection());
       document.getElementById('matrix-dock').classList.add('open');
       document.getElementById('matrix-fab').style.display = 'none';
@@ -4425,6 +4644,7 @@
     }
 
     function minimizeMatrix() {
+      disarmLaunchBack();
       if (document.getElementById('matrix-dock').classList.contains('open')) sfx('close');
       document.getElementById('matrix-dock').classList.remove('open');
       document.getElementById('matrix-fab').style.display = 'flex';
@@ -4432,6 +4652,7 @@
     }
 
     function closeMatrix() {
+      disarmLaunchBack();
       if (document.getElementById('matrix-dock').classList.contains('open')) sfx('close');
       if (selectedFlaps.size) setTimeout(() => sfx('erase'), 280);
       matrixSingleFlap = null;
@@ -4460,12 +4681,13 @@
       flaps.forEach((f, i) => {
         const pinned = f.name === matrixPinned;
         const EXPAND_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/></svg>';
-        tableHtml += `<th class="${pinned ? 'pinned' : ''}" data-col="${i}"><div class="th-tools">` + (flaps.length > 1 ?
+        tableHtml += `<th class="${pinned ? 'pinned' : ''}" data-col="${i}"><div class="th-tools"><span class="th-left">` + (flaps.length > 1 ?
           `<button type="button" class="th-tool" data-move="-1" data-i="${i}" aria-label="Move left" ${i === 0 || pinned || (i === 1 && matrixPinned) ? 'disabled' : ''}>‹</button>` +
           `<button type="button" class="th-tool${pinned ? ' on' : ''}" data-pin="${i}" aria-label="${pinned ? 'Unpin' : 'Pin'} this column" title="${pinned ? 'Unpin' : 'Pin'}">${PIN_SVG}</button>` +
           `<button type="button" class="th-tool" data-move="1" data-i="${i}" aria-label="Move right" ${i === flaps.length - 1 || pinned ? 'disabled' : ''}>›</button>` : '') +
-          `<button type="button" class="th-tool th-expand" data-open="${i}" aria-label="Open this flap full screen" title="Open full screen">${EXPAND_SVG}</button></div>` +
-          `<span class="th-name" data-open="${i}" role="button" tabindex="0" title="Open full screen">${stripHTML(f.name)}</span><span class="th-fav-slot" data-i="${i}"></span></th>`;
+          `<button type="button" class="th-tool th-expand" data-open="${i}" aria-label="Open this flap full screen" title="Open full screen">${EXPAND_SVG}</button></span>` +
+          `<button type="button" class="th-tool th-hide" data-hide="${i}" aria-label="Take out of this comparison (stays ticked)" title="Take out of this comparison – stays ticked">✕</button></div>` +
+          `<div class="th-namerow"><input type="checkbox" class="th-tick" checked data-untick="${i}" aria-label="Untick this flap" title="Untick – removes it from your selection"><span class="th-name" data-open="${i}" role="button" tabindex="0" title="Open full screen">${stripHTML(f.name)}</span><span class="th-fav-slot" data-i="${i}"></span></div></th>`;
       });
       tableHtml += `</tr></thead><tbody>`;
 
@@ -4494,6 +4716,8 @@
       container.querySelectorAll('[data-move]').forEach(b => b.onclick = () => moveMatrixColumn(Number(b.dataset.i), Number(b.dataset.move)));
       container.querySelectorAll('[data-pin]').forEach(b => b.onclick = () => pinMatrixColumn(Number(b.dataset.pin)));
       container.querySelectorAll('[data-open]').forEach(b => b.onclick = () => openFlapFromMatrix(Number(b.dataset.open), b));
+      container.querySelectorAll('[data-hide]').forEach(b => b.onclick = () => hideFromMatrix(Number(b.dataset.hide)));
+      container.querySelectorAll('[data-untick]').forEach(b => b.onchange = () => untickFromMatrix(Number(b.dataset.untick)));
       linkifyUrls(container.querySelector('tbody'));
     }
 

@@ -128,7 +128,7 @@ const UNDERSIDE_IMAGE = 'icons/flap-underside.jpg';
     if (commit) {
       if (g.dir < 0) { renderFlapPage(g.target, -1); noSlide(); body.scrollTop = 0; }
       history.replaceState({ view: 'flap' }, '', flapHash(g.target));
-      buzz(6); saveStateSoon();
+      saveStateSoon();
     } else if (g.dir > 0) {
       renderFlapPage(g.cur); noSlide(); body.scrollTop = g.scroll;
     }
@@ -148,6 +148,7 @@ const UNDERSIDE_IMAGE = 'icons/flap-underside.jpg';
       track([from[0] + (target[0] - from[0]) * e, from[1] + (target[1] - from[1]) * e], now);
       if (k < 1) { requestAnimationFrame(step); return; }
       note('  ' + (commit ? 'turned' : 'fell back') + ' (q ' + g.q.toFixed(2) + ')');
+      hapt(commit ? HAPTIC.land : HAPTIC.flop);
       SFX.curl.stop(); sfx(commit ? 'land' : 'flop');
       settle(commit);
     })();
@@ -166,7 +167,7 @@ const UNDERSIDE_IMAGE = 'icons/flap-underside.jpg';
       const now = performance.now(), k = Math.min(1, (now - t0) / dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
       track(constrain([from[0] + (to[0] - from[0]) * e, from[1] - 70 * Math.sin(Math.PI * e)]), now);
       if (k < 1) { requestAnimationFrame(step); return; }
-      SFX.curl.stop(); sfx('land'); settle(true);
+      hapt(HAPTIC.land); SFX.curl.stop(); sfx('land'); settle(true);
     })();
     return true;
   }
@@ -210,6 +211,9 @@ const UNDERSIDE_IMAGE = 'icons/flap-underside.jpg';
         if (!G || G.anim) return;
         const base = G.dir > 0 ? [G.W, G.C[1]] : [-G.W, G.C[1]];
         track(constrain([base[0] + 2 * (t.lx - t.bx), base[1] + (t.ly - t.by)]), performance.now());
+        // a faint tick of paper friction every so often as the finger drags the page
+        t.fr = (t.fr || 0) + Math.abs(t.lx - (t.px === undefined ? t.lx : t.px)); t.px = t.lx;
+        if (t.fr > 70) { t.fr = 0; hapt(HAPTIC.friction); }
       });
     } else if (T.mode === 'flat' || T.mode === 'edge') { if (e && e.cancelable) e.preventDefault(); }
   }
