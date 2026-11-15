@@ -1046,8 +1046,7 @@
     .list-row.is-sel { box-shadow: inset -4px 0 0 var(--sel); background-image: linear-gradient(270deg, color-mix(in srgb, var(--sel) 15%, transparent), transparent 55%); }
     .list-row.is-fav.is-sel { box-shadow: inset 3px 0 0 #f5c451, inset -4px 0 0 var(--sel);
       background-image: linear-gradient(90deg, rgba(245, 196, 81, 0.14), transparent 40%), linear-gradient(270deg, color-mix(in srgb, var(--sel) 15%, transparent), transparent 55%); }
-    body.anim-off .flap-card.is-sel, body.anim-off .flap-card.is-fav.is-sel::after { animation: none; }
-    body.anim-off .flap-card.is-sel { box-shadow: 0 0 0 1px var(--sel), inset 0 0 28px 5px color-mix(in srgb, var(--sel) 10%, transparent), inset 0 0 90px 26px color-mix(in srgb, var(--sel) 6%, transparent); }
+    /* (the selected glow keeps breathing even with ✨ animations off – it marks the selection) */
 
     /* ---- the tick on a flap page (item 2) ---- */
     .fh-row { display: flex; align-items: flex-start; gap: 10px; }
@@ -2622,114 +2621,136 @@
       page.style.transition = ''; page.style.clipPath = ''; page.style.opacity = '';
     }
 
-    // The page grows out of the item that was tapped.
-    //  card · lift and bloom: the card lifts towards you and becomes the page; its title glides into the page title
-    //         while the other cards sink back, soften and dim.
-    //  row  · the list parts: rows part away from the tapped one like a curtain, nearest first, as it unfolds.
-    let flourish = null;      // the opening in progress (so a quick Back can tidy it up)
+    // The page grows out of the item that was tapped (or out of the long-press preview).
+    //  · the real page itself grows from the item's outline (no stand-in panel, so nothing blinks)
+    //  · the title travels letter by letter from the item to the page title, each on its own gentle arc,
+    //    so a title on two lines regroups smoothly into one; the letters land exactly in place
+    //  · the page's contents appear together, a moment before the title lands
+    //  · cards: the tapped card rises, the others sink back in a ripple and the room darkens
+    //    list: the rows part away from the tapped one, nearest first
+    // Only movement and fading are animated (no blur filters or resizing), which phones handle smoothly.
+    let flourish = null;
     function endFlourish() { if (flourish) { flourish(); flourish = null; } }
-    function openFlourish(el, page) {
+    function charBoxes(el) {                     // every visible character of an element with its box on screen
+      const out = [], walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      let n;
+      while ((n = walker.nextNode())) {
+        for (let i = 0; i < n.length; i++) {
+          const ch = n.data[i]; if (!ch.trim()) { out.push({ ch: ' ' }); continue; }
+          const rg = document.createRange(); rg.setStart(n, i); rg.setEnd(n, i + 1);
+          const b = rg.getClientRects()[0] || rg.getBoundingClientRect();
+          out.push({ ch: ch, x: b.left, y: b.top, w: b.width, h: b.height });
+        }
+      }
+      return out;
+    }
+    function openFlourish(el, page, opts) {
       if (!el || !el.isConnected || !el.animate) return false;
+      const peekCard = opts && opts.peek;
       const isCard = el.classList.contains('flap-card'), isRow = el.classList.contains('list-row');
-      if (!isCard && !isRow) return false;
-      const r = el.getBoundingClientRect(), top = parseFloat(getComputedStyle(page).top) || 0;
+      if (!isCard && !isRow && !peekCard) return false;
+      const box = peekCard || el;
+      const r = box.getBoundingClientRect(), top = parseFloat(getComputedStyle(page).top) || 0;
       if (r.width < 20 || r.bottom < top + 10 || r.top > innerHeight - 10) return false;
       endFlourish();
-      const W = innerWidth, H = innerHeight - top, E = 'cubic-bezier(0.22, 1, 0.36, 1)';
-      const rc = getComputedStyle(page).getPropertyValue('--rc').trim() || '#c0563f';
-      // a solid surface for the bloom (list rows are see-through, so fall back to the page's own panel colour)
-      const bgOf = c => { const m = String(c).match(/rgba?\(([^)]+)\)/); return !m || (m[1].split(',')[3] !== undefined && parseFloat(m[1].split(',')[3]) === 0) ? '' : c; };
-      const solid = bgOf(getComputedStyle(el).backgroundColor) || getComputedStyle(document.querySelector('.fp-section') || document.body).backgroundColor || '#ffffff';
-      const anims = [], timers = [];
-      // the page is laid out (so the title's place is known) but hidden until the bloom has covered the screen
-      page.style.transition = 'none'; page.classList.add('open'); page.style.opacity = '0'; void page.offsetWidth;
-      const ghost = document.createElement('div');
-      ghost.style.cssText = 'position:fixed;left:0;top:0;z-index:870;pointer-events:none;transform-origin:0 0;overflow:hidden;will-change:transform;' +
-        'background:' + solid + ';width:' + r.width + 'px;height:' + r.height + 'px;border-radius:12px;box-shadow:0 18px 40px rgba(15,23,42,0.22);';
-      const tint = document.createElement('div');
-      tint.style.cssText = 'position:absolute;inset:0;opacity:0;background:linear-gradient(135deg,' + rc + ',transparent 72%);';
-      ghost.appendChild(tint); document.body.appendChild(ghost);
-      const delay = isCard ? 230 : 160, dur = 640;
-      if (isCard) {
-        // the tapped card rises towards you…
+      const E = 'cubic-bezier(0.22, 1, 0.36, 1)', anims = [], timers = [], extra = [];
+      const lead = peekCard ? 40 : isCard ? 330 : 220, grow = 600;   // the surroundings play first, then the page grows
+      // the real page, clipped to the item's outline, then opened out to the full screen
+      const px = v => Math.max(0, Math.round(v)) + 'px';
+      // a lifted card is a little larger and higher – the page starts from exactly that outline
+      const lx = isCard && !peekCard ? r.width * 0.03 : 0, ly = isCard && !peekCard ? 8 : 0;
+      const from = 'inset(' + px(r.top - top - ly - lx) + ' ' + px(innerWidth - r.right - lx) + ' ' + px(innerHeight - r.bottom + ly - lx) + ' ' + px(r.left - lx) + ' round 14px)';
+      page.style.transition = 'none'; page.style.clipPath = from; page.style.opacity = '0'; page.classList.add('open'); void page.offsetWidth;
+      // the page stays invisible while the card lifts; it fades in over the card as it starts to grow
+      const pageAnim = page.animate([{ clipPath: from, opacity: 0 }, { offset: 0.14, opacity: 1 }, { clipPath: 'inset(0px 0px 0px 0px round 0px)', opacity: 1 }],
+        { duration: grow, delay: lead, easing: 'cubic-bezier(0.5, 0, 0.15, 1)', fill: 'both' });
+      anims.push(pageAnim);
+      // its contents appear all together, shortly before the title lands
+      const parts = Array.from(page.querySelectorAll('.fp-header, #fp-hero .fh-meta, #fp-hero .fh-pills, #fp-hero .fp-tick, #fp-tabs, #fp-inner, .fp-nav'));
+      parts.forEach(n => anims.push(n.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }],
+        { duration: 380, delay: lead + grow * 0.55, easing: E, fill: 'backwards' })));
+      // the surroundings
+      if (isCard && !peekCard) {
         el.style.position = 'relative'; el.style.zIndex = '5';
-        anims.push(el.animate([{ transform: 'none' }, { transform: 'translateY(-8px) scale(1.07)', boxShadow: '0 24px 48px rgba(15,23,42,0.32)' }],
-          { duration: 220, easing: 'cubic-bezier(0.2, 0.9, 0.3, 1.2)', fill: 'forwards' }));
-        // …the room around it darkens…
-        const veil = document.createElement('div');
-        veil.style.cssText = 'position:fixed;inset:0;z-index:860;pointer-events:none;background:radial-gradient(circle at ' + (r.left + r.width / 2) + 'px ' + (r.top + r.height / 2) + 'px, rgba(15,23,42,0.05), rgba(15,23,42,0.45) 70%);opacity:0;';
-        document.body.appendChild(veil);
-        anims.push(veil.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 380, easing: 'ease-out', fill: 'forwards' }));
-        anims.push({ cancel: () => veil.remove() });
-        // …and the other cards sink away into the depth, in a ripple spreading out from the tapped one
+        anims.push(el.animate([{ transform: 'none' }, { transform: 'translateY(-8px) scale(1.06)' }], { duration: 220, easing: 'cubic-bezier(0.2, 0.9, 0.3, 1.2)', fill: 'forwards' }));
         const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
         el.parentElement.querySelectorAll('.flap-card').forEach(c => {
           if (c === el) return;
           const q = c.getBoundingClientRect(); if (q.bottom < 0 || q.top > innerHeight) return;
           const dx = q.left + q.width / 2 - cx, dy = q.top + q.height / 2 - cy, d = Math.hypot(dx, dy);
-          anims.push(c.animate([
-            { transform: 'none', opacity: 1, filter: 'blur(0px) brightness(1)' },
-            { transform: 'translate(' + (-dx * 0.08).toFixed(1) + 'px,' + (-dy * 0.08 + 6).toFixed(1) + 'px) scale(0.84)', opacity: 0.28, filter: 'blur(3px) brightness(0.8)' }
-          ], { duration: 520, delay: Math.min(160, d * 0.35), easing: 'cubic-bezier(0.3, 0.6, 0.2, 1)', fill: 'forwards' }));
+          anims.push(c.animate([{ transform: 'none', opacity: 1 },
+            { transform: 'translate(' + (-dx * 0.1).toFixed(1) + 'px,' + (-dy * 0.1 + 8).toFixed(1) + 'px) scale(0.8)', opacity: 0.18 }],
+            { duration: 520, delay: Math.min(150, d * 0.3), easing: 'cubic-bezier(0.3, 0.6, 0.2, 1)', fill: 'forwards' }));
         });
-        ghost.animate([
-          { transform: 'translate(' + r.left + 'px,' + r.top + 'px) perspective(900px) rotateX(0deg)', width: r.width + 'px', height: r.height + 'px', borderRadius: '12px', opacity: 0 },
-          { offset: 0.12, opacity: 1, transform: 'translate(' + (r.left - 4) + 'px,' + (r.top - 8) + 'px) perspective(900px) rotateX(6deg)', width: (r.width + 8) + 'px', height: (r.height + 8) + 'px', borderRadius: '12px' },
-          { transform: 'translate(0px,' + top + 'px) perspective(900px) rotateX(0deg)', width: W + 'px', height: H + 'px', borderRadius: '0px', opacity: 1 }
-        ], { duration: dur, delay: delay, easing: E, fill: 'both' });
-      } else {
-        anims.push(el.animate([{ backgroundColor: getComputedStyle(el).backgroundColor }, { backgroundColor: 'color-mix(in srgb, var(--sel) 12%, ' + getComputedStyle(el).backgroundColor + ')' }], { duration: 140, fill: 'forwards' }));
-        const items = Array.from(el.parentElement.children).filter(c => c !== el && c.getBoundingClientRect().height > 0);
-        const idx = Array.from(el.parentElement.children).indexOf(el);
-        items.forEach(c => {
-          const cr = c.getBoundingClientRect(); if (cr.bottom < top - 40 || cr.top > innerHeight + 40) return;
-          const k = Array.from(el.parentElement.children).indexOf(c), up = k < idx;
-          const dist = up ? -(cr.bottom - top + 30) : (innerHeight - cr.top + 30);
-          // they accelerate away and fade early, so nothing lingers while the page unfolds
+      } else if (isRow && !peekCard) {
+        const kids = Array.from(el.parentElement.children), idx = kids.indexOf(el);
+        kids.forEach((c, k) => {
+          if (c === el) return;
+          const cr = c.getBoundingClientRect(); if (!cr.height || cr.bottom < top - 40 || cr.top > innerHeight + 40) return;
+          const dist = k < idx ? -(cr.bottom - top + 30) : (innerHeight - cr.top + 30);
           anims.push(c.animate([{ transform: 'none', opacity: 1 }, { offset: 0.55, opacity: 0 }, { transform: 'translateY(' + dist + 'px)', opacity: 0 }],
-            { duration: 440, delay: 70 + Math.min(10, Math.abs(k - idx)) * 28, easing: 'cubic-bezier(0.5, 0, 0.75, 0.2)', fill: 'forwards' }));
+            { duration: 440, delay: 40 + Math.min(10, Math.abs(k - idx)) * 26, easing: 'cubic-bezier(0.5, 0, 0.75, 0.2)', fill: 'forwards' }));
         });
-        ghost.animate([
-          { transform: 'translate(' + r.left + 'px,' + r.top + 'px)', width: r.width + 'px', height: r.height + 'px', borderRadius: '12px' },
-          { offset: 0.25, transform: 'translate(' + (r.left - 6) + 'px,' + (r.top - 3) + 'px)', width: (r.width + 12) + 'px', height: (r.height + 6) + 'px', borderRadius: '12px' },
-          { transform: 'translate(0px,' + top + 'px)', width: W + 'px', height: H + 'px', borderRadius: '0px' }
-        ], { duration: dur, delay: delay, easing: 'cubic-bezier(0.45, 0, 0.2, 1)', fill: 'both' });
       }
-      tint.animate([{ opacity: 0 }, { opacity: 0.18 }], { duration: 480, delay: delay + 200, fill: 'forwards' });
-      // the tapped item's own title glides and grows into the page title
-      const src = el.querySelector(isCard ? '.card-title' : '.list-title'), dst = page.querySelector('#fp-hero .fh-title');
-      let clone = null;
+      if (!peekCard) {
+        // one darkening layer (much lighter for a phone than dimming every card)
+        const veil = document.createElement('div');
+        veil.style.cssText = 'position:fixed;inset:0;z-index:840;pointer-events:none;opacity:0;background:radial-gradient(circle at ' + (r.left + r.width / 2) + 'px ' + (r.top + r.height / 2) + 'px, rgba(8,14,30,0.15), rgba(8,14,30,0.68) 70%);';
+        document.body.appendChild(veil); extra.push(veil);
+        anims.push(veil.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 360, easing: 'ease-out', fill: 'forwards' }));
+      } else {
+        const back = peekCard.closest('.peek-backdrop');
+        if (back) { back.style.pointerEvents = 'none'; back.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' }); timers.push(setTimeout(() => back.remove(), 280)); }
+      }
+      // the title, letter by letter
+      const src = box.querySelector(peekCard ? 'h3' : isCard ? '.card-title' : '.list-title'), dst = page.querySelector('#fp-hero .fh-title');
+      let landed = lead + grow;
       if (src && dst) {
-        const a = src.getBoundingClientRect(), b = dst.getBoundingClientRect(), cs = getComputedStyle(src), ds = getComputedStyle(dst);
-        const k = parseFloat(ds.fontSize) / (parseFloat(cs.fontSize) || 16);
-        clone = document.createElement('div');
-        clone.textContent = src.textContent;
-        clone.style.cssText = 'position:fixed;left:' + a.left + 'px;top:' + a.top + 'px;width:' + Math.min(a.width, b.width / k) + 'px;z-index:871;pointer-events:none;transform-origin:0 0;margin:0;' +
-          'font-family:' + ds.fontFamily + ';font-size:' + cs.fontSize + ';font-weight:' + ds.fontWeight + ';line-height:' + ds.lineHeight + ';letter-spacing:' + ds.letterSpacing + ';color:' + ds.color + ';';
-        document.body.appendChild(clone);
-        src.style.visibility = 'hidden';              // the title itself travels – no second copy left on the item
-        clone.animate([{ transform: 'translate(0,0) scale(1)' }, { transform: 'translate(' + (b.left - a.left) + 'px,' + (b.top - a.top) + 'px) scale(' + k + ')' }],
-          { duration: dur - (isCard ? 20 : 120), delay: delay + (isCard ? 20 : 120), easing: E, fill: 'both' });
+        const A = charBoxes(src), B = charBoxes(dst);
+        const same = A.length === B.length && A.every((a, i) => a.ch === B[i].ch || (a.ch === ' ' && B[i].ch === ' '));
+        const lifted = isCard && !peekCard, ccx = r.left + r.width / 2, ccy = r.top + r.height / 2;
+        const ds = getComputedStyle(dst), k0 = (parseFloat(getComputedStyle(src).fontSize) || 16) / (parseFloat(ds.fontSize) || 26) * (lifted ? 1.06 : 1);
+        // a lifted card's title sits a little higher and larger: the letters start from there
+        if (lifted) A.forEach(a => { if (a.x === undefined) return; a.x = ccx + (a.x - ccx) * 1.06; a.y = ccy + (a.y - ccy) * 1.06 - 8; });
+        if (same && A.length < 140) {
+          dst.style.visibility = 'hidden';
+          const layer = document.createElement('div');
+          layer.style.cssText = 'position:fixed;inset:0;z-index:871;pointer-events:none;visibility:hidden;';
+          document.body.appendChild(layer); extra.push(layer);
+          // the card keeps its own title while it lifts; at the moment the page starts to grow, the letters take over
+          timers.push(setTimeout(() => { layer.style.visibility = ''; src.style.visibility = 'hidden'; }, lead));
+          let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+          let n = 0;
+          B.forEach((b, i) => {
+            const a = A[i]; if (b.ch === ' ' || !a || a.x === undefined) return;
+            const sp = document.createElement('span'); sp.textContent = b.ch;
+            sp.style.cssText = 'position:absolute;left:' + b.x + 'px;top:' + b.y + 'px;transform-origin:0 0;white-space:pre;will-change:transform;' +
+              'font-family:' + ds.fontFamily + ';font-size:' + ds.fontSize + ';font-weight:' + ds.fontWeight + ';letter-spacing:' + ds.letterSpacing + ';line-height:' + b.h + 'px;color:' + ds.color + ';';
+            layer.appendChild(sp);
+            const sx = a.x - b.x, sy = a.y - b.y, lift = -(10 + rnd() * 16), tilt = (rnd() - 0.5) * 8;
+            const delay = lead + Math.min(220, n * 8), d = 600 + rnd() * 80; n++;
+            landed = Math.max(landed, delay + d);
+            sp.animate([
+              { transform: 'translate(' + sx + 'px,' + sy + 'px) scale(' + k0 + ')' },
+              { offset: 0.5, transform: 'translate(' + (sx * 0.42) + 'px,' + (sy * 0.42 + lift) + 'px) scale(' + ((k0 + 1) / 2) + ') rotate(' + tilt + 'deg)' },
+              { transform: 'translate(0px,0px) scale(1)' }
+            ], { duration: d, delay: delay, easing: 'cubic-bezier(0.25, 0.8, 0.25, 1)', fill: 'both' });
+          });
+        } else {
+          anims.push(dst.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: lead + grow * 0.5, easing: E, fill: 'backwards' }));
+        }
       }
       const tidy = () => {
         timers.forEach(clearTimeout);
         anims.forEach(a => { try { a.cancel(); } catch (e) {} });
+        extra.forEach(x => x.remove());
+        if (src) src.style.visibility = ''; if (dst) dst.style.visibility = '';
         el.style.position = ''; el.style.zIndex = '';
-        if (src) src.style.visibility = '';
-        ghost.remove(); if (clone) clone.remove();
-        page.style.transition = ''; page.style.opacity = '';
+        page.style.transition = ''; page.style.clipPath = ''; page.style.opacity = '';
       };
       flourish = tidy;
-      timers.push(setTimeout(() => {
-        // the page takes over from the bloom; its parts settle in one after another
-        page.style.transition = 'opacity 0.18s ease-out'; page.style.opacity = '1';
-        const parts = [page.querySelector('#fp-hero .fh-meta'), page.querySelector('#fp-hero .fh-pills'), page.querySelector('#fp-tabs')]
-          .concat(Array.from(page.querySelectorAll('#fp-inner .fp-section')).slice(0, 6)).filter(Boolean);
-        parts.forEach((n, i) => n.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], { duration: 420, delay: i * 55, easing: E, fill: 'backwards' }));
-        ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' });
-        if (clone) clone.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, delay: 60, fill: 'forwards' });
-        timers.push(setTimeout(() => { if (flourish === tidy) flourish = null; tidy(); }, 300));
-      }, delay + dur - 60));
+      // the letters land exactly where the title is: swap them for the title in the same instant
+      timers.push(setTimeout(() => { if (flourish === tidy) flourish = null; tidy(); }, landed + 20));
       return true;
     }
     function openFlapPage(name, opts) {
@@ -2743,7 +2764,7 @@
       flapFromDeck = !!(opts && opts.deck); deckOrder = flapFromDeck ? Array.from(selectedFlaps) : [];
       clearMorph(page);
       const fromEl = opts && opts.fromEl;
-      const start = !fancyOff() && openFlourish(fromEl, page) ? 'flourish' : morphInset(page, fromEl);
+      const start = !fancyOff() && openFlourish(fromEl, page, opts) ? 'flourish' : morphInset(page, fromEl);
       if (start === 'flourish') {
         morph.el = fromEl; morph.name = name;        // on closing, the page still shrinks back into the item
       } else if (start) {
@@ -3071,11 +3092,16 @@
         clearTimeout(timer);
         const el = src; src = null;
         if (!peek) return;
-        peek.remove(); peek = null;
+        const card = open && el ? peek.querySelector('.peek-card') : null;
+        if (!card) peek.remove();
+        peek = null;
         document.removeEventListener('touchmove', noScroll, { passive: false });
         if (el) el.classList.remove('peeking');
         suppressClick = true; setTimeout(() => { suppressClick = false; }, 450);
-        if (open && el) openFlapPage(el.dataset.name, { fromEl: el });
+        if (open && el) {
+          openFlapPage(el.dataset.name, { fromEl: el, peek: card });
+          const b = card && card.closest('.peek-backdrop'); if (b) setTimeout(() => b.remove(), 600);   // (normally faded and removed already)
+        }
       }
       document.addEventListener('pointerdown', e => {
         const el = e.target.closest && e.target.closest('#flap-grid-canvas .flap-card, #flap-grid-canvas .list-row');
@@ -4753,9 +4779,18 @@
       matrixSingleFlap = null;
       matrixHidden.clear();                 // Compare always opens the full selection again
       buildMatrix(orderedSelection());
-      const deckEl = document.getElementById('ct-stack'), deckR = deckEl && deckEl.getBoundingClientRect();
-      document.getElementById('matrix-dock').classList.add('open');
-      if (!fancyOff() && deckR && deckR.width > 0) dealIntoMatrix(deckR);
+      const deckEl = document.getElementById('ct-stack');
+      let deckR = deckEl && deckEl.getBoundingClientRect();
+      // no deck on screen (e.g. opened by tapping a ticked card): the cards rise from the bottom centre
+      if (!deckR || !deckR.width) deckR = { left: innerWidth / 2 - 30, top: innerHeight - 70, width: 60, height: 44 };
+      const dock = document.getElementById('matrix-dock');
+      if (!fancyOff()) {
+        // a quick fade instead of the big round reveal, so the phone's effort goes into the deal
+        dock.style.transition = 'opacity 0.25s ease-out'; dock.style.clipPath = 'none';
+        setTimeout(() => { dock.style.transition = ''; dock.style.clipPath = ''; }, 2600);
+      }
+      dock.classList.add('open');
+      if (!fancyOff()) dealIntoMatrix(deckR);
       document.getElementById('matrix-fab').style.display = 'none';
       isMatrixMinimized = false; sfx('open');
       renderWorkspaceGrid(); 
@@ -4765,9 +4800,9 @@
     // and each column's content flows down beneath its head
     function dealIntoMatrix(deckR) {
       const dock = document.getElementById('matrix-dock');
-      const heads = Array.from(dock.querySelectorAll('.matrix-table thead th')).filter(h => { const r = h.getBoundingClientRect(); return r.right > 0 && r.left < innerWidth; }).slice(0, 5);
+      const heads = Array.from(dock.querySelectorAll('.matrix-table thead th')).filter(h => { const r = h.getBoundingClientRect(); return r.width > 0 && r.right > 0 && r.left < innerWidth; }).slice(0, 4);
       if (!heads.length || !document.body.animate) return;
-      const rows = Array.from(dock.querySelectorAll('.matrix-table tbody tr')).slice(0, 8);
+      const rows = Array.from(dock.querySelectorAll('.matrix-table tbody tr')).filter(tr => tr.getBoundingClientRect().top < innerHeight).slice(0, 6);
       // wait for the dock to be laid out, then deal
       requestAnimationFrame(() => {
         heads.forEach((h, k) => {
@@ -4778,7 +4813,7 @@
           card.textContent = (h.querySelector('.th-name') || h).textContent;
           const hs = getComputedStyle(h);
           card.style.cssText = 'position:fixed;left:0;top:0;z-index:950;pointer-events:none;box-sizing:border-box;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;' +
-            'width:' + t.width + 'px;height:' + Math.min(t.height, 90) + 'px;border-radius:12px;background:' + hs.backgroundColor + ';color:' + hs.color + ';font-weight:700;font-size:0.95rem;line-height:1.2;box-shadow:0 12px 28px rgba(0,0,0,0.35);';
+            'width:' + t.width + 'px;height:' + Math.min(t.height, 90) + 'px;border-radius:12px;background:' + hs.backgroundColor + ';color:' + hs.color + ';font-weight:700;font-size:0.95rem;line-height:1.2;box-shadow:0 8px 18px rgba(0,0,0,0.3);will-change:transform;';
           document.body.appendChild(card);
           const sx = deckR.left + deckR.width / 2 - t.width / 2, sy = deckR.top + deckR.height / 2 - 40;
           const mx = (sx + t.left) / 2 + (k - (heads.length - 1) / 2) * 30, my = Math.min(sy, t.top) - 70;
