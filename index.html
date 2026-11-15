@@ -539,6 +539,9 @@
     .pf-err { color: #c0392b; font-size: 0.88rem; min-height: 1.2em; margin-top: 10px; }
     .pm-btn { width: 100%; margin-top: 14px; padding: 13px; border: none; border-radius: 14px; background: var(--accent-blue); color: #fff; font: inherit; font-weight: 700; font-size: 1rem; cursor: pointer; }
     body.yellow-theme .pm-btn { background: #0e3b43; color: #fff000; }
+    .app-version { margin-top: 6px; font-size: 0.72rem; color: #94a3b8; opacity: 0.8; cursor: default; user-select: none; -webkit-user-select: none; }
+    .about-version { margin-top: 22px; text-align: center; color: var(--text-muted); }
+    .diag-pre { max-height: 55vh; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 0.72rem; line-height: 1.45; background: rgba(15, 23, 42, 0.06); padding: 10px; border-radius: 10px; }
     .pm-link { display: block; margin: 10px auto 0; background: none; border: none; color: var(--text-muted); font: inherit; font-size: 0.9rem; cursor: pointer; text-decoration: underline; }
     .pm-card.letter { border-top: 5px solid #f5c451; background-image: linear-gradient(rgba(245, 196, 81, 0.07), transparent 120px); }
     .pm-body { font-size: 1.02rem; line-height: 1.6; }
@@ -1127,6 +1130,7 @@
       <div class="sidebar-profile" id="user-profile-section">
         <button type="button" class="profile-name" id="display-user-name" onclick="showProfilePrompt(false)" style="display:none" title="Edit your name and birthday"></button>
         <div class="profile-email" id="display-user-email"></div>
+        <div class="app-version" id="app-version" title="The version of the app on this device">Version …</div>
         <div class="profile-controls">
           <button class="btn-sidebar" onclick="toggleTheme(event)" title="Toggle Dark Mode">🌓 Theme</button>
           <button class="btn-sidebar" id="anim-btn" onclick="toggleAnim()" title="Animations on – tap to turn them off" aria-label="Animations on – tap to turn them off">✨</button>
@@ -1995,7 +1999,7 @@
       
       const pageKey = stripHTML(pageData.name).trim().toLowerCase();
       document.getElementById('system-page-view').innerHTML = `<h2>${stripHTML(pageData.name)}</h2><div>${contentBody}</div>` +
-        (pageKey === 'help' ? SUPPORT_LINK_HTML : '') + (pageKey === 'about' ? SOCIAL_LINKS_HTML : '');
+        (pageKey === 'help' ? SUPPORT_LINK_HTML : '') + (pageKey === 'about' ? SOCIAL_LINKS_HTML + '<div class="app-version about-version">' + escapeAttr(appVersionText) + '</div>' : '');
       
       closeSidebarDrawer(); // Auto-close global sidebar drawer
     }
@@ -2411,6 +2415,11 @@
         selAll = { ctx: '', added: [] };
         isMatrixMinimized = false;
         document.getElementById('matrix-dock').classList.remove('open');
+      } else if (count === 1 && document.getElementById('matrix-dock').classList.contains('open')) {
+        // a comparison of one flap makes no sense: it closes, the single tick stays
+        isMatrixMinimized = false;
+        document.getElementById('matrix-dock').classList.remove('open');
+        if (location.hash === '#matrix') history.replaceState(history.state, '', location.pathname + location.search);
       }
       updateTray(); updateSelectAllUI();
     }
@@ -2419,7 +2428,7 @@
     function viewSingleFlap(flapName, fromEl) {
       const q = document.getElementById('search-input').value;
       if (q.trim()) saveRecentSearch(q);
-      if (selectedFlaps.has(flapName)) openMatrix();
+      if (selectedFlaps.has(flapName) && selectedFlaps.size > 1) openMatrix();
       else openFlapPage(flapName, { fromEl: fromEl });
     }
 
@@ -3654,7 +3663,7 @@
     // ---- bottom comparison tray ----
     function updateTray() {
       const n = selectedFlaps.size, sys = document.body.classList.contains('sys-page');
-      document.body.classList.toggle('tray-on', n > 0 && !sys);
+      document.body.classList.toggle('tray-on', n > 1 && !sys);          // the tray appears once two flaps are ticked
       document.getElementById('ct-count').textContent = n;
       const names = Array.from(selectedFlaps);
       const stack = document.getElementById('ct-stack');
@@ -4273,6 +4282,38 @@
     }
     applyTextSize();
 
+    // ---- the version running on this device (from the service worker), shown in the side panel and on About ----
+    let appVersionText = 'Version …';
+    function showAppVersion(v) {
+      appVersionText = 'Version of ' + v.built + ' · ' + String(v.version).slice(0, 6);
+      document.querySelectorAll('.app-version').forEach(el => { el.textContent = appVersionText; });
+    }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'version') showAppVersion(e.data); });
+      navigator.serviceWorker.ready.then(r => { const w = navigator.serviceWorker.controller || r.active; if (w) w.postMessage('version'); }).catch(() => {});
+    }
+    // five quick taps on the version open a small log of the last swipes on flap pages (to diagnose swipe problems)
+    (function () {
+      let taps = [];
+      document.addEventListener('click', e => {
+        if (!e.target.closest || !e.target.closest('.app-version')) return;
+        const now = Date.now(); taps = taps.filter(x => now - x < 2500); taps.push(now);
+        if (taps.length < 5) return;
+        taps = [];
+        const body = document.getElementById('fp-body'), cs = body ? getComputedStyle(body) : null;
+        const info = [appVersionText, navigator.userAgent, 'screen ' + innerWidth + '×' + innerHeight + ' @' + devicePixelRatio,
+          'touch-action ' + (cs ? cs.touchAction : '?') + ' · overflow-x ' + (cs ? cs.overflowX : '?') + ' · scroll ' + (body ? body.scrollWidth + '/' + body.clientWidth : '?'),
+          'animations ' + (fancyOff() ? 'off' : 'on') + ' · memory ' + (navigator.deviceMemory || '?')];
+        const log = window.curlLog ? window.curlLog() : [];
+        const wrap = document.createElement('div'); wrap.className = 'pm-backdrop';
+        wrap.innerHTML = '<div class="pm-card"><div class="pm-kicker">Swipe log</div><pre class="diag-pre"></pre>' +
+          '<button type="button" class="pm-btn">Close</button></div>';
+        wrap.querySelector('pre').textContent = info.join('\n') + '\n\n' + (log.length ? log.join('\n') : '(no swipes on a flap page yet)');
+        wrap.querySelector('.pm-btn').onclick = () => wrap.remove();
+        document.body.appendChild(wrap);
+      });
+    })();
+
     // ---- OFFLINE + UPDATES ----
     // A service worker keeps the app on the device. When a newer version has been downloaded, a bar offers to switch.
     if ('serviceWorker' in navigator && location.protocol === 'https:' || location.hostname === 'localhost') {
@@ -4299,7 +4340,7 @@
     }
 
     function openMatrix() {
-      if (selectedFlaps.size === 0) return;
+      if (selectedFlaps.size < 2) { if (selectedFlaps.size === 1) showToast('Tick one more flap to compare'); return; }
       history.pushState({ view: 'matrix' }, "Matrix", "#matrix");
       matrixSingleFlap = null;
       buildMatrix(orderedSelection());

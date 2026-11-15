@@ -146,6 +146,7 @@ const UNDERSIDE_IMAGE = 'icons/flap-underside.jpg';
       const now = performance.now(), k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
       track([from[0] + (target[0] - from[0]) * e, from[1] + (target[1] - from[1]) * e], now);
       if (k < 1) { requestAnimationFrame(step); return; }
+      note('  ' + (commit ? 'turned' : 'fell back') + ' (q ' + g.q.toFixed(2) + ')');
       SFX.curl.stop(); sfx(commit ? 'land' : 'flop');
       settle(commit);
     })();
@@ -172,6 +173,10 @@ const UNDERSIDE_IMAGE = 'icons/flap-underside.jpg';
   window.flapCurl = { auto: auto, abort: abort, busy: () => !!G };
 
   // ---------- the finger ----------
+  // a short log of the last swipes (five taps on the version number shows it)
+  const LOG = [];
+  const note = m => { const d = new Date(); LOG.push(('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2) + '.' + ('00' + d.getMilliseconds()).slice(-3) + ' ' + m); if (LOG.length > 40) LOG.shift(); };
+  window.curlLog = () => LOG.slice();
   const zoomed = () => !!(window.visualViewport && window.visualViewport.scale > 1.02);
   // while pinch-zoomed in, the page may pan sideways again (see #fp-body touch-action)
   if (window.visualViewport) window.visualViewport.addEventListener('resize', () => document.body.classList.toggle('vv-zoomed', zoomed()));
@@ -181,18 +186,20 @@ const UNDERSIDE_IMAGE = 'icons/flap-underside.jpg';
     if (G && !G.anim) abort();
     if (!target.closest || !target.closest('#fp-body') || target.closest('#fp-tabs, .fp-gallery, [data-no-swipe]') || zoomed() || G) { T = null; return; }
     const r = document.getElementById('fp-body').getBoundingClientRect();
-    T = { sx: x, sy: y, ry: y - r.top, mode: '', t: Date.now() };
+    T = { sx: x, sy: y, ry: y - r.top, mode: '', t: Date.now(), moves: 0, blocked: 0 };
+    note('start on ' + ((target.className && String(target.className).slice(0, 24)) || target.tagName));
   }
   function moveTo(x, y, e) {
     if (!T) return;
     const dx = x - T.sx, dy = y - T.sy;
+    T.moves++; if (e && !e.cancelable) T.blocked++;
     if (!T.mode) {
-      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { T.mode = 'scroll'; return; }
+      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { T.mode = 'scroll'; note('  → scroll'); return; }
       if (Math.abs(dx) < 10 || Math.abs(dx) < 1.4 * Math.abs(dy)) return;
       const dir = dx < 0 ? 1 : -1;
-      if (fancyOff() || lowMemory) { T.mode = 'flat'; T.dir = dir; return; }
-      if (!begin(dir, T.ry)) { T.mode = 'edge'; T.dir = dir; return; }
-      T.mode = 'curl'; T.bx = x; T.by = y;
+      if (fancyOff() || lowMemory) { T.mode = 'flat'; T.dir = dir; note('  → flat ' + dir); return; }
+      if (!begin(dir, T.ry)) { T.mode = 'edge'; T.dir = dir; note('  → no curl (edge or error) ' + dir); return; }
+      T.mode = 'curl'; T.bx = x; T.by = y; note('  → curl ' + dir + (e && !e.cancelable ? ' (move not cancelable!)' : ''));
     }
     if (T.mode === 'curl' && G && !G.anim) {
       if (e && e.cancelable) e.preventDefault();
@@ -208,6 +215,7 @@ const UNDERSIDE_IMAGE = 'icons/flap-underside.jpg';
   function endAt(x) {
     if (!T) return;
     const t = T; T = null;
+    note('  end ' + t.mode + ' dx ' + Math.round(x - t.sx) + ' moves ' + t.moves + (t.blocked ? ' (' + t.blocked + ' not cancelable)' : ''));
     if (t.raf) cancelAnimationFrame(t.raf);
     if (t.mode === 'curl' && G && !G.anim) {
       const base = G.dir > 0 ? [G.W, G.C[1]] : [-G.W, G.C[1]];
@@ -217,10 +225,39 @@ const UNDERSIDE_IMAGE = 'icons/flap-underside.jpg';
     else if (t.mode === 'flat' && Math.abs(x - t.sx) > 60) stepFlap(t.dir);
     else if (t.mode === 'edge' && Math.abs(x - t.sx) > 60) edgeBounce(t.dir);
   }
-  document.addEventListener('touchstart', e => { if (e.touches.length > 1) { T = null; return; } startAt(e.touches[0].clientX, e.touches[0].clientY, e.target); }, { passive: true });
-  document.addEventListener('touchmove', e => { if (!T) return; if (e.touches.length > 1) { if (T.mode === 'curl' && G && !G.anim) finish(false); T = null; return; } moveTo(e.touches[0].clientX, e.touches[0].clientY, e); }, { passive: false });
-  document.addEventListener('touchend', e => endAt(e.changedTouches[0].clientX), { passive: true });
-  document.addEventListener('touchcancel', () => { if (T && T.mode === 'curl' && G && !G.anim) finish(false); T = null; }, { passive: true });
+  // The rest of a touch is always delivered to the element the finger first landed on – even after the curl
+  // has redrawn the flap and that element is no longer on the page (then nothing reaches the document).
+  // So the move / lift / cancel listeners sit on that element itself, for the length of the touch.
+  let held = null;
+  function release() {
+    if (!held) return;
+    held.removeEventListener('touchmove', onMove, { passive: false });
+    held.removeEventListener('touchend', onEnd);
+    held.removeEventListener('touchcancel', onCancel);
+    held = null;
+  }
+  function onMove(e) {
+    if (!T) return;
+    if (e.touches.length > 1) { if (T.mode === 'curl' && G && !G.anim) finish(false); T = null; release(); return; }
+    moveTo(e.touches[0].clientX, e.touches[0].clientY, e);
+  }
+  function onEnd(e) { release(); endAt(e.changedTouches[0].clientX); }
+  function onCancel() {
+    release();
+    if (T) note('  CANCELLED by the browser (' + T.mode + ', moves ' + T.moves + ')');
+    if (T && T.mode === 'curl' && G && !G.anim) finish(false);
+    T = null;
+  }
+  document.addEventListener('touchstart', e => {
+    release();
+    if (e.touches.length > 1) { if (T && T.mode === 'curl' && G && !G.anim) finish(false); T = null; return; }
+    startAt(e.touches[0].clientX, e.touches[0].clientY, e.target);
+    if (!T) return;
+    held = e.target;
+    held.addEventListener('touchmove', onMove, { passive: false });
+    held.addEventListener('touchend', onEnd);
+    held.addEventListener('touchcancel', onCancel);
+  }, { passive: true });
   // a mouse can turn pages too (desktop)
   document.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && e.button === 0) startAt(e.clientX, e.clientY, e.target); });
   document.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' && T) moveTo(e.clientX, e.clientY, e); });

@@ -3,7 +3,8 @@
    works without a connection. A new version is downloaded in the background; the page then offers an
    "Update" button, and the new version takes over only when the user taps it.
    VERSION is a fingerprint of the app files (set by bump_sw.py) - any change to them makes a new version. */
-const VERSION = '77d6b75550ff';
+const VERSION = '4d720019151f';
+const BUILT = '15 Nov 2026, 4:05 PM';   // when this version was made (set by bump_sw.py)
 const SHELL = 'flapendium-shell-' + VERSION;
 const RUNTIME = 'flapendium-runtime';
 const IMAGES = 'flapendium-images';
@@ -19,9 +20,9 @@ const SHELL_FILES = [
   'icons/regions/trunk.png', 'icons/regions/upper-extremity.png'
 ];
 
-// FORCE_UPDATE: this version takes over by itself (the previous one could crash phones before its Update button
-// appeared). Set back to false in the next release so updates wait for the user's tap again.
-const FORCE_UPDATE = true;
+// FORCE_UPDATE: true makes a version take over by itself (only for emergencies, e.g. a version that crashes
+// before its Update button can appear). Normally false: a new version waits for the user's tap on "Update".
+const FORCE_UPDATE = false;
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(SHELL).then(cache => cache.addAll(SHELL_FILES.map(f => new Request(f, { cache: 'reload' }))))
     .then(() => { if (FORCE_UPDATE) return self.skipWaiting(); }));
@@ -37,6 +38,7 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('message', event => {
   if (event.data === 'skipWaiting') self.skipWaiting();
+  else if (event.data === 'version' && event.source) event.source.postMessage({ type: 'version', version: VERSION, built: BUILT });
 });
 
 async function trimCache(name, max) {

@@ -119,20 +119,20 @@
       action: () => selectedFlaps.size >= 1 },
 
     { target: firstToggle, title: 'And one more', tryIt: true,
-      text: 'Now tick <b>Compare</b> on a second flap – here, or any other.',
+      text: 'Now tick <b>Compare</b> on a second flap – here, or any other. The comparison tray appears once two are ticked.',
       action: () => selectedFlaps.size >= 2 },
 
     { target: () => $('#ct-stack'), title: 'Your deck of selected flaps', tryIt: true,
       text: 'Every flap you tick joins this little <b>deck of cards</b> at the bottom-left, so you always see how many you have picked. <b>Tap the deck</b> to fan the cards out.',
-      when: () => selectedFlaps.size >= 1,
+      when: () => selectedFlaps.size >= 2,
       action: () => !!document.querySelector('#ct-fan.open') },
 
     { target: () => $('#ct-fan.open') || $('#cmp-tray'), title: 'Check before you compare',
       text: 'Here you can see exactly which flaps are lined up. Tap <b>✕</b> to drop one you picked by mistake, or tap a card to read that flap <b>full screen</b> – your selection stays as it is.<br><span class="tg-tip"><b>Clear</b> in the tray unticks them all at once.</span>',
-      when: () => selectedFlaps.size >= 1 },
+      when: () => selectedFlaps.size >= 2 },
 
     { target: () => $('#launch-matrix-btn'), title: 'Open the comparison', tryIt: true,
-      text: 'Now tap <b>Compare</b>.<br><span class="tg-tip">Tip: tapping any <b>ticked</b> flap also opens the comparison, while an <b>unticked</b> flap opens its own page.</span>',
+      text: 'Now tap <b>Compare</b>.<br><span class="tg-tip">Tip: with two or more ticked, tapping any <b>ticked</b> flap also opens the comparison, while an <b>unticked</b> flap opens its own page.</span>',
       when: () => selectedFlaps.size >= 2, action: matrixOpen },
 
     { target: () => $('#matrix-container'), title: 'Comparative Overview',
@@ -149,7 +149,7 @@
 
     { target: () => $('#launch-matrix-btn'), title: 'Back to your comparison',
       text: 'Your selection waits in the tray – tap <b>Compare</b> to bring the comparison back at any time.',
-      when: () => !matrixOpen() && selectedFlaps.size > 0 },
+      when: () => !matrixOpen() && selectedFlaps.size > 1 },
 
     { target: () => $('#select-all-btn'), title: 'Select everything at once', tryIt: true,
       text: 'Tap <b>☑</b> to tick <b>every flap on this screen</b> for comparison – the button lights up. Then tap it <b>again</b> to untick just those, keeping any flaps you had picked yourself.',
@@ -273,7 +273,7 @@
     if (sc === 'menu') { openSidebar(); return; }
     closeSidebar();
     if (sc === 'flap' && !pageOpen()) { const el = firstUnticked(); if (el) openFlapPage(el.dataset.name); }
-    else if (sc === 'matrix' && !matrixOpen() && selectedFlaps.size) openMatrix();
+    else if (sc === 'matrix' && !matrixOpen() && selectedFlaps.size > 1) openMatrix();
     else if (sc === 'dm' && !dmOpen() && typeof openDefectMapper === 'function') openDefectMapper();
   }
   // is the step's element hidden behind another screen (a flap page, the comparison, the menu)?

@@ -12,5 +12,8 @@ for n in names:
     h.update(n.encode()); h.update((root / n).read_bytes())
 version = h.hexdigest()[:12]
 new = re.sub(r"const VERSION = '[^']*';", f"const VERSION = '{version}';", sw)
+import datetime
+built = datetime.datetime.now().strftime('%d %b %Y, %I:%M %p').lstrip('0').replace(' 0', ' ')
+new = re.sub(r"const BUILT = '[^']*';", f"const BUILT = '{built}';", new)
 (root / 'sw.js').write_bytes(new.replace('\r\n', '\n').replace('\n', '\r\n').encode('utf-8'))
 print('sw.js version', version)
