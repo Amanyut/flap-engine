@@ -55,7 +55,8 @@ const UNDERSIDE_IMAGE = 'icons/flap-underside.jpg';
   function snapshot(into, scroll) {
     const body = document.getElementById('fp-body'), copy = body.cloneNode(true);
     copy.removeAttribute('id'); copy.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
-    copy.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;overflow:hidden;pointer-events:none;';
+    // exactly the page's own size, padding included (otherwise the text re-wraps and the page jumps)
+    copy.style.cssText = 'position:absolute;left:0;top:0;box-sizing:border-box;width:' + body.offsetWidth + 'px;height:' + body.offsetHeight + 'px;margin:0;overflow:hidden;pointer-events:none;';
     into.innerHTML = ''; into.appendChild(copy); copy.scrollTop = scroll;
   }
   function render(P) {
