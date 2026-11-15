@@ -5542,8 +5542,14 @@
         el.addEventListener('touchmove', e => {
           if (!pinch || pinch.inOv !== inOv) return;
           if (e.touches.length !== 2) return;
-          if (e.cancelable) e.preventDefault();
           const a = e.touches[0], b = e.touches[1], s = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / pinch.d0, now = performance.now();
+          // on the cards only fingers moving together belong to the overview; spreading them is the browser's own zoom
+          // (to look closer at a card or a star), so it is left completely alone
+          if (!inOv && !pinch.started) {
+            if (s > 1.015) { pinch = null; return; }
+            if (s > 0.985) return;
+          }
+          if (e.cancelable) e.preventDefault();
           pinch.v = pinch.v * 0.6 + ((s - pinch.lastS) / Math.max(1, now - pinch.t)) * 0.4; pinch.lastS = s; pinch.t = now; pinch.s = s;
           if (!pinch.started) { pinch.started = true; if (!inOv) prepare(pinch.cx, pinch.cy); }
           if (praf) return;
