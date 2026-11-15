@@ -201,6 +201,9 @@
     @keyframes socialIn { from { opacity: 0; transform: translateY(14px) scale(0.7); } }
     @media (prefers-reduced-motion: reduce) { .social-btn { animation: none; } }
     .support-link svg { width: 26px; height: 26px; flex-shrink: 0; }
+    .support-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+    .support-row .support-link { margin-top: 0; border: none; font-family: inherit; cursor: pointer; }
+    .support-link.gmail { background: #ffffff; color: #1f2937; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.14), inset 0 0 0 1px rgba(15, 23, 42, 0.1); }
 
     .flap-card { background: var(--panel-light); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 10px;}
     .flap-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: var(--accent-blue); }
@@ -542,6 +545,7 @@
     .app-version { margin-top: 6px; font-size: 0.72rem; color: #94a3b8; opacity: 0.8; cursor: default; user-select: none; -webkit-user-select: none; }
     .about-version { margin-top: 22px; text-align: center; color: var(--text-muted); }
     .diag-pre { max-height: 55vh; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 0.72rem; line-height: 1.45; background: rgba(15, 23, 42, 0.06); padding: 10px; border-radius: 10px; }
+    .pf-hint { min-height: 1.1em; margin: 6px 2px 0; font-size: 0.82rem; color: var(--text-muted); }
     .pm-link { display: block; margin: 10px auto 0; background: none; border: none; color: var(--text-muted); font: inherit; font-size: 0.9rem; cursor: pointer; text-decoration: underline; }
     .pm-card.letter { border-top: 5px solid #f5c451; background-image: linear-gradient(rgba(245, 196, 81, 0.07), transparent 120px); }
     .pm-body { font-size: 1.02rem; line-height: 1.6; }
@@ -1961,8 +1965,16 @@
     document.addEventListener('click', saveStateSoon, true);
     document.addEventListener('change', saveStateSoon, true);
 
-    // WhatsApp chat with the app's author, shown on the Help page
+    // Support on the Help page: Gmail for everyone, WhatsApp only for those ticked for "Ask Amanyu" in the Users tab.
+    // The Gmail address is read from the sheet: System tab, Help row, column "Support email".
     const SUPPORT_WHATSAPP = '916282437283';
+    function supportEmail() {
+      const h = datasetMaster.find(f => f.category === 'System' && stripHTML(f.name).trim().toLowerCase() === 'help');
+      const k = h && Object.keys(h).find(x => /support\s*e-?mail/i.test(stripHTML(x)));
+      const v = k ? stripHTML(String(h[k])).trim() : '';
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? v : '';
+    }
+    const GMAIL_SVG = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M6 40h7V22.5L3 15v22a3 3 0 0 0 3 3z"/><path fill="#34A853" d="M35 40h7a3 3 0 0 0 3-3V15l-10 7.5z"/><path fill="#FBBC04" d="M35 9.5v13L45 15v-4c0-3.7-4.2-5.8-7.2-3.6z"/><path fill="#EA4335" d="M13 22.5v-13l11 8.25 11-8.25v13l-11 8.25z"/><path fill="#C5221F" d="M3 11v4l10 7.5v-13l-2.8-2.1C7.2 5.2 3 7.3 3 11z"/></svg>';
     // About page: Dr Amanyu's profiles (logos only)
     const SOCIAL_LINKS_HTML = '<div class="social-row">' +
       '<a class="social-btn yt" href="https://www.youtube.com/@amanyut" target="_blank" rel="noopener" aria-label="YouTube" title="YouTube">' +
@@ -1972,10 +1984,16 @@
       '<a class="social-btn x" href="https://x.com/melodicscalpel" target="_blank" rel="noopener" aria-label="X (Twitter)" title="X (Twitter)">' +
         '<svg viewBox="0 0 24 24" style="width:24px;height:24px"><path fill="#fff" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23zm-1.16 17.52h1.83L7.08 4.13H5.12z"/></svg></a>' +
       '</div>';
-    const SUPPORT_LINK_HTML = `<a class="support-link" href="https://wa.me/${SUPPORT_WHATSAPP}" target="_blank" rel="noopener">`
-      + `<svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#fff" d="M16 3C8.8 3 3 8.7 3 15.8c0 2.5.7 4.9 2 7L3 29l6.4-2c2 1.1 4.3 1.7 6.6 1.7 7.2 0 13-5.7 13-12.8S23.2 3 16 3zm0 23.4c-2.1 0-4.1-.6-5.9-1.7l-.4-.3-3.8 1.2 1.2-3.7-.3-.4a10.5 10.5 0 0 1-1.7-5.7C5.1 9.9 10 5.1 16 5.1s10.9 4.8 10.9 10.7S22 26.4 16 26.4z"/>`
+    const WHATSAPP_SVG = `<svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#fff" d="M16 3C8.8 3 3 8.7 3 15.8c0 2.5.7 4.9 2 7L3 29l6.4-2c2 1.1 4.3 1.7 6.6 1.7 7.2 0 13-5.7 13-12.8S23.2 3 16 3zm0 23.4c-2.1 0-4.1-.6-5.9-1.7l-.4-.3-3.8 1.2 1.2-3.7-.3-.4a10.5 10.5 0 0 1-1.7-5.7C5.1 9.9 10 5.1 16 5.1s10.9 4.8 10.9 10.7S22 26.4 16 26.4z"/>`
       + `<path fill="#fff" d="M12.2 9.6c-.3-.6-.6-.6-.9-.6h-.8c-.3 0-.7.1-1 .5-.4.4-1.3 1.3-1.3 3.1s1.4 3.6 1.5 3.8c.2.3 2.6 4.1 6.4 5.6 3.2 1.2 3.8 1 4.5.9.7-.1 2.2-.9 2.5-1.8.3-.9.3-1.6.2-1.8-.1-.2-.3-.3-.7-.5l-2.4-1.2c-.3-.1-.6-.2-.8.2-.2.4-.9 1.2-1.1 1.4-.2.2-.4.3-.8.1-.4-.2-1.6-.6-3-1.9-1.1-1-1.9-2.2-2.1-2.6-.2-.4 0-.6.2-.8l.6-.7c.2-.2.3-.4.4-.6.1-.3 0-.5 0-.7l-1.2-2.8z"/></svg>`
-      + `<span>Support</span></a>`;
+;
+    function supportLinksHtml() {
+      const wa = !!(userProfile && userProfile.ask), mail = !!supportEmail();
+      if (!wa && !mail) return '';
+      return '<div class="support-row">' +
+        (wa ? '<button type="button" class="support-link" onclick="openSupportBox(\'wa\')">' + WHATSAPP_SVG + '<span>WhatsApp</span></button>' : '') +
+        (mail ? '<button type="button" class="support-link gmail" onclick="openSupportBox(\'mail\')">' + GMAIL_SVG + '<span>Gmail</span></button>' : '') + '</div>';
+    }
 
     function viewSystemPage(pageName, element) {
       document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
@@ -1999,7 +2017,7 @@
       
       const pageKey = stripHTML(pageData.name).trim().toLowerCase();
       document.getElementById('system-page-view').innerHTML = `<h2>${stripHTML(pageData.name)}</h2><div>${contentBody}</div>` +
-        (pageKey === 'help' ? SUPPORT_LINK_HTML : '') + (pageKey === 'about' ? SOCIAL_LINKS_HTML + '<div class="app-version about-version">' + escapeAttr(appVersionText) + '</div>' : '');
+        (pageKey === 'help' ? supportLinksHtml() : '') + (pageKey === 'about' ? SOCIAL_LINKS_HTML + '<div class="app-version about-version">' + escapeAttr(appVersionText) + '</div>' : '');
       
       closeSidebarDrawer(); // Auto-close global sidebar drawer
     }
@@ -3109,29 +3127,85 @@
       });
     }
 
-    // ---- Ask Amanyu (only for friends ticked in the Users tab) ----
-    // The question is typed here first, so WhatsApp receives one complete message (it would otherwise put the cursor before the greeting)
-    function openAskBox() {
-      if (!flapPageName || document.getElementById('ask-backdrop')) return;
-      const flapName = stripHTML(flapPageName);
+    // ---- Ask Amanyu and Support: the message is typed here first ----
+    // (so WhatsApp / Gmail receive one complete message – WhatsApp would otherwise put the cursor before the greeting).
+    // Left empty, the button simply opens a blank chat or email instead.
+    function openMessageBox(o) {
+      if (document.getElementById('ask-backdrop')) return;
       const wrap = document.createElement('div');
       wrap.className = 'pm-backdrop'; wrap.id = 'ask-backdrop';
-      wrap.innerHTML = '<div class="pm-card"><div class="pm-kicker">Ask Amanyu</div><h3>' + escapeAttr(flapName) + '</h3>' +
-        '<label for="ask-text">Your question</label><textarea id="ask-text" rows="5" placeholder="Type your question"></textarea>' +
-        '<div class="pf-err" id="ask-err"></div><button type="button" class="pm-btn" id="ask-send">Send on WhatsApp</button>' +
+      wrap.innerHTML = '<div class="pm-card"><div class="pm-kicker">' + o.kicker + '</div><h3>' + escapeAttr(o.title) + '</h3>' +
+        '<label for="ask-text">' + o.label + '</label><textarea id="ask-text" rows="5" placeholder="' + o.placeholder + '"></textarea>' +
+        '<div class="pf-hint" id="ask-hint"></div><button type="button" class="pm-btn" id="ask-send"></button>' +
         '<button type="button" class="pm-link" id="ask-cancel">Cancel</button></div>';
       document.body.appendChild(wrap);
-      const box = document.getElementById('ask-text');
-      setTimeout(() => box.focus(), 250);
-      box.oninput = () => { document.getElementById('ask-err').textContent = ''; };
-      document.getElementById('ask-cancel').onclick = () => wrap.remove();
-      document.getElementById('ask-send').onclick = () => {
-        const q = box.value.trim();
-        if (!q) { document.getElementById('ask-err').textContent = 'Please type your question first.'; box.focus(); return; }
-        const text = 'Hi Amanyu, I have a doubt about the ' + flapName + ':\n\n' + q;
-        window.open('https://wa.me/' + SUPPORT_WHATSAPP + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
-        wrap.remove(); buzz(10);
+      const box = document.getElementById('ask-text'), send = document.getElementById('ask-send'), hint = document.getElementById('ask-hint');
+      const paint = () => {
+        const typed = !!box.value.trim();
+        send.textContent = typed ? o.sendLabel : o.openLabel;
+        hint.textContent = typed ? '' : o.emptyHint;
       };
+      paint(); box.oninput = paint;
+      setTimeout(() => box.focus(), 250);
+      document.getElementById('ask-cancel').onclick = () => wrap.remove();
+      send.onclick = () => { const q = box.value.trim(); wrap.remove(); buzz(10); o.go(q); };
+    }
+    function openWhatsApp(text) {
+      window.open('https://wa.me/' + SUPPORT_WHATSAPP + (text ? '?text=' + encodeURIComponent(text) : ''), '_blank', 'noopener');
+    }
+    // Gmail: the app on Android (falls back to Gmail in the browser, which asks for a Google sign-in if needed
+    // and then opens the new message); the app on iPhone if it is there, otherwise the browser; a new tab on computers
+    function openGmail(subject, body) {
+      const to = supportEmail(), enc = encodeURIComponent;
+      if (!to) return;
+      const web = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + enc(to) + '&su=' + enc(subject) + (body ? '&body=' + enc(body) : '');
+      const ua = navigator.userAgent || '';
+      if (/Android/i.test(ua)) {
+        location.href = 'intent:mailto:' + to + '?subject=' + enc(subject) + (body ? '&body=' + enc(body) : '') +
+          '#Intent;action=android.intent.action.SENDTO;package=com.google.android.gm;S.browser_fallback_url=' + enc(web) + ';end';
+        return;
+      }
+      if (/iPhone|iPad|iPod/i.test(ua)) {
+        const t0 = Date.now();
+        location.href = 'googlegmail:///co?to=' + enc(to) + '&subject=' + enc(subject) + (body ? '&body=' + enc(body) : '');
+        setTimeout(() => { if (!document.hidden && Date.now() - t0 < 2500) window.open(web, '_blank', 'noopener'); }, 1200);
+        return;
+      }
+      window.open(web, '_blank', 'noopener');
+    }
+    // who is writing, so an unknown number or address is still recognised
+    function senderLine() {
+      const nm = formalName() || (userProfile && userProfile.call) || '', em = localStorage.getItem('flap_email') || '';
+      if (!nm && !em) return '';
+      return '\n\n– ' + (nm || 'A Flapendium user') + (em ? ' (' + em + ', signed in to the app)' : '');
+    }
+    const SUPPORT_OPENING = 'Hello Dr Amanyu, I’m writing to you from Amanyu’s Flapendium –';
+    function openSupportBox(via) {
+      const wa = via === 'wa';
+      openMessageBox({
+        kicker: 'Support', title: wa ? 'Message Amanyu on WhatsApp' : 'Email Amanyu', label: 'Your message',
+        placeholder: 'Type your message – or leave it empty to write it in ' + (wa ? 'WhatsApp' : 'Gmail'),
+        sendLabel: wa ? 'Send on WhatsApp' : 'Send with Gmail',
+        openLabel: wa ? 'Open WhatsApp chat' : 'Open Gmail',
+        emptyHint: wa ? 'Nothing typed – the button opens a blank chat with Amanyu.' : 'Nothing typed – the button opens a blank email to Amanyu.',
+        go: q => {
+          const body = q ? SUPPORT_OPENING + '\n\n' + q + senderLine() : '';
+          if (wa) openWhatsApp(body);
+          else openGmail('Amanyu’s Flapendium – support' + (formalName() ? ' (' + formalName() + ')' : ''), body);
+        }
+      });
+    }
+    // Ask Amanyu (only for friends ticked in the Users tab)
+    function openAskBox() {
+      if (!flapPageName) return;
+      const flapName = stripHTML(flapPageName);
+      openMessageBox({
+        kicker: 'Ask Amanyu', title: flapName, label: 'Your question',
+        placeholder: 'Type your question – or leave it empty to write it in WhatsApp',
+        sendLabel: 'Send on WhatsApp', openLabel: 'Open WhatsApp chat',
+        emptyHint: 'Nothing typed – the button opens a blank chat with Amanyu.',
+        go: q => openWhatsApp(q ? 'Hi Amanyu, I have a doubt about the ' + flapName + ':\n\n' + q : '')
+      });
     }
     function refreshAskButton() {
       const btn = document.getElementById('fp-ask');
