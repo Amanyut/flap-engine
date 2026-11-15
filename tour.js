@@ -97,7 +97,7 @@
       text: 'These chips take you straight to a section – Introduction, Arterial Anatomy, Flap Markings and more. The one you are reading lights up as you scroll, and the thin gold line beneath shows how far you have read.<br><span class="tg-tip">When a flap mentions another flap, its name is a <b>link</b> – tap it to jump there, and Back returns you.</span>' },
 
     { target: () => $('.fp-nav'), title: 'Next and previous flap',
-      text: '<b>Swipe left or right</b> on the page – or use these buttons – to move through the flaps of the list you came from.<br><span class="tg-tip">When you have zoomed in with two fingers, a sideways swipe simply scrolls the text.</span>' },
+      text: '<b>Swipe left</b> on the page and it turns like a book page – slowly to peek at the next flap, quickly to turn it. <b>Swipe right</b> brings the previous one back. These buttons do the same. They move through the flaps of the list you came from.<br><span class="tg-tip">When you have zoomed in with two fingers, a sideways swipe simply scrolls the text.</span>' },
 
     { target: () => $('#fp-star .fav-btn'), title: 'Add to Favourites', tryIt: true,
       text: 'The star on a flap’s page does the same: tap <b>☆</b> to add it to <b>Favourites</b>, or <b>★</b> to remove it (an <b>Undo</b> button appears for a moment). Favourites are saved to your account on every device.',
@@ -176,6 +176,10 @@
       text: 'The app plays a few soft sounds – when a flap opens, cards are dealt, or the connection drops. Tap the speaker <b>🔊</b> to mute them – it changes to <b>🔇</b> – and tap it again to turn them back on.',
       prepare: openSidebar },
 
+    { target: () => $('#anim-btn'), title: 'Animations',
+      text: 'Prefer a calmer app? Tap <b>✨</b> to turn the extra animations off – it gets a line through it – and tap it again to bring them back.',
+      prepare: openSidebar },
+
     { target: () => $('#display-user-name'), title: 'Your details',
       text: 'Tap your name to change it, or to add or change your <b>birthday</b>.',
       prepare: openSidebar },
@@ -244,7 +248,7 @@
     'Ask Amanyu': 'flap', 'Back to the list': 'flap', 'Compare flaps': 'list', 'And one more': 'list', 'Your deck of selected flaps': 'list',
     'Check before you compare': 'list', 'Open the comparison': 'list', 'Comparative Overview': 'matrix', 'Arrange and expand': 'matrix',
     'Keep it for later': 'matrix', 'Back to your comparison': 'list', 'Select everything at once': 'list', 'Pull down to refresh': 'list',
-    'Your Favourites': 'menu', 'Text size': 'menu', 'Three themes': 'menu', 'Sounds': 'menu', 'Your details': 'menu', 'Need a reminder?': 'menu',
+    'Your Favourites': 'menu', 'Text size': 'menu', 'Three themes': 'menu', 'Sounds': 'menu', 'Animations': 'menu', 'Your details': 'menu', 'Need a reminder?': 'menu',
     'Defect Mapper (beta)': 'menu', 'You’re all set': 'any'
   };
   const HINT_OF = {

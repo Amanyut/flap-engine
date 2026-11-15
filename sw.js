@@ -3,14 +3,14 @@
    works without a connection. A new version is downloaded in the background; the page then offers an
    "Update" button, and the new version takes over only when the user taps it.
    VERSION is a fingerprint of the app files (set by bump_sw.py) - any change to them makes a new version. */
-const VERSION = 'b6b81493020a';
+const VERSION = '3e9aa14d1ea1';
 const SHELL = 'flapendium-shell-' + VERSION;
 const RUNTIME = 'flapendium-runtime';
 const IMAGES = 'flapendium-images';
 const MAX_IMAGES = 160;
 
 const SHELL_FILES = [
-  './', 'index.html', 'intro.js', 'tour.js', 'manifest.json', 'icon.png',
+  './', 'index.html', 'intro.js', 'tour.js', 'pagecurl.js', 'manifest.json', 'icon.png',
   'defect/mapper.js', 'defect/reach.json', 'defect/body_meta.json',
   'icons/splash.webp', 'icons/logo-96.png', 'icons/favicon-32.png', 'icons/apple-touch-icon.png',
   'icons/icon-192.png', 'icons/icon-maskable-512.png', 'icons/shortcuts/search.png', 'icons/shortcuts/favourites.png', 'icons/shortcuts/continue.png', 'icons/shortcuts/mapper.png',
