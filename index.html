@@ -2661,6 +2661,8 @@
       const L = r.left - lx, T = r.top - ly - lx, Wd = r.width + 2 * lx, Hd = r.height + 2 * lx, PW = innerWidth, PH = innerHeight - top;
       const from = 'translate(' + L.toFixed(1) + 'px,' + (T - top).toFixed(1) + 'px) scale(' + (Wd / PW).toFixed(4) + ',' + (Hd / PH).toFixed(4) + ')';
       page.style.transition = 'none'; page.style.transformOrigin = '0 0'; page.style.opacity = '0'; page.classList.add('open'); void page.offsetWidth;
+      // where the title's letters will land, measured on the full-size page before it is shrunk into the card
+      const dstTitle = page.querySelector('#fp-hero .fh-title'), landing = dstTitle ? charBoxes(dstTitle) : [];
       // the page stays invisible while the card lifts; it fades in over the card as it starts to grow
       const pageAnim = page.animate([{ transform: from, opacity: 0 }, { offset: 0.14, opacity: 1 }, { transform: 'none', opacity: 1 }],
         { duration: grow, delay: lead, easing: 'cubic-bezier(0.5, 0, 0.15, 1)', fill: 'both' });
@@ -2712,7 +2714,7 @@
       const src = box.querySelector(peekCard ? 'h3' : isCard ? '.card-title' : '.list-title'), dst = page.querySelector('#fp-hero .fh-title');
       let landed = lead + grow;
       if (src && dst) {
-        const A = charBoxes(src), B = charBoxes(dst);
+        const A = charBoxes(src), B = landing;
         const same = A.length === B.length && A.every((a, i) => a.ch === B[i].ch || (a.ch === ' ' && B[i].ch === ' '));
         const lifted = isCard && !peekCard, ccx = r.left + r.width / 2, ccy = r.top + r.height / 2;
         const ds = getComputedStyle(dst), k0 = (parseFloat(getComputedStyle(src).fontSize) || 16) / (parseFloat(ds.fontSize) || 26) * (lifted ? 1.06 : 1);
