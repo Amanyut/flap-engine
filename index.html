@@ -1161,7 +1161,7 @@
     .soft-note .sn-icon { font-size: 1.3rem; flex-shrink: 0; }
     .soft-note .sn-sign { font-family: 'Caveat', cursive; font-size: 1.3rem; color: #ffea00; white-space: nowrap; }
 
-    /* ---- the hidden Amanyu Flap ---- */
+    /* ---- the hidden developer page ---- */
     .flap-card.egg-card, .list-row.egg-card { position: relative; overflow: hidden; background: linear-gradient(135deg, #fffbd6 0%, #fff27a 46%, #ffea00 100%) !important; border-color: #e3c600 !important; box-shadow: 0 6px 18px rgba(200, 160, 0, 0.35); }
     .egg-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.8) 50%, transparent 62%); background-size: 260% 100%; animation: eggShine 3s ease-in-out infinite; pointer-events: none; }
     @keyframes eggShine { 0% { background-position: 160% 0; } 60%, 100% { background-position: -60% 0; } }
@@ -2650,7 +2650,7 @@
       document.getElementById('fp-meta').innerText = stripHTML(flap.category) + (tag ? ' · ' + tag : '');
       document.getElementById('flap-page').style.setProperty('--rc', regionVar(flap.category));
       renderHero(flap); syncFpTicks();
-      if (flap.__egg) { document.getElementById('fp-meta').innerText = '✦ Hidden flap'; const hm = document.querySelector('#fp-hero .fh-meta'); if (hm) hm.textContent = '✦ Hidden flap'; }
+      if (flap.__egg) { document.getElementById('fp-meta').innerText = '✦ Behind the app'; const hm = document.querySelector('#fp-hero .fh-meta'); if (hm) hm.textContent = '✦ Behind the app'; }
       document.getElementById('fp-title').innerText = stripHTML(flap.name);
       const starSlot = document.getElementById('fp-star'); starSlot.innerHTML = ''; starSlot.appendChild(makeStarButton(flap.name, 'fp-fav'));
 
@@ -5316,21 +5316,22 @@
       }, wait);
     }
 
-    // ---------- the hidden Amanyu Flap ----------
-    // Its words come from the sheet: App Database > System tab > the column headed "Amanyu Flap".
+    // ---------- the hidden developer page ----------
+    // Its words come from the sheet: App Database > System tab > the column whose heading starts with "Dev"
+    // (e.g. "Dev: Amanyu" or "Developer: Dr Amanyu"); that heading is the page's title.
     // Each line of its Content cell written as "Heading: text" becomes a section (lines without a heading join the one above);
     // any other row filled in that column becomes a section too. Without that column, the words below are shown.
     const EGG_DEFAULT = [
       ['Also Known As', 'The Flapendium flap · the 3 AM flap'],
-      ['Introduction', 'A hidden flap, raised quietly beneath every page of this app. You found it.'],
+      ['Introduction', 'A hidden page, tucked quietly beneath every page of this app. You found it.'],
       ['Originally Described by', 'Dr Amanyu (2026), in the final year of plastic surgery residency'],
       ['Arterial Anatomy', 'Coffee, with generous collaterals from curiosity'],
       ['Indications', 'The night before an exam · whenever the textbooks run out of patience'],
       ['Clinical Pearls', 'Every page, sound and animation here was built by hand. If you are reading this – say hello.']
     ];
     function prepareEgg() {
-      let e = datasetMaster.find(f => f.category === 'System' && /^(the\s+)?amanyu\s*flap$/i.test(stripHTML(f.name).trim()));
-      if (!e) { e = { name: 'Amanyu Flap', category: 'System' }; EGG_DEFAULT.forEach(([k, v]) => { e[k] = v; }); datasetMaster.push(e); }
+      let e = datasetMaster.find(f => f.category === 'System' && /^dev(eloper)?(\s*[:\-–]|\s|$)/i.test(stripHTML(f.name).trim()));
+      if (!e) { e = { name: 'Dev: Amanyu', category: 'System' }; EGG_DEFAULT.forEach(([k, v]) => { e[k] = v; }); datasetMaster.push(e); }
       else if (!e.__egg) {
         const keep = {}, order = [];
         Object.keys(e).forEach(k => {
@@ -5352,13 +5353,15 @@
         if (!order.length) EGG_DEFAULT.forEach(([k, v]) => { e[k] = v; });
         else order.forEach(k => { e[k] = keep[k]; });
       }
-      // marked as the hidden flap (not listed among its fields, so it never shows as a section or in searches)
+      // marked as the hidden page (not listed among its fields, so it never shows as a section or in searches)
       Object.defineProperty(e, '__egg', { value: true, enumerable: false, configurable: true });
     }
     function eggFor(q) {
       const s = String(q || '').toLowerCase().replace(/[^a-z ]+/g, ' ').replace(/\s+/g, ' ').trim();
-      if (!/^(dr |the )?amanyu( flap)?$|^who (made|built|created|designed|developed) (this|you|it)( app)?$|^(creator|developer|made by|built by)$/.test(s)) return null;
-      return datasetMaster.find(f => f.__egg) || null;
+      const egg = datasetMaster.find(f => f.__egg); if (!egg || !s) return null;
+      const title = stripHTML(egg.name).toLowerCase().replace(/[^a-z ]+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (s === title || /^(dr )?amanyu$|^(the )?dev(eloper)?( dr)?( amanyu)?$|^who (made|built|created|designed|developed) (this|you|it)( app)?$|^(creator|made by|built by)$/.test(s)) return egg;
+      return null;
     }
     function addEggCard(canvas, q) {
       const egg = eggFor(q); if (!egg) return;
@@ -5368,10 +5371,10 @@
       el.dataset.name = egg.name;
       if (isList) {
         el.className = 'list-row egg-card';
-        el.innerHTML = '<div class="list-num">✦</div><div class="list-body"><div class="list-title">' + name + '</div><div class="list-sub">A hidden flap. You found it.</div></div>';
+        el.innerHTML = '<div class="list-num">✦</div><div class="list-body"><div class="list-title">' + name + '</div><div class="list-sub">A hidden page. You found it.</div></div>';
       } else {
         el.className = 'flap-card egg-card';
-        el.innerHTML = '<div><div class="card-meta">✦ Hidden flap</div><h4 class="card-title">' + name + '</h4><div style="margin-top:12px;"><div class="preview-text">You found it. Tap to open.</div></div></div>';
+        el.innerHTML = '<div><div class="card-meta">✦ Behind the app</div><h4 class="card-title">' + name + '</h4><div style="margin-top:12px;"><div class="preview-text">You found it. Tap to open.</div></div></div>';
       }
       el.onclick = () => { hapt(HAPTIC.fav); openFlapPage(egg.name, { fromEl: el }); };
       canvas.insertBefore(el, canvas.firstChild);
