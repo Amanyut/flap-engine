@@ -96,14 +96,25 @@ const UNDERSIDE_IMAGE = 'icons/flap-underside.jpg';
   }
   function beginTurn(dir, y) {
     const order = viewOrder(), idx = order.indexOf(flapPageName), target = order[idx + dir];
-    if (idx < 0 || !target) return false;
+    // past the very last flap the page still lifts – its back carries a handwritten note – and then falls back
+    const last = !target && dir > 0 && idx >= 0 && idx === order.length - 1 && order.length > 1;
+    if (idx < 0 || (!target && !last)) return false;
     const body = document.getElementById('fp-body'), W = body.clientWidth, H = body.clientHeight;
     if (W < 50 || H < 50) return false;
     const cur = flapPageName, scroll = body.scrollTop, cy = y > H / 2 ? H : 0;
-    G = { dir, cur, target, scroll, W, H, D: Math.hypot(W, H), C: [W, cy], v: 0, vx: 0, lastT: performance.now(), born: performance.now() };
+    G = { dir, cur, target, scroll, W, H, D: Math.hypot(W, H), C: [W, cy], v: 0, vx: 0, lastT: performance.now(), born: performance.now(), last };
     G.el = build(W, H);
     G.el.logo.classList.toggle('top', cy === 0);
-    if (dir > 0) {
+    if (last) {
+      const endp = document.createElement('div'); endp.className = 'curl-end';
+      endp.innerHTML = '<img src="icons/logo-96.png" alt=""><div class="ce-t">Amanyu’s Flapendium</div><div class="ce-s">the end</div>';
+      G.el.root.insertBefore(endp, G.el.root.firstChild);
+      const note = document.createElement('div'); note.className = 'curl-note';
+      note.innerHTML = 'Harvested &amp; inset<br>by Dr Amanyu<small>– the last page, for whoever got this far</small>';
+      G.el.v.appendChild(note);
+      snapshot(G.el.leaf, scroll);
+      G.P = [W, cy];
+    } else if (dir > 0) {
       snapshot(G.el.leaf, scroll);
       renderFlapPage(target, 1); noSlide(); body.scrollTop = 0;
       G.P = [W, cy];
@@ -137,7 +148,7 @@ const UNDERSIDE_IMAGE = 'icons/flap-underside.jpg';
   function stale() { return G && !G.anim && !T && performance.now() - G.born > 3000; }
   function finish(force) {
     const g = G;
-    const commit = force !== undefined ? force : (g.dir > 0 ? (g.q > 0.5 || (g.vx < -0.35 && g.q > 0.04)) : (g.q < 0.5 || (g.vx > 0.35 && g.q < 0.96)));
+    const commit = g.last ? false : force !== undefined ? force : (g.dir > 0 ? (g.q > 0.5 || (g.vx < -0.35 && g.q > 0.04)) : (g.q < 0.5 || (g.vx > 0.35 && g.q < 0.96)));
     const target = (g.dir > 0) === commit ? [-g.W, g.C[1]] : [g.C[0], g.C[1]];
     const from = g.P.slice(), dist = Math.hypot(target[0] - from[0], target[1] - from[1]);
     const dur = Math.max(170, Math.min(520, dist / Math.max(1.8, Math.abs(g.vx) * 2.4)));

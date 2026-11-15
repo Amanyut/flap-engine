@@ -1115,6 +1115,102 @@
     #intro { position: fixed; inset: 0; z-index: 99999; background: #042551; display: flex; align-items: center; justify-content: center; touch-action: none; }
     #intro-logo { width: min(61vw, 36vh, 460px); height: auto; aspect-ratio: 1; border-radius: 8%; }
     #intro canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    /* ===================== Nov 2026 additions ===================== */
+    /* ---- search inside sections: the words searched for are marked on the flap page ---- */
+    mark.fp-hit { background: rgba(255, 234, 0, 0.5); color: inherit; border-radius: 3px; padding: 0 1px; box-shadow: 0 0 0 1px rgba(214, 178, 0, 0.35); }
+    body.dark-theme mark.fp-hit { background: rgba(255, 234, 0, 0.3); }
+    mark.fp-hit.cur { background: #ffea00; color: #1d1a00; box-shadow: 0 0 0 2px #ffea00; animation: hitPulse 1s ease-out; }
+    @keyframes hitPulse { 0% { box-shadow: 0 0 0 2px #ffea00, 0 0 0 0 rgba(255, 234, 0, 0.95); } 100% { box-shadow: 0 0 0 2px #ffea00, 0 0 0 14px rgba(255, 234, 0, 0); } }
+    .fp-find { position: absolute; left: 50%; bottom: 84px; z-index: 46; display: none; align-items: center; gap: 4px; padding: 5px 5px 5px 14px; border-radius: 999px; background: rgba(15, 23, 42, 0.94); color: #fff; font-size: 0.84rem; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32); white-space: nowrap; max-width: calc(100% - 24px); box-sizing: border-box; transform: translateX(-50%); }
+    .fp-find.on { display: flex; animation: ffIn 0.3s ease-out; }
+    @keyframes ffIn { from { opacity: 0; transform: translate(-50%, 14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    .fp-find .ff-q { max-width: 112px; overflow: hidden; text-overflow: ellipsis; color: #ffea00; font-weight: 700; }
+    .fp-find .ff-n { color: #cbd5e1; margin: 0 6px 0 6px; font-variant-numeric: tabular-nums; }
+    .fp-find button { border: none; background: rgba(255, 255, 255, 0.12); color: #fff; width: 34px; height: 34px; border-radius: 50%; font-size: 0.9rem; cursor: pointer; flex-shrink: 0; }
+    .fp-find button:active { background: rgba(255, 234, 0, 0.35); }
+    .preview-label .pl-more, .list-sub .pl-more { font-weight: 700; color: var(--accent-blue); white-space: nowrap; }
+
+    /* ---- overview: pinch the cards together to see every flap at once ---- */
+    #overview { position: fixed; left: 0; right: 0; top: var(--topbar-h); bottom: 0; z-index: 760; background: var(--bg-main); display: none; will-change: transform, opacity; }
+    #overview.on { display: block; }
+    #overview .ov-scroll { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 10px 140px; box-sizing: border-box; touch-action: pan-y; }
+    .ov-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 0 4px 14px; }
+    .ov-top h2 { margin: 0; font-family: var(--brand-font); font-size: 1.2rem; letter-spacing: 0.04em; color: var(--text-dark); }
+    .ov-top .ov-sub { margin-top: 3px; font-size: 0.74rem; line-height: 1.35; color: var(--text-muted); }
+    .ov-close { border: 1px solid var(--border-color); background: var(--panel-light); color: var(--text-dark); width: 36px; height: 36px; border-radius: 50%; font-size: 0.95rem; cursor: pointer; flex-shrink: 0; }
+    .ov-region { margin-bottom: 18px; }
+    .ov-rhead { display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: none; padding: 6px 4px 8px; font: inherit; font-weight: 800; font-size: 0.84rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--rc); cursor: pointer; text-align: left; }
+    .ov-rhead .ov-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--rc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rc) 24%, transparent); flex-shrink: 0; }
+    .ov-rhead .ov-count { font-weight: 700; color: var(--text-muted); letter-spacing: 0; }
+    .ov-rhead .ov-go { margin-left: auto; font-size: 1.25rem; line-height: 1; opacity: 0.75; }
+    .ov-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+    @media (min-width: 700px) { .ov-tiles { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 7px; } }
+    .ov-sublabel { grid-column: 1 / -1; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); padding: 5px 2px 0; }
+    .ov-tile { position: relative; height: 50px; border-radius: 8px; background: var(--panel-light); border: 1px solid var(--border-color); box-shadow: inset 0 3px 0 var(--rc); padding: 7px 5px 3px; box-sizing: border-box; overflow: hidden; cursor: pointer; transition: transform 0.1s; }
+    .ov-tile:active { transform: scale(0.93); }
+    .ov-name { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-size: 9.5px; line-height: 1.22; font-weight: 700; color: var(--text-dark); overflow-wrap: anywhere; }
+    .ov-tile.is-fav::after { content: '★'; position: absolute; right: 3px; bottom: 0; font-size: 9px; color: #f5c451; }
+    .ov-tile.is-sel { border-color: var(--sel); box-shadow: inset 0 3px 0 var(--rc), 0 0 0 1.5px var(--sel); }
+    .ov-tile.ov-here { animation: ovHere 1.6s ease-out 0.45s 2; }
+    @keyframes ovHere { 0%, 100% { box-shadow: inset 0 3px 0 var(--rc); } 40% { box-shadow: inset 0 3px 0 var(--rc), 0 0 0 2px var(--rc), 0 0 14px 2px color-mix(in srgb, var(--rc) 55%, transparent); } }
+
+    /* a quiet note at the bottom of the screen (tips, and one that only appears very late at night) */
+    .soft-note { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 3050; display: flex; align-items: center; gap: 12px; width: max-content; max-width: min(360px, calc(100vw - 32px)); box-sizing: border-box; padding: 12px 18px; border-radius: 18px; background: rgba(4, 14, 34, 0.94); color: #e8edf7; font-size: 0.88rem; line-height: 1.4; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 234, 0, 0.28); opacity: 0; transform: translate(-50%, 12px); transition: opacity 1.1s ease, transform 1.1s ease; pointer-events: none; }
+    .soft-note.show { opacity: 1; transform: translate(-50%, 0); }
+    body.tray-on .soft-note { bottom: calc(110px + env(safe-area-inset-bottom)); }
+    .soft-note .sn-icon { font-size: 1.3rem; flex-shrink: 0; }
+    .soft-note .sn-sign { font-family: 'Caveat', cursive; font-size: 1.3rem; color: #ffea00; white-space: nowrap; }
+
+    /* ---- the hidden Amanyu Flap ---- */
+    .flap-card.egg-card, .list-row.egg-card { position: relative; overflow: hidden; background: linear-gradient(135deg, #fffbd6 0%, #fff27a 46%, #ffea00 100%) !important; border-color: #e3c600 !important; box-shadow: 0 6px 18px rgba(200, 160, 0, 0.35); }
+    .egg-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.8) 50%, transparent 62%); background-size: 260% 100%; animation: eggShine 3s ease-in-out infinite; pointer-events: none; }
+    @keyframes eggShine { 0% { background-position: 160% 0; } 60%, 100% { background-position: -60% 0; } }
+    .egg-card .card-meta, .egg-card .list-num { color: #8a6c00 !important; }
+    .egg-card .card-title, .egg-card .list-title { color: #2a2300 !important; }
+    .egg-card .preview-text, .egg-card .list-sub { color: #5a4a00 !important; }
+    #flap-page.egg-page { --rc: #d4a900; }
+    #flap-page.egg-page .fp-hero { background: linear-gradient(135deg, #fffbd6, #fff06a 55%, #ffe100); }
+    #flap-page.egg-page .fp-hero::before { display: none; }
+    #flap-page.egg-page .fh-title { color: #2a2300; }
+    #flap-page.egg-page .fh-meta { color: #8a6c00; }
+    #flap-page.egg-page .fp-tick, #flap-page.egg-page #fp-star, #flap-page.egg-page .fp-nav { display: none !important; }
+    #flap-page.egg-page .fp-section { border-color: rgba(212, 169, 0, 0.45); box-shadow: inset 3px 0 0 #ffd400; }
+    #flap-page.egg-page .row-label { color: #a07f00; }
+    body.dark-theme #flap-page.egg-page .row-label { color: #ffe14d; }
+
+    /* ---- draw a Z on the home screen: a Z-plasty, and the credits underneath ---- */
+    #zp { position: fixed; inset: 0; z-index: 2950; pointer-events: none; }
+    #zp.live { pointer-events: auto; cursor: pointer; }
+    #zp .zp-layer { position: absolute; left: 0; top: 0; width: 100vw; height: 100vh; transform-origin: 0 0; }
+    #zp .zp-bed { position: absolute; inset: 0; opacity: 0; background: radial-gradient(circle at var(--bx) var(--by), #6e1424 0%, #3a0812 45%, #1a0308 100%); }
+    #zp .zp-shade { position: absolute; inset: 0; background: rgba(10, 0, 4, 0.45); }
+    #zp .zp-copy { position: absolute; overflow: hidden; pointer-events: none; }
+    #zp svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    #zp .zp-card { position: absolute; left: 50%; top: 50%; width: min(330px, calc(100vw - 40px)); box-sizing: border-box; padding: 26px 22px 18px; border-radius: 22px; text-align: center; color: #e9eef8; opacity: 0;
+      background: radial-gradient(circle at 50% 0%, rgba(255, 234, 0, 0.16), transparent 60%), linear-gradient(160deg, #0b2550, #042551 55%, #021a3c);
+      box-shadow: 0 0 0 1px rgba(255, 234, 0, 0.55), 0 22px 60px rgba(0, 0, 0, 0.6), 0 0 70px rgba(255, 234, 0, 0.22); }
+    #zp .zp-card img { width: 60px; height: 60px; border-radius: 14px; box-shadow: 0 0 0 1px rgba(255, 234, 0, 0.5), 0 0 22px rgba(255, 234, 0, 0.3); }
+    #zp .zp-title { margin-top: 12px; font-family: var(--brand-font); font-size: 1.15rem; letter-spacing: 0.05em; color: #fff; }
+    #zp .zp-title span { color: #ffea00; }
+    #zp .zp-by { margin-top: 14px; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: #9fb0cc; }
+    #zp .zp-sign { margin-top: 2px; font-family: 'Caveat', cursive; font-size: 2.6rem; line-height: 1.1; color: #ffea00; text-shadow: 0 0 18px rgba(255, 234, 0, 0.45); clip-path: inset(0 100% 0 0); }
+    #zp .zp-fact { margin-top: 12px; font-size: 0.78rem; line-height: 1.45; color: #c8d3e6; }
+    #zp .zp-fact b { color: #fff; }
+    #zp .zp-tap { margin-top: 14px; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: #6f82a3; }
+
+    /* ---- five taps on "Flap" in the title bar: the word lifts like a raised flap ---- */
+    .flap-lift { position: fixed; z-index: 1001; pointer-events: none; perspective: 240px; }
+    .flap-lift .fl-under { position: absolute; inset: -2px -3px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: radial-gradient(circle, rgba(255, 234, 0, 0.22), rgba(255, 234, 0, 0.04) 70%); font-family: 'Caveat', cursive; font-weight: 600; color: #ffea00; text-shadow: 0 0 8px rgba(255, 234, 0, 0.85); white-space: nowrap; opacity: 0; }
+    .flap-lift .fl-leaf { position: absolute; inset: 0; transform-origin: 0 50%; color: var(--brand-flap); white-space: nowrap; line-height: 1; display: flex; align-items: center; backface-visibility: hidden; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
+
+    /* ---- the back of the last page (page curl past the final flap) ---- */
+    .curl-end { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center;
+      background: radial-gradient(circle at 50% 42%, #0d3a78, #042551 58%, #01132c); color: #f5c451; }
+    .curl-end img { width: 64px; height: 64px; border-radius: 15px; opacity: 0.92; box-shadow: 0 0 0 1px rgba(245, 196, 81, 0.55), 0 0 26px rgba(245, 196, 81, 0.25); }
+    .curl-end .ce-t { font-family: var(--brand-font); font-size: 1.15rem; letter-spacing: 0.08em; }
+    .curl-end .ce-s { font-size: 0.72rem; letter-spacing: 0.32em; text-transform: uppercase; color: rgba(245, 196, 81, 0.65); }
+    .curl-note { position: absolute; right: 22px; top: 30%; width: 64%; transform: scaleX(-1) rotate(-5deg); font-family: 'Caveat', cursive; font-size: 2rem; line-height: 1.12; color: rgba(255, 248, 230, 0.96); text-shadow: 0 1px 2px rgba(60, 0, 10, 0.75); text-align: center; }
+    .curl-note small { display: block; margin-top: 8px; font-size: 1.35rem; color: #ffe46b; }
   </style>
 </head>
 <body oncontextmenu="return false;">
@@ -1847,6 +1943,7 @@
       // first start: the screen saved when the app was last closed; later refreshes: keep the current screen
       const screenToShow = stateRestored ? captureState() : loadSavedState();
       datasetMaster = flaps;
+      prepareEgg();
       datasetMaster.forEach((f, i) => originalOrderMap.set(f.name, i));
       
       document.getElementById('login-screen').style.display = 'none';
@@ -1916,7 +2013,7 @@
 
         systemPages.forEach(page => {
            const cleanName = stripHTML(page.name).toLowerCase();
-           if (cleanName.includes('order')) return; 
+           if (cleanName.includes('order') || page.__egg) return; 
 
            const div = document.createElement('div');
            div.className = "menu-item"; div.innerText = stripHTML(page.name);
@@ -1934,6 +2031,7 @@
       stateRestored = true;
       openSharedLink();
       if (window.flapTour) window.flapTour.maybeStartFirstTime();
+      if (!maybeOverviewTip.done) { maybeOverviewTip.done = true; maybeOverviewTip(); }
     }
 
     // A shared link (…/#flap=Name) opens that flap once the flaps are loaded
@@ -2236,13 +2334,14 @@
       // Short "why this matched" text for search results: the field holding the most search fragments
       const queryTokens = searchTokens(searchQuery);
       function searchMatchHtml(flap) {
-        let best = null, bestCount = 0;
+        let best = null, bestCount = 0, hits = 0;
         searchText(flap).fields.forEach(f => {
           if (f.key === 'Sub-Region Tag') return;
           const count = queryTokens.filter(tok => f.lower.includes(tok)).length;
+          if (count) hits++;
           if (count > bestCount) { best = f; bestCount = count; }
         });
-        return best ? { label: stripHTML(best.key), snippet: getSearchSnippet(best.text, queryTokens) } : null;
+        return best ? { label: stripHTML(best.key) + (hits > 1 ? ' <span class="pl-more">+' + (hits - 1) + ' more</span>' : ''), snippet: getSearchSnippet(best.text, queryTokens) } : null;
       }
 
       if (activeCategoryFilter === 'FAVOURITES' && viewData.length === 0) {
@@ -2254,7 +2353,7 @@
 
       if (isList) {
         renderListView(canvas, viewData, searchQuery, sortMode, subDropdownValue, searchMatchHtml);
-        addSearchNote(canvas, viewData.length); decorateGrid(canvas);
+        addSearchNote(canvas, viewData.length); addEggCard(canvas, searchQuery); decorateGrid(canvas);
         updateCompareButton();
         return;
       }
@@ -2305,7 +2404,7 @@
         card.appendChild(makeStarButton(flap.name, 'card-fav'));
         canvas.appendChild(card);
       });
-      addSearchNote(canvas, viewData.length); decorateGrid(canvas);
+      addSearchNote(canvas, viewData.length); addEggCard(canvas, searchQuery); decorateGrid(canvas);
       updateCompareButton();
     }
 
@@ -2546,10 +2645,12 @@
       const body = document.getElementById('fp-body'), inner = document.getElementById('fp-inner');
       const keepScroll = !dir && name === flapPageName ? body.scrollTop : 0;
       flapPageName = name;
+      document.getElementById('flap-page').classList.toggle('egg-page', !!flap.__egg);
       const tag = stripHTML(flap['Sub-Region Tag'] || '').split(',')[0].trim();
       document.getElementById('fp-meta').innerText = stripHTML(flap.category) + (tag ? ' · ' + tag : '');
       document.getElementById('flap-page').style.setProperty('--rc', regionVar(flap.category));
       renderHero(flap); syncFpTicks();
+      if (flap.__egg) { document.getElementById('fp-meta').innerText = '✦ Hidden flap'; const hm = document.querySelector('#fp-hero .fh-meta'); if (hm) hm.textContent = '✦ Hidden flap'; }
       document.getElementById('fp-title').innerText = stripHTML(flap.name);
       const starSlot = document.getElementById('fp-star'); starSlot.innerHTML = ''; starSlot.appendChild(makeStarButton(flap.name, 'fp-fav'));
 
@@ -2560,7 +2661,7 @@
           const label = stripHTML(k), val = String(flap[k]).trim();
           const content = isImageKey(k) ? buildGalleryHtml(val, stripHTML(flap.name)) : `<div class="fp-text">${val}</div>`;
           // "Amanyu's Pearl" keeps its place in the sheet (after Clinical Pearls) but is drawn as a personal note
-          if (/amanyu/i.test(label)) {
+          if (/amanyu/i.test(label) && !flap.__egg) {
             html += `<section class="fp-section fp-pearl" id="fps-${i}"><div class="row-label">✦ Amanyu’s Pearl</div>${content}</section>`;
             tabs += `<button class="fp-tab" data-target="fps-${i}">Amanyu’s Pearl</button>`;
             return;
@@ -2601,9 +2702,11 @@
       const pb = document.getElementById('fp-prev'), nb = document.getElementById('fp-next');
       pb.disabled = !prev; pb.innerText = prev ? '‹ ' + stripHTML(prev) : '‹ Previous';
       nb.disabled = !next; nb.innerText = next ? stripHTML(next) + ' ›' : 'Next ›';
-      pushRecent(name); updateReadProgress(); refreshAskButton();
+      if (!flap.__egg) pushRecent(name);
+      updateReadProgress(); refreshAskButton();
       linkifyUrls(inner);
       linkFlapNames(inner, name);
+      markPageHits();
       return true;
     }
 
@@ -2647,7 +2750,7 @@
     function openFlourish(el, page, opts) {
       if (!el || !el.isConnected || !el.animate) return false;
       const peekCard = opts && opts.peek;
-      const isCard = el.classList.contains('flap-card'), isRow = el.classList.contains('list-row');
+      const isCard = el.classList.contains('flap-card'), isRow = el.classList.contains('list-row') || el.classList.contains('ov-tile');
       if (!isCard && !isRow && !peekCard) return false;
       const box = peekCard || el;
       const r = box.getBoundingClientRect(), top = parseFloat(getComputedStyle(page).top) || 0;
@@ -2667,10 +2770,11 @@
       const pageAnim = page.animate([{ transform: from, opacity: 0 }, { offset: 0.14, opacity: 1 }, { transform: 'none', opacity: 1 }],
         { duration: grow, delay: lead, easing: 'cubic-bezier(0.5, 0, 0.15, 1)', fill: 'both' });
       anims.push(pageAnim);
-      // its contents appear all together, shortly before the title lands
-      const parts = Array.from(page.querySelectorAll('.fp-header, .fp-progress, #fp-hero .fh-icon, #fp-hero .fh-meta, #fp-hero .fh-pills, #fp-hero .fp-tick, #fp-tabs, #fp-inner, .fp-nav'));
+      // its header and chips appear together, shortly before the title lands; the section boxes deal in one after another
+      const parts = Array.from(page.querySelectorAll('.fp-header, .fp-progress, #fp-hero .fh-icon, #fp-hero .fh-meta, #fp-hero .fh-pills, #fp-hero .fp-tick, #fp-tabs, .fp-nav'));
       parts.forEach(n => anims.push(n.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }],
         { duration: 380, delay: lead + grow * 0.55, easing: E, fill: 'backwards' })));
+      waveSections(page, lead + grow * 0.4);
       // the surroundings
       if (isCard && !peekCard) {
         el.style.position = 'relative'; el.style.zIndex = '5';
@@ -2711,7 +2815,7 @@
         if (back) { back.style.pointerEvents = 'none'; back.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' }); timers.push(setTimeout(() => back.remove(), 280)); }
       }
       // the title, letter by letter
-      const src = box.querySelector(peekCard ? 'h3' : isCard ? '.card-title' : '.list-title'), dst = page.querySelector('#fp-hero .fh-title');
+      const src = box.querySelector(peekCard ? 'h3' : isCard ? '.card-title' : '.list-title, .ov-name'), dst = page.querySelector('#fp-hero .fh-title');
       let landed = lead + grow;
       if (src && dst) {
         const A = charBoxes(src), B = landing;
@@ -2762,6 +2866,7 @@
       return true;
     }
     function openFlapPage(name, opts) {
+      hitsOff = false;
       if (!renderFlapPage(name)) return;
       const page = document.getElementById('flap-page');
       if (page.classList.contains('open')) { history.replaceState({ view: 'flap' }, '', flapHash(name)); return; }
@@ -2787,6 +2892,8 @@
         page.classList.add('open');
       }
       page.setAttribute('aria-hidden', 'false');
+      if (start !== 'flourish') waveSections(page, start ? 140 : 60);
+      if (hitMarks.length) jumpToBestHit(start === 'flourish' ? 1450 : 520);
       buzz(6);
       if (!(opts && opts.noHistory)) history.pushState({ view: 'flap' }, '', flapHash(name));
     }
@@ -5080,7 +5187,656 @@
     })();
 
     // Phone / browser back button: close the topmost thing instead of leaving the app
+    // ===================== Nov 2026 additions =====================
+
+    // ---------- flap page: the section boxes deal in one after another, like the cards when a region is chosen ----------
+    function waveSections(page, delay) {
+      if (fancyOff()) return [];
+      const out = [];
+      Array.from(page.querySelectorAll('#fp-inner .fp-section')).slice(0, 6).forEach((s, i) => {
+        out.push(s.animate([
+          { opacity: 0, transform: 'translateY(34px) scale(0.965)' },
+          { offset: 0.55, opacity: 1 },
+          { opacity: 1, transform: 'none' }
+        ], { duration: 500, delay: delay + i * 55, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'backwards' }));
+      });
+      return out;
+    }
+
+    // ---------- a quiet note at the bottom of the screen ----------
+    function softNote(html, ms) {
+      const old = document.querySelector('.soft-note'); if (old) old.remove();
+      const n = document.createElement('div'); n.className = 'soft-note'; n.innerHTML = html;
+      document.body.appendChild(n); void n.offsetWidth; n.classList.add('show');
+      setTimeout(() => { n.classList.remove('show'); setTimeout(() => n.remove(), 1200); }, ms || 6000);
+    }
+
+    // ---------- search inside sections ----------
+    // A flap opened while a search is on shows every searched word marked on the page; the bar at the bottom steps
+    // through them (▲ ▼) and the page starts at the best match. ✕ removes the marks for this visit.
+    let hitsOff = false, hitMarks = [], hitIdx = -1;
+    function pageSearchWords() {
+      const input = document.getElementById('search-input');
+      const q = input ? input.value.trim() : '';
+      if (!q) return [];
+      const words = [];
+      buildSearchPlan(searchTokens(q)).forEach(p => {
+        const w = p.mode === 'exact' ? p.raw : realWordFor(p);
+        if (w && w.length >= 2 && !words.includes(w)) words.push(w);
+      });
+      return words;
+    }
+    function findBar() {
+      let bar = document.getElementById('fp-find');
+      if (!bar) {
+        bar = document.createElement('div'); bar.id = 'fp-find'; bar.className = 'fp-find';
+        bar.innerHTML = '<span class="ff-q"></span><span class="ff-n"></span>' +
+          '<button type="button" class="ff-up" aria-label="Previous match">▲</button><button type="button" class="ff-down" aria-label="Next match">▼</button>' +
+          '<button type="button" class="ff-x" aria-label="Stop highlighting">✕</button>';
+        document.getElementById('flap-page').appendChild(bar);
+        bar.querySelector('.ff-up').onclick = e => { e.stopPropagation(); goHit(hitIdx - 1); };
+        bar.querySelector('.ff-down').onclick = e => { e.stopPropagation(); goHit(hitIdx + 1); };
+        bar.querySelector('.ff-x').onclick = e => { e.stopPropagation(); hitsOff = true; clearPageHits(); buzz(6); };
+      }
+      return bar;
+    }
+    function paintBar() {
+      const bar = findBar();
+      if (!hitMarks.length) { bar.classList.remove('on'); return; }
+      bar.querySelector('.ff-q').textContent = '“' + document.getElementById('search-input').value.trim() + '”';
+      bar.querySelector('.ff-n').textContent = (hitIdx < 0 ? '' : (hitIdx + 1) + ' / ') + hitMarks.length;
+      const nav = document.querySelector('#flap-page > .fp-nav');
+      bar.style.bottom = ((nav && nav.offsetHeight) || 60) + 8 + 'px';
+      if (!bar.classList.contains('on')) bar.classList.add('on');
+    }
+    function clearPageHits() {
+      document.querySelectorAll('#fp-inner mark.fp-hit').forEach(m => { const p = m.parentNode; p.replaceChild(document.createTextNode(m.textContent), m); p.normalize(); });
+      hitMarks = []; hitIdx = -1; paintBar();
+    }
+    function markPageHits() {
+      hitMarks = []; hitIdx = -1;
+      const words = hitsOff || document.getElementById('flap-page').classList.contains('egg-page') ? [] : pageSearchWords();
+      const inner = document.getElementById('fp-inner');
+      if (words.length && inner) {
+        const src = '(' + words.slice().sort((a, b) => b.length - a.length).map(escapeRegExp).join('|') + ')';
+        const test = new RegExp(src, 'i'), all = new RegExp(src, 'gi');
+        const walker = document.createTreeWalker(inner, NodeFilter.SHOW_TEXT, {
+          acceptNode: n => (n.parentNode.closest('.row-label, mark, script, style, .fp-gallery') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT)
+        });
+        const nodes = []; let n;
+        while ((n = walker.nextNode())) if (test.test(n.data)) nodes.push(n);
+        nodes.forEach(node => {
+          const s = node.data, frag = document.createDocumentFragment(); let last = 0;
+          s.replace(all, (m, g, off) => {
+            if (off > last) frag.appendChild(document.createTextNode(s.slice(last, off)));
+            const mk = document.createElement('mark'); mk.className = 'fp-hit'; mk.textContent = m; frag.appendChild(mk);
+            last = off + m.length; return m;
+          });
+          if (last < s.length) frag.appendChild(document.createTextNode(s.slice(last)));
+          node.parentNode.replaceChild(frag, node);
+        });
+        hitMarks = Array.from(inner.querySelectorAll('mark.fp-hit'));
+      }
+      paintBar();
+    }
+    // the best place to start: the section holding the most of the searched words (as the card said: "Matched in …")
+    function bestHit() {
+      let best = -1, bestKey = -1;
+      const seen = new Map();
+      hitMarks.forEach((m, i) => {
+        const sec = m.closest('.fp-section'); if (!sec) return;
+        let e = seen.get(sec); if (!e) { e = { first: i, words: new Set(), n: 0 }; seen.set(sec, e); }
+        e.words.add(m.textContent.toLowerCase()); e.n++;
+      });
+      seen.forEach(e => { const k = e.words.size * 1000 + e.n; if (k > bestKey) { bestKey = k; best = e.first; } });
+      return best;
+    }
+    function goHit(i, quiet) {
+      if (!hitMarks.length) return;
+      i = (i + hitMarks.length) % hitMarks.length;
+      if (hitMarks[hitIdx]) hitMarks[hitIdx].classList.remove('cur');
+      hitIdx = i; const m = hitMarks[i];
+      m.classList.remove('cur'); void m.offsetWidth; m.classList.add('cur');
+      const body = document.getElementById('fp-body'), br = body.getBoundingClientRect(), mr = m.getBoundingClientRect();
+      fpTabLock = false;
+      body.scrollTo({ top: Math.max(0, body.scrollTop + mr.top - br.top - body.clientHeight * 0.36), behavior: 'smooth' });
+      paintBar();
+      if (!quiet) buzz(5);
+    }
+    // after a flap opens from a search, the page glides to the best match once the opening has finished
+    function jumpToBestHit(wait) {
+      const name = flapPageName;
+      setTimeout(() => {
+        if (flapPageName !== name || !hitMarks.length) return;
+        const body = document.getElementById('fp-body');
+        if (body.scrollTop > 4) return;                       // the reader has already moved
+        const title = stripHTML(name).toLowerCase();
+        if (pageSearchWords().every(w => title.includes(w.toLowerCase()))) { paintBar(); return; }   // found by its name
+        const b = bestHit(); if (b >= 0) goHit(b, true);
+      }, wait);
+    }
+
+    // ---------- the hidden Amanyu Flap ----------
+    // Its words come from the sheet: App Database > System tab > the column headed "Amanyu Flap".
+    // Each line of its Content cell written as "Heading: text" becomes a section (lines without a heading join the one above);
+    // any other row filled in that column becomes a section too. Without that column, the words below are shown.
+    const EGG_DEFAULT = [
+      ['Also Known As', 'The Flapendium flap · the 3 AM flap'],
+      ['Introduction', 'A hidden flap, raised quietly beneath every page of this app. You found it.'],
+      ['Originally Described by', 'Dr Amanyu (2026), in the final year of plastic surgery residency'],
+      ['Arterial Anatomy', 'Coffee, with generous collaterals from curiosity'],
+      ['Indications', 'The night before an exam · whenever the textbooks run out of patience'],
+      ['Clinical Pearls', 'Every page, sound and animation here was built by hand. If you are reading this – say hello.']
+    ];
+    function prepareEgg() {
+      let e = datasetMaster.find(f => f.category === 'System' && /^(the\s+)?amanyu\s*flap$/i.test(stripHTML(f.name).trim()));
+      if (!e) { e = { name: 'Amanyu Flap', category: 'System' }; EGG_DEFAULT.forEach(([k, v]) => { e[k] = v; }); datasetMaster.push(e); }
+      else if (!e.__egg) {
+        const keep = {}, order = [];
+        Object.keys(e).forEach(k => {
+          const label = stripHTML(k).trim(), v = String(e[k] == null ? '' : e[k]).trim();
+          if (k === 'name' || k === 'category' || !v || /support\s*e-?mail/i.test(label)) return;
+          if (label.toLowerCase() !== 'content') { if (!(label in keep)) order.push(label); keep[label] = v; return; }
+          // "Heading: text" lines of the Content cell
+          let cur = null;
+          v.split(/<br\s*\/?>|\n/i).forEach(line => {
+            if (!stripHTML(line).trim()) return;
+            let pos = -1, inTag = false;
+            for (let i = 0; i < line.length; i++) { const c = line[i]; if (c === '<') inTag = true; else if (c === '>') inTag = false; else if (c === ':' && !inTag) { pos = i; break; } }
+            const head = pos > 0 ? stripHTML(line.slice(0, pos)).trim() : '';
+            if (head && head.length <= 40) { cur = head; if (!(cur in keep)) { order.push(cur); keep[cur] = ''; } keep[cur] += (keep[cur] ? '<br>' : '') + line.slice(pos + 1).trim(); }
+            else { if (!cur) { cur = 'Introduction'; if (!(cur in keep)) { order.push(cur); keep[cur] = ''; } } keep[cur] += (keep[cur] ? '<br>' : '') + line.trim(); }
+          });
+        });
+        Object.keys(e).forEach(k => { if (k !== 'name' && k !== 'category') delete e[k]; });
+        if (!order.length) EGG_DEFAULT.forEach(([k, v]) => { e[k] = v; });
+        else order.forEach(k => { e[k] = keep[k]; });
+      }
+      // marked as the hidden flap (not listed among its fields, so it never shows as a section or in searches)
+      Object.defineProperty(e, '__egg', { value: true, enumerable: false, configurable: true });
+    }
+    function eggFor(q) {
+      const s = String(q || '').toLowerCase().replace(/[^a-z ]+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!/^(dr |the )?amanyu( flap)?$|^who (made|built|created|designed|developed) (this|you|it)( app)?$|^(creator|developer|made by|built by)$/.test(s)) return null;
+      return datasetMaster.find(f => f.__egg) || null;
+    }
+    function addEggCard(canvas, q) {
+      const egg = eggFor(q); if (!egg) return;
+      canvas.querySelectorAll('.empty-state').forEach(x => x.remove());
+      const isList = canvas.classList.contains('list-layout'), name = escapeAttr(stripHTML(egg.name));
+      const el = document.createElement('div');
+      el.dataset.name = egg.name;
+      if (isList) {
+        el.className = 'list-row egg-card';
+        el.innerHTML = '<div class="list-num">✦</div><div class="list-body"><div class="list-title">' + name + '</div><div class="list-sub">A hidden flap. You found it.</div></div>';
+      } else {
+        el.className = 'flap-card egg-card';
+        el.innerHTML = '<div><div class="card-meta">✦ Hidden flap</div><h4 class="card-title">' + name + '</h4><div style="margin-top:12px;"><div class="preview-text">You found it. Tap to open.</div></div></div>';
+      }
+      el.onclick = () => { hapt(HAPTIC.fav); openFlapPage(egg.name, { fromEl: el }); };
+      canvas.insertBefore(el, canvas.firstChild);
+      if (!addEggCard.sang) { addEggCard.sang = true; sfx('fav'); }
+    }
+
+    // ---------- overview: pinch the cards together and the whole book appears, every flap as a small tile ----------
+    window.flapOverview = (function () {
+      let ov = null, open = false, busy = false, pinch = null, ignorePop = false, raf = 0, praf = 0;
+      let p = 0, oc = { x: 0, y: 0 }, oo = '50% 30%';
+      const canvas = () => document.getElementById('flap-grid-canvas');
+      const workspace = () => document.querySelector('.workspace');
+      const pageOpen = () => document.getElementById('flap-page').classList.contains('open');
+      const homeReady = () => datasetMaster.length && !pageOpen() && !document.body.classList.contains('sys-page') &&
+        !document.getElementById('matrix-dock').classList.contains('open') && !(window.defectMapper && window.defectMapper.isOpen()) &&
+        !document.querySelector('.sidebar.open') && document.getElementById('app-shell').style.display !== 'none' && !document.getElementById('zp');
+      function build() {
+        if (!ov) {
+          ov = document.createElement('div'); ov.id = 'overview'; ov.setAttribute('aria-hidden', 'true');
+          document.body.appendChild(ov);
+          ov.addEventListener('click', onClick);
+          attachPinch(ov, true);
+        }
+        const flaps = datasetMaster.filter(f => f.category !== 'System');
+        const cats = []; flaps.forEach(f => { if (!cats.includes(f.category)) cats.push(f.category); });
+        const order = getSubRegionOrder();
+        let html = '<div class="ov-scroll"><div class="ov-top"><div><h2>Every flap</h2><div class="ov-sub">' + flaps.length + ' flaps in ' + cats.length +
+          ' regions · tap a flap to open it · tap a region’s name or spread two fingers over it to go in</div></div>' +
+          '<button type="button" class="ov-close" aria-label="Close the overview">✕</button></div>';
+        cats.forEach(cat => {
+          const items = flaps.filter(f => f.category === cat);
+          const tags = []; items.forEach(f => { const t = firstTag(f) || ''; if (!tags.includes(t)) tags.push(t); });
+          tags.sort((a, b) => { let ia = order.indexOf(a), ib = order.indexOf(b); if (ia < 0) ia = 9999; if (ib < 0) ib = 9999; return ia === ib ? a.localeCompare(b) : ia - ib; });
+          html += '<section class="ov-region" data-cat="' + escapeAttr(cat) + '" style="--rc:' + regionVar(cat) + '">' +
+            '<button type="button" class="ov-rhead"><span class="ov-dot"></span>' + escapeAttr(stripHTML(cat)) + ' <span class="ov-count">' + items.length + '</span><span class="ov-go">›</span></button><div class="ov-tiles">';
+          tags.forEach(t => {
+            if (tags.length > 1 && t) html += '<div class="ov-sublabel">' + escapeAttr(t) + '</div>';
+            items.filter(f => (firstTag(f) || '') === t).forEach(f => {
+              html += '<div class="ov-tile' + (isFavourite(f.name) ? ' is-fav' : '') + (selectedFlaps.has(f.name) ? ' is-sel' : '') + '" data-name="' + escapeAttr(f.name) + '"><span class="ov-name">' + escapeAttr(stripHTML(f.name)) + '</span></div>';
+            });
+          });
+          html += '</div></section>';
+        });
+        ov.innerHTML = html + '</div>';
+      }
+      // p: 0 = the cards as they are, 1 = the overview. The cards shrink away around the fingers; the overview settles in from slightly larger.
+      function setP(v) {
+        p = v;
+        const c = canvas(), k = Math.max(0, v);
+        c.style.transformOrigin = oc.x + 'px ' + oc.y + 'px';
+        c.style.transform = 'scale(' + (1 - 0.5 * v).toFixed(4) + ')';
+        c.style.opacity = String(Math.max(0, 1 - k * 1.15).toFixed(3));
+        ov.style.transformOrigin = oo;
+        ov.style.transform = 'scale(' + (1.45 - 0.45 * k).toFixed(4) + ')';
+        ov.style.opacity = String(Math.min(1, k * 1.3).toFixed(3));
+      }
+      function tween(from, to, dur, done) {
+        cancelAnimationFrame(raf);
+        const t0 = performance.now();
+        const step = now => {
+          const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+          setP(from + (to - from) * e);
+          if (k < 1) raf = requestAnimationFrame(step); else { raf = 0; if (done) done(); }
+        };
+        raf = requestAnimationFrame(step);
+      }
+      function prepare(cx, cy) {
+        build();
+        const cr = canvas().getBoundingClientRect();
+        oc = { x: cx - cr.left, y: cy - cr.top };
+        const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar-h')) || 50;
+        oo = cx + 'px ' + (cy - top) + 'px';
+        ov.style.pointerEvents = 'none';
+        ov.classList.add('on');
+        setP(0);
+        // the region being looked at is where the overview opens; that flap glows briefly if it was just read
+        const sec = activeCategoryFilter && ov.querySelector('.ov-region[data-cat="' + CSS.escape(activeCategoryFilter) + '"]');
+        const sc = ov.querySelector('.ov-scroll');
+        sc.scrollTop = sec ? Math.max(0, sec.offsetTop - 8) : 0;
+        const last = getRecent()[0], t = last && ov.querySelector('.ov-tile[data-name="' + CSS.escape(last) + '"]');
+        if (t) t.classList.add('ov-here');
+      }
+      function settleOpen() {
+        open = true; busy = false;
+        ov.style.pointerEvents = ''; ov.setAttribute('aria-hidden', 'false');
+        canvas().style.visibility = 'hidden';
+        history.pushState({ view: 'overview' }, '', location.href);
+      }
+      function reset() {
+        cancelAnimationFrame(raf);
+        open = false; busy = false;
+        if (ov) { ov.classList.remove('on'); ov.style.transform = ''; ov.style.opacity = ''; ov.setAttribute('aria-hidden', 'true'); ov.getAnimations().forEach(a => a.cancel()); }
+        const c = canvas(); c.style.transform = ''; c.style.opacity = ''; c.style.transformOrigin = ''; c.style.visibility = '';
+      }
+      // from the cards to the overview, played on its own (a trackpad pinch, or a pinch that was let go part-way)
+      function show(cx, cy, from) {
+        if (busy || open || !homeReady()) return;
+        busy = true;
+        if (from === undefined) prepare(cx, cy);
+        sfx('gather'); hapt(HAPTIC.gather(8));
+        tween(from || 0, 1, 380 - 200 * (from || 0), settleOpen);
+        // the tiles settle into place in a quick ripple spreading from the fingers
+        if (!fancyOff()) {
+          const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar-h')) || 50;
+          let n = 0;
+          ov.querySelectorAll('.ov-tile, .ov-rhead').forEach(t => {
+            const r = t.getBoundingClientRect(); if (r.bottom < top || r.top > innerHeight || n > 90) return;
+            const d = Math.hypot(r.left + r.width / 2 - cx, r.top + r.height / 2 - cy); n++;
+            t.animate([{ opacity: 0, transform: 'scale(0.6)' }, { opacity: 1, transform: 'none' }],
+              { duration: 420, delay: Math.min(260, d * 0.45), easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'backwards' });
+          });
+        }
+      }
+      // back to the cards as they were
+      function close(viaBack) {
+        if (!ov || !ov.classList.contains('on') || busy) return;
+        busy = true;
+        if (open && !viaBack) { ignorePop = true; history.back(); }
+        open = false;
+        canvas().style.visibility = '';
+        ov.style.pointerEvents = 'none';
+        oo = '50% 35%';
+        sfx('close');
+        tween(p, 0, 340, () => reset());
+      }
+      // into one region: the overview swells towards it and the region's cards deal in
+      function enterRegion(cat, x, y) {
+        if (busy) return;
+        const tile = document.querySelector('#chapter-menu [data-cat="' + CSS.escape(cat) + '"]');
+        if (!tile) { close(); return; }
+        busy = true;
+        if (open) { ignorePop = true; history.back(); }
+        open = false;
+        const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar-h')) || 50;
+        const cur = ov.style.transform || 'scale(1)';
+        ov.style.pointerEvents = 'none';
+        ov.style.transformOrigin = x + 'px ' + (y - top) + 'px';
+        sfx('tile'); hapt(HAPTIC.tile);
+        const a = ov.animate([{ transform: cur, opacity: ov.style.opacity || 1 }, { transform: 'scale(2.1)', opacity: 0 }], { duration: 420, easing: 'cubic-bezier(0.45, 0, 0.2, 1)', fill: 'forwards' });
+        a.onfinish = () => reset();
+        const c = canvas(); c.style.transform = ''; c.style.opacity = ''; c.style.visibility = '';
+        workspace().scrollTop = 0;
+        filterCategory(cat, tile);
+        c.animate([{ transform: 'scale(0.82)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 460, delay: 80, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'backwards' });
+      }
+      function onClick(e) {
+        if (!open) return;
+        if (e.target.closest('.ov-close')) { buzz(6); close(); return; }
+        const h = e.target.closest('.ov-rhead');
+        if (h) { const r = h.getBoundingClientRect(); enterRegion(h.parentElement.dataset.cat, r.left + 40, r.top + r.height / 2); return; }
+        const t = e.target.closest('.ov-tile');
+        if (t) { openFlapPage(t.dataset.name, { fromEl: t }); }
+      }
+      // ---- two fingers ----
+      function attachPinch(el, inOv) {
+        el.addEventListener('touchstart', e => {
+          if (e.touches.length !== 2 || busy) { if (e.touches.length > 2) pinch = null; return; }
+          if (inOv ? !open || pageOpen() : (open || !homeReady())) return;
+          if (window.visualViewport && window.visualViewport.scale > 1.02) return;
+          const a = e.touches[0], b = e.touches[1], d0 = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+          if (d0 < 24) return;
+          pinch = { d0: d0, cx: (a.clientX + b.clientX) / 2, cy: (a.clientY + b.clientY) / 2, inOv: inOv, s: 1, lastS: 1, v: 0, t: performance.now(), started: false };
+          document.dispatchEvent(new Event('pointercancel'));      // no long-press preview while pinching
+        }, { passive: true });
+        el.addEventListener('touchmove', e => {
+          if (!pinch || pinch.inOv !== inOv) return;
+          if (e.touches.length !== 2) return;
+          if (e.cancelable) e.preventDefault();
+          const a = e.touches[0], b = e.touches[1], s = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / pinch.d0, now = performance.now();
+          pinch.v = pinch.v * 0.6 + ((s - pinch.lastS) / Math.max(1, now - pinch.t)) * 0.4; pinch.lastS = s; pinch.t = now; pinch.s = s;
+          if (!pinch.started) { pinch.started = true; if (!inOv) prepare(pinch.cx, pinch.cy); }
+          if (praf) return;
+          praf = requestAnimationFrame(() => {
+            praf = 0; if (!pinch) return;
+            if (!inOv) setP(pinch.s < 1 ? Math.min(1, (1 - pinch.s) / 0.55) : -Math.min(0.06, (pinch.s - 1) * 0.12));
+            else {
+              const q = pinch.s > 1 ? Math.min(1, (pinch.s - 1) / 0.8) : -Math.min(0.12, (1 - pinch.s) * 0.3);
+              const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topbar-h')) || 50;
+              ov.style.transformOrigin = pinch.cx + 'px ' + (pinch.cy - top) + 'px';
+              ov.style.transform = 'scale(' + (1 + 0.9 * q).toFixed(4) + ')';
+              ov.style.opacity = String(Math.max(0, 1 - Math.max(0, q) * 0.7).toFixed(3));
+            }
+          });
+        }, { passive: false });
+        const end = e => {
+          if (!pinch || pinch.inOv !== inOv || (e.touches && e.touches.length >= 2)) return;
+          const g = pinch; pinch = null; cancelAnimationFrame(praf); praf = 0;
+          if (!g.started) return;
+          if (!inOv) {
+            const cur = Math.max(0, p);
+            if (cur > 0.28 || (g.v < -0.0012 && cur > 0.08)) show(g.cx, g.cy, cur);
+            else { busy = true; tween(p, 0, 220, () => reset()); }
+          } else {
+            const q = g.s > 1 ? (g.s - 1) / 0.8 : 0;
+            if (q > 0.3 || (g.v > 0.0012 && q > 0.06)) {
+              ov.style.transform = ''; ov.style.opacity = '';
+              const hit = document.elementFromPoint(g.cx, g.cy), sec = hit && hit.closest && hit.closest('.ov-region');
+              ov.style.transform = 'scale(' + (1 + 0.9 * Math.min(1, q)) + ')';
+              if (sec) enterRegion(sec.dataset.cat, g.cx, g.cy); else close();
+            } else ov.animate([{ transform: ov.style.transform || 'none', opacity: ov.style.opacity || 1 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'ease-out' }).onfinish = () => { ov.style.transform = ''; ov.style.opacity = ''; };
+          }
+        };
+        el.addEventListener('touchend', end, { passive: true });
+        el.addEventListener('touchcancel', end, { passive: true });
+      }
+      // a trackpad pinch (ctrl + wheel) does the same on a computer
+      let acc = 0, accT = 0;
+      document.addEventListener('wheel', e => {
+        if (!e.ctrlKey) return;
+        const now = performance.now(); if (now - accT > 400) acc = 0; accT = now;
+        if (!open && !busy && homeReady() && e.target.closest && e.target.closest('.workspace')) {
+          e.preventDefault(); acc += e.deltaY; if (acc > 30) { acc = 0; show(e.clientX, e.clientY); }
+        } else if (open && !busy && !pageOpen()) {
+          e.preventDefault(); acc -= e.deltaY;
+          if (acc > 30) { acc = 0; const sec = e.target.closest && e.target.closest('.ov-region'); if (sec) enterRegion(sec.dataset.cat, e.clientX, e.clientY); else close(); }
+        }
+      }, { passive: false });
+      function onReady() { const w = workspace(); if (w && !w.__pinch) { w.__pinch = true; attachPinch(w, false); } }
+      onReady();
+      return {
+        isOpen: () => open,
+        show: show,
+        close: close,
+        // the Back button: returns true when it was dealt with here
+        handlePop: () => {
+          if (ignorePop) { ignorePop = false; return true; }
+          if (open && !pageOpen()) { close(true); return true; }
+          return false;
+        },
+        refreshTile: name => { if (!ov || !open) return; ov.querySelectorAll('.ov-tile').forEach(t => { if (t.dataset.name === name) { t.classList.toggle('is-fav', isFavourite(name)); t.classList.toggle('is-sel', selectedFlaps.has(name)); } }); }
+      };
+    })();
+    // a single tip, shown once to someone who has used the app a few times and has never pinched the cards
+    function maybeOverviewTip() {
+      try {
+        if (localStorage.getItem('flap_tip_ov')) return;
+        const n = (+localStorage.getItem('flap_launches') || 0) + 1; localStorage.setItem('flap_launches', String(n));
+        if (n < 3) return;
+      } catch (e) { return; }
+      setTimeout(function tip() {
+        if (window.__introRunning || document.getElementById('gate') || document.querySelector('.soft-note')) { setTimeout(tip, 4000); return; }
+        if (document.getElementById('flap-page').classList.contains('open') || document.body.classList.contains('sys-page') || (window.flapOverview && flapOverview.isOpen())) return;
+        try { localStorage.setItem('flap_tip_ov', '1'); } catch (e) {}
+        softNote('<span class="sn-icon">🤏</span><span>Pinch the cards together with two fingers to see every flap at once.</span>', 6500);
+      }, 9000);
+    }
+
+    // ---------- draw a Z on the home screen: the screen performs a Z-plasty and the credits appear underneath ----------
+    (function () {
+      let pts = null;
+      const onHome = t => t && t.closest && t.closest('.workspace') && !document.getElementById('flap-page').classList.contains('open') &&
+        !(window.flapOverview && flapOverview.isOpen()) && !document.getElementById('zp') && !document.querySelector('.sidebar.open');
+      const start = (x, y, t) => { pts = onHome(t) ? [[x, y, performance.now()]] : null; };
+      const move = (x, y) => { if (!pts) return; const l = pts[pts.length - 1]; if (Math.hypot(x - l[0], y - l[1]) > 3) pts.push([x, y, performance.now()]); if (pts.length > 500) pts = null; };
+      const end = () => { const q = pts; pts = null; if (q && q.length > 6) { const z = readZ(q); if (z) play(z); } };
+      document.addEventListener('touchstart', e => { if (e.touches.length === 1) start(e.touches[0].clientX, e.touches[0].clientY, e.target); else pts = null; }, { passive: true });
+      document.addEventListener('touchmove', e => { if (e.touches.length === 1) move(e.touches[0].clientX, e.touches[0].clientY); else pts = null; }, { passive: true });
+      document.addEventListener('touchend', e => { if (!e.touches.length) end(); }, { passive: true });
+      document.addEventListener('touchcancel', () => { pts = null; }, { passive: true });
+      document.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && e.button === 0) start(e.clientX, e.clientY, e.target); });
+      document.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' && pts && e.buttons) move(e.clientX, e.clientY); });
+      document.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') end(); });
+
+      // the stroke, simplified to its corners
+      function rdp(a, eps) {
+        if (a.length < 3) return a.slice();
+        const [x1, y1] = a[0], [x2, y2] = a[a.length - 1], L = Math.hypot(x2 - x1, y2 - y1) || 1;
+        let idx = -1, dmax = 0;
+        for (let i = 1; i < a.length - 1; i++) { const d = Math.abs((y2 - y1) * a[i][0] - (x2 - x1) * a[i][1] + x2 * y1 - y2 * x1) / L; if (d > dmax) { dmax = d; idx = i; } }
+        if (dmax <= eps) return [a[0], a[a.length - 1]];
+        return rdp(a.slice(0, idx + 1), eps).slice(0, -1).concat(rdp(a.slice(idx), eps));
+      }
+      function readZ(q) {
+        const dur = q[q.length - 1][2] - q[0][2];
+        if (dur < 200 || dur > 3500) return null;
+        let v = rdp(q.map(r => [r[0], r[1]]), Math.max(18, innerWidth * 0.045));
+        // drop tiny hooks at either end, then join neighbouring pieces running the same way
+        const seg = i => [v[i + 1][0] - v[i][0], v[i + 1][1] - v[i][1]];
+        while (v.length > 2 && Math.hypot(...seg(0)) < 26) v.shift();
+        while (v.length > 2 && Math.hypot(...seg(v.length - 2)) < 26) v.pop();
+        for (let i = 1; i < v.length - 1;) {
+          const a = seg(i - 1), b = seg(i), ang = Math.abs(Math.atan2(a[0] * b[1] - a[1] * b[0], a[0] * b[0] + a[1] * b[1]));
+          if (ang < 0.6) v.splice(i, 1); else i++;
+        }
+        if (v.length !== 4) return null;
+        const W = innerWidth, s1 = seg(0), s2 = seg(1), s3 = seg(2);
+        const flat = s => s[0] > W * 0.22 && Math.abs(s[1]) < s[0] * 0.75;
+        if (!flat(s1) || !flat(s3)) return null;
+        if (!(s2[0] < -W * 0.12 && s2[1] > 60 && s2[1] > -s2[0] * 0.35)) return null;
+        return v;
+      }
+
+      // the affine transform taking triangle s onto triangle d
+      function affine(s, d) {
+        const [a, b, c] = s, det = a[0] * (b[1] - c[1]) + b[0] * (c[1] - a[1]) + c[0] * (a[1] - b[1]);
+        if (Math.abs(det) < 1e-6) return 'none';
+        const inv = [
+          [(b[1] - c[1]) / det, (c[0] - b[0]) / det, (b[0] * c[1] - c[0] * b[1]) / det],
+          [(c[1] - a[1]) / det, (a[0] - c[0]) / det, (c[0] * a[1] - a[0] * c[1]) / det],
+          [(a[1] - b[1]) / det, (b[0] - a[0]) / det, (a[0] * b[1] - b[0] * a[1]) / det]];
+        const row = k => [0, 1, 2].map(j => d[0][k] * inv[0][j] + d[1][k] * inv[1][j] + d[2][k] * inv[2][j]);
+        const X = row(0), Y = row(1);
+        return 'matrix(' + [X[0], Y[0], X[1], Y[1], X[2], Y[2]].map(n => n.toFixed(5)).join(',') + ')';
+      }
+      const poly = pts => 'polygon(' + pts.map(p => p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px').join(',') + ')';
+
+      function play(z) {
+        if (document.getElementById('zp')) return;
+        const W = innerWidth, H = innerHeight, [P0, P1, P2, P3] = z;
+        const shell = document.getElementById('app-shell'), sr = shell.getBoundingClientRect(), ws = document.querySelector('.workspace');
+        const root = document.createElement('div'); root.id = 'zp';
+        // the wound bed under the flaps
+        const bed = document.createElement('div'); bed.className = 'zp-bed';
+        const M = [(P1[0] + P2[0]) / 2, (P1[1] + P2[1]) / 2];
+        bed.style.setProperty('--bx', M[0] + 'px'); bed.style.setProperty('--by', M[1] + 'px');
+        bed.style.clipPath = poly([P0, P1, P3, P2]);
+        root.appendChild(bed);
+        // each flap: a copy of the screen, cut to its triangle
+        const copy = () => {
+          const c = shell.cloneNode(true); c.removeAttribute('id'); c.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+          c.style.cssText += ';position:absolute;left:' + sr.left + 'px;top:' + sr.top + 'px;width:' + sr.width + 'px;height:' + sr.height + 'px;margin:0;pointer-events:none;';
+          return c;
+        };
+        const makeFlap = (tri, shade) => {
+          const lift = document.createElement('div'); lift.className = 'zp-layer';
+          const inner = document.createElement('div'); inner.className = 'zp-layer'; inner.style.clipPath = poly(tri);
+          if (shade) { inner.appendChild(Object.assign(document.createElement('div'), { className: 'zp-shade' })); }
+          else inner.appendChild(copy());
+          lift.appendChild(inner); root.appendChild(lift);
+          return { lift, inner };
+        };
+        const A = [P0, P1, P2], B = [P1, P3, P2];
+        const shA = makeFlap(A, true), shB = makeFlap(B, true), fA = makeFlap(A), fB = makeFlap(B);
+        [shA, shB, fA, fB].forEach(f => { f.lift.style.opacity = '0'; });
+        // the marking: drawn with a skin marker along the Z, then cut
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M' + z.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L'));
+        path.setAttribute('fill', 'none'); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round');
+        path.style.stroke = '#7c3aed'; path.style.strokeWidth = '4';
+        svg.appendChild(path); root.appendChild(svg);
+        const card = document.createElement('div'); card.className = 'zp-card';
+        card.innerHTML = '<img src="icons/logo-96.png" alt=""><div class="zp-title">Amanyu’s <span>Flap</span>endium</div>' +
+          '<div class="zp-by">conceived, written, designed &amp; built by</div><div class="zp-sign">Dr Amanyu</div>' +
+          '<div class="zp-fact">You just performed a <b>Z-plasty</b>.<br>At 60°, the central limb lengthens by about 75%.<br>Very few people ever find this page.</div>' +
+          '<div class="zp-tap">Tap anywhere to close</div>';
+        root.appendChild(card);
+        document.body.appendChild(root);
+        // the copies show the screen exactly as it is, scrolled to the same place
+        root.querySelectorAll('.zp-layer .workspace').forEach(w => { w.scrollTop = ws.scrollTop; });
+
+        const L = path.getTotalLength();
+        const T = (ms, f) => setTimeout(f, ms);
+        sfx('press'); hapt(HAPTIC.peek);
+        path.style.strokeDasharray = L; path.animate([{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: 650, easing: 'cubic-bezier(0.4, 0, 0.3, 1)', fill: 'both' });
+        // incision
+        T(720, () => {
+          path.animate([{ stroke: '#7c3aed', strokeWidth: 4 }, { stroke: '#7a0b1c', strokeWidth: 2.2 }], { duration: 220, fill: 'forwards' });
+          fA.lift.style.opacity = '1'; fB.lift.style.opacity = '1';
+          bed.style.opacity = '1';
+          sfx('flick'); hapt(30);
+        });
+        // the flaps are raised: they lift a little away from the central limb
+        const v = [P2[0] - P1[0], P2[1] - P1[1]], vl = Math.hypot(v[0], v[1]) || 1, n = [-v[1] / vl, v[0] / vl];
+        const side = ((P0[0] - P1[0]) * n[0] + (P0[1] - P1[1]) * n[1]) > 0 ? 1 : -1;
+        const cen = t => [(t[0][0] + t[1][0] + t[2][0]) / 3, (t[0][1] + t[1][1] + t[2][1]) / 3];
+        const raise = (f, sh, tri, s) => {
+          const c = cen(tri), dx = n[0] * s * 10, dy = n[1] * s * 10;
+          f.lift.style.transformOrigin = c[0] + 'px ' + c[1] + 'px'; sh.lift.style.transformOrigin = c[0] + 'px ' + c[1] + 'px';
+          const up = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(1.04)';
+          f.lift.animate([{ transform: 'none' }, { transform: up }], { duration: 300, easing: 'cubic-bezier(0.3, 0.7, 0.3, 1)', fill: 'forwards' });
+          sh.lift.style.opacity = '1';
+          sh.lift.animate([{ transform: 'none', opacity: 0 }, { transform: 'translate(' + (dx + 6).toFixed(1) + 'px,' + (dy + 12).toFixed(1) + 'px) scale(1.03)', opacity: 1 }], { duration: 300, easing: 'ease-out', fill: 'forwards' });
+        };
+        T(900, () => { raise(fA, shA, A, side); raise(fB, shB, B, -side); svg.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards' }); });
+        // transposition: each flap swings across the central limb into the other's place
+        // flap A keeps its base P0–P2 and its tip moves from P1 to P3; flap B keeps P1–P3 and its tip moves from P2 to P0
+        const mA = affine(A, [P0, P3, P2]), mB = affine(B, [P1, P3, P0]);
+        T(1220, () => {
+          sfx('page');
+          const o = { duration: 900, easing: 'cubic-bezier(0.55, 0, 0.25, 1)', fill: 'forwards' };
+          fA.inner.animate([{ transform: 'none' }, { transform: mA }], o); shA.inner.animate([{ transform: 'none' }, { transform: mA }], o);
+          fB.inner.animate([{ transform: 'none' }, { transform: mB }], Object.assign({}, o, { delay: 60 })); shB.inner.animate([{ transform: 'none' }, { transform: mB }], Object.assign({}, o, { delay: 60 }));
+        });
+        // inset: the flaps settle down into their new places
+        T(2200, () => {
+          [fA, fB, shA, shB].forEach(f => f.lift.getAnimations().forEach(a => a.reverse()));
+          sfx('land'); hapt(HAPTIC.land);
+        });
+        // the credits rise out of the new central limb
+        T(2480, () => {
+          const c = [(P0[0] + P3[0]) / 2, (P0[1] + P3[1]) / 2];
+          const dx = c[0] - W / 2, dy = c[1] - H / 2;
+          const veil = document.createElement('div'); veil.style.cssText = 'position:absolute;inset:0;background:rgba(2,8,22,0.62);opacity:0;';
+          root.insertBefore(veil, card);
+          veil.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 500, fill: 'forwards' });
+          card.animate([{ opacity: 0, transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(0.15)' },
+            { offset: 0.7, opacity: 1, transform: 'translate(-50%, -50%) scale(1.04)' }, { opacity: 1, transform: 'translate(-50%, -50%) scale(1)' }],
+            { duration: 640, easing: 'cubic-bezier(0.2, 0.8, 0.25, 1)', fill: 'forwards' });
+          card.querySelector('.zp-sign').animate([{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)' }], { duration: 900, delay: 520, easing: 'ease-in-out', fill: 'forwards' });
+          sfx('done'); hapt(HAPTIC.fav);
+          T(700, () => root.classList.add('live'));
+        });
+        root.addEventListener('click', () => {
+          if (!root.classList.contains('live')) return;
+          root.classList.remove('live');
+          root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 380, easing: 'ease-in', fill: 'forwards' }).onfinish = () => root.remove();
+          buzz(6);
+        });
+      }
+      window.__zplasty = play;
+    })();
+
+    // ---------- five quick taps on "Flap" in the title bar: the word lifts like a raised flap ----------
+    (function () {
+      let taps = [], busy = false;
+      document.addEventListener('click', e => {
+        const f = e.target.closest && e.target.closest('.top-status-bar .brand-flap');
+        if (!f || busy) return;
+        const now = Date.now(); taps = taps.filter(t => now - t < 2600); taps.push(now);
+        if (taps.length >= 5) { taps = []; lift(f); }
+      });
+      function lift(f) {
+        busy = true;
+        const r = f.getBoundingClientRect(), cs = getComputedStyle(f);
+        const wrap = document.createElement('div'); wrap.className = 'flap-lift';
+        wrap.style.cssText = 'left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height + 'px;';
+        const under = document.createElement('div'); under.className = 'fl-under'; under.textContent = 'Amanyu';
+        under.style.fontSize = Math.min(r.height * 1.05, r.width / 2.9).toFixed(1) + 'px';
+        const leaf = document.createElement('div'); leaf.className = 'fl-leaf'; leaf.textContent = f.textContent;
+        leaf.style.fontFamily = cs.fontFamily; leaf.style.fontSize = cs.fontSize; leaf.style.fontWeight = cs.fontWeight; leaf.style.letterSpacing = cs.letterSpacing;
+        wrap.append(under, leaf); document.body.appendChild(wrap);
+        f.style.visibility = 'hidden';
+        sfx('peek'); hapt(HAPTIC.peek);
+        under.animate([{ opacity: 0 }, { offset: 0.12, opacity: 1 }, { offset: 0.86, opacity: 1 }, { opacity: 0 }], { duration: 3800, fill: 'forwards' });
+        leaf.animate([
+          { transform: 'rotateY(0deg)' },
+          { offset: 0.14, transform: 'rotateY(-84deg)', easing: 'cubic-bezier(0.3, 1.4, 0.5, 1)' },
+          { offset: 0.8, transform: 'rotateY(-78deg)', easing: 'cubic-bezier(0.6, 0, 0.8, 0.4)' },
+          { offset: 0.9, transform: 'rotateY(4deg)' },
+          { transform: 'rotateY(0deg)' }
+        ], { duration: 3800, fill: 'forwards' }).onfinish = () => { wrap.remove(); f.style.visibility = ''; busy = false; };
+        setTimeout(() => showToast('✦ Flap raised by its maker – Dr Amanyu'), 450);
+        setTimeout(() => { sfx('land'); hapt(HAPTIC.land); }, 3300);
+      }
+    })();
+
+    // ---------- very late at night (2–4 AM), now and then: a quiet line from the person who built the app ----------
+    (function () {
+      function nightNote() {
+        const h = new Date().getHours(); if (h < 2 || h >= 4) return;
+        if (window.__introRunning || document.getElementById('gate') || !datasetMaster.length) return;
+        const key = 'flap_night_' + new Date().toDateString();
+        try { if (localStorage.getItem(key)) return; } catch (e) { return; }
+        if (Math.random() > 0.5) return;
+        try { localStorage.setItem(key, '1'); } catch (e) {}
+        softNote('<span class="sn-icon">🌙</span><span>Still awake? So was the person who built this. <span class="sn-sign">– A.</span></span>', 7500);
+      }
+      window.__nightNote = nightNote;
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(nightNote, 2500); });
+      setTimeout(function first() { if (!datasetMaster.length || window.__introRunning || document.getElementById('gate')) { setTimeout(first, 3000); return; } nightNote(); }, 6000);
+    })();
+
     window.addEventListener('popstate', function(event) {
+        if (window.flapOverview && flapOverview.handlePop()) return;     // the overview handles its own Back
         if (document.getElementById('lightbox').classList.contains('open')) {
             closeLightbox(true);
         } else if (document.getElementById('flap-page').classList.contains('open')) {
