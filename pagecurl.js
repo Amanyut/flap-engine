@@ -173,6 +173,8 @@ const UNDERSIDE_IMAGE = 'icons/flap-underside.jpg';
 
   // ---------- the finger ----------
   const zoomed = () => !!(window.visualViewport && window.visualViewport.scale > 1.02);
+  // while pinch-zoomed in, the page may pan sideways again (see #fp-body touch-action)
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => document.body.classList.toggle('vv-zoomed', zoomed()));
   let T = null;    // touch being followed
   function startAt(x, y, target) {
     // a new touch means any earlier one is over: a turn still hanging from it is put back at once
