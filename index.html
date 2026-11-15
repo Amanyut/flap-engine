@@ -2656,17 +2656,17 @@
       const E = 'cubic-bezier(0.22, 1, 0.36, 1)', anims = [], timers = [], extra = [];
       const lead = peekCard ? 40 : isCard ? 330 : 220, grow = 600;   // the surroundings play first, then the page grows
       // the real page, clipped to the item's outline, then opened out to the full screen
-      const px = v => Math.max(0, Math.round(v)) + 'px';
       // a lifted card is a little larger and higher – the page starts from exactly that outline
       const lx = isCard && !peekCard ? r.width * 0.03 : 0, ly = isCard && !peekCard ? 8 : 0;
-      const from = 'inset(' + px(r.top - top - ly - lx) + ' ' + px(innerWidth - r.right - lx) + ' ' + px(innerHeight - r.bottom + ly - lx) + ' ' + px(r.left - lx) + ' round 14px)';
-      page.style.transition = 'none'; page.style.clipPath = from; page.style.opacity = '0'; page.classList.add('open'); void page.offsetWidth;
+      const L = r.left - lx, T = r.top - ly - lx, Wd = r.width + 2 * lx, Hd = r.height + 2 * lx, PW = innerWidth, PH = innerHeight - top;
+      const from = 'translate(' + L.toFixed(1) + 'px,' + (T - top).toFixed(1) + 'px) scale(' + (Wd / PW).toFixed(4) + ',' + (Hd / PH).toFixed(4) + ')';
+      page.style.transition = 'none'; page.style.transformOrigin = '0 0'; page.style.opacity = '0'; page.classList.add('open'); void page.offsetWidth;
       // the page stays invisible while the card lifts; it fades in over the card as it starts to grow
-      const pageAnim = page.animate([{ clipPath: from, opacity: 0 }, { offset: 0.14, opacity: 1 }, { clipPath: 'inset(0px 0px 0px 0px round 0px)', opacity: 1 }],
+      const pageAnim = page.animate([{ transform: from, opacity: 0 }, { offset: 0.14, opacity: 1 }, { transform: 'none', opacity: 1 }],
         { duration: grow, delay: lead, easing: 'cubic-bezier(0.5, 0, 0.15, 1)', fill: 'both' });
       anims.push(pageAnim);
       // its contents appear all together, shortly before the title lands
-      const parts = Array.from(page.querySelectorAll('.fp-header, #fp-hero .fh-meta, #fp-hero .fh-pills, #fp-hero .fp-tick, #fp-tabs, #fp-inner, .fp-nav'));
+      const parts = Array.from(page.querySelectorAll('.fp-header, .fp-progress, #fp-hero .fh-icon, #fp-hero .fh-meta, #fp-hero .fh-pills, #fp-hero .fp-tick, #fp-tabs, #fp-inner, .fp-nav'));
       parts.forEach(n => anims.push(n.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }],
         { duration: 380, delay: lead + grow * 0.55, easing: E, fill: 'backwards' })));
       // the surroundings
@@ -2693,11 +2693,17 @@
         });
       }
       if (!peekCard) {
-        // one darkening layer (much lighter for a phone than dimming every card)
+        // one darkening layer, even and dark everywhere, with a crisp cut-out exactly around the lifted card or row
         const veil = document.createElement('div');
-        veil.style.cssText = 'position:fixed;inset:0;z-index:840;pointer-events:none;opacity:0;background:radial-gradient(circle at ' + (r.left + r.width / 2) + 'px ' + (r.top + r.height / 2) + 'px, rgba(8,14,30,0.15), rgba(8,14,30,0.68) 70%);';
+        // a solid dark sheet with a rounded hole cut in it (a huge shadow paints much paler than its colour on Chrome)
+        const rr = isCard ? 14 : 12, f = v => v.toFixed(1), x0 = L, y0 = T, x1 = L + Wd, y1 = T + Hd;
+        const hole = 'M' + f(x0 + rr) + ' ' + f(y0) + 'H' + f(x1 - rr) + 'A' + rr + ' ' + rr + ' 0 0 1 ' + f(x1) + ' ' + f(y0 + rr) +
+          'V' + f(y1 - rr) + 'A' + rr + ' ' + rr + ' 0 0 1 ' + f(x1 - rr) + ' ' + f(y1) + 'H' + f(x0 + rr) + 'A' + rr + ' ' + rr + ' 0 0 1 ' + f(x0) + ' ' + f(y1 - rr) +
+          'V' + f(y0 + rr) + 'A' + rr + ' ' + rr + ' 0 0 1 ' + f(x0 + rr) + ' ' + f(y0) + 'Z';
+        veil.style.cssText = 'position:fixed;left:0;top:0;width:' + innerWidth + 'px;height:' + innerHeight + 'px;z-index:840;pointer-events:none;opacity:0;background:rgba(8,14,30,0.72);' +
+          'clip-path:path(evenodd,"M0 0H' + innerWidth + 'V' + innerHeight + 'H0Z' + hole + '");';
         document.body.appendChild(veil); extra.push(veil);
-        anims.push(veil.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 360, easing: 'ease-out', fill: 'forwards' }));
+        anims.push(veil.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, easing: 'ease-out', fill: 'forwards' }));
       } else {
         const back = peekCard.closest('.peek-backdrop');
         if (back) { back.style.pointerEvents = 'none'; back.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' }); timers.push(setTimeout(() => back.remove(), 280)); }
@@ -2746,7 +2752,7 @@
         extra.forEach(x => x.remove());
         if (src) src.style.visibility = ''; if (dst) dst.style.visibility = '';
         el.style.position = ''; el.style.zIndex = '';
-        page.style.transition = ''; page.style.clipPath = ''; page.style.opacity = '';
+        page.style.transition = ''; page.style.clipPath = ''; page.style.opacity = ''; page.style.transformOrigin = '';
       };
       flourish = tidy;
       // the letters land exactly where the title is: swap them for the title in the same instant
