@@ -1178,14 +1178,14 @@
     #flap-page.egg-page .row-label { color: #a07f00; }
     body.dark-theme #flap-page.egg-page .row-label { color: #ffe14d; }
 
-    /* ---- draw a Z on the home screen: a Z-plasty, and the credits underneath ---- */
+    /* ---- draw a Z on the home screen: a real Z-plasty on the screen itself; the credits erupt from the wound ---- */
     #zp { position: fixed; inset: 0; z-index: 2950; pointer-events: none; }
     #zp.live { pointer-events: auto; cursor: pointer; }
-    #zp .zp-layer { position: absolute; left: 0; top: 0; width: 100vw; height: 100vh; transform-origin: 0 0; }
-    #zp .zp-bed { position: absolute; inset: 0; opacity: 0; background: radial-gradient(circle at var(--bx) var(--by), #6e1424 0%, #3a0812 45%, #1a0308 100%); }
-    #zp .zp-shade { position: absolute; inset: 0; background: rgba(10, 0, 4, 0.45); }
-    #zp .zp-copy { position: absolute; overflow: hidden; pointer-events: none; }
-    #zp svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    #zp canvas { position: absolute; left: 0; top: 0; pointer-events: none; }
+    #zp .zp-skin { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 0 0; visibility: hidden; overflow: hidden; }
+    #zp .zp-seed { position: absolute; width: 58px; height: 58px; border-radius: 15px; overflow: hidden; opacity: 0; transform: translate(-50%, -50%) scale(0); box-shadow: 0 0 0 2px rgba(255, 234, 0, 0.6), 0 0 24px 8px rgba(255, 200, 0, 0.45); }
+    #zp .zp-seed img { display: block; width: 100%; height: 100%; }
+    #zp .zp-veil { position: absolute; inset: 0; opacity: 0; background: radial-gradient(circle at 50% 50%, rgba(2, 8, 22, 0.4), rgba(2, 8, 22, 0.72)); }
     #zp .zp-card { position: absolute; left: 50%; top: 50%; width: min(330px, calc(100vw - 40px)); box-sizing: border-box; padding: 26px 22px 18px; border-radius: 22px; text-align: center; color: #e9eef8; opacity: 0;
       background: radial-gradient(circle at 50% 0%, rgba(255, 234, 0, 0.16), transparent 60%), linear-gradient(160deg, #0b2550, #042551 55%, #021a3c);
       box-shadow: 0 0 0 1px rgba(255, 234, 0, 0.55), 0 22px 60px rgba(0, 0, 0, 0.6), 0 0 70px rgba(255, 234, 0, 0.22); }
@@ -1197,7 +1197,6 @@
     #zp .zp-fact { margin-top: 12px; font-size: 0.78rem; line-height: 1.45; color: #c8d3e6; }
     #zp .zp-fact b { color: #fff; }
     #zp .zp-tap { margin-top: 14px; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: #6f82a3; }
-
     /* ---- five taps on "Flap" in the title bar: the word lifts like a raised flap ---- */
     .flap-lift { position: fixed; z-index: 1001; pointer-events: none; perspective: 240px; }
     .flap-lift .fl-under { position: absolute; inset: -2px -3px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: radial-gradient(circle, rgba(255, 234, 0, 0.22), rgba(255, 234, 0, 0.04) 70%); font-family: 'Caveat', cursive; font-weight: 600; color: #ffea00; text-shadow: 0 0 8px rgba(255, 234, 0, 0.85); white-space: nowrap; opacity: 0; }
@@ -5628,13 +5627,19 @@
       }, 9000);
     }
 
-    // ---------- draw a Z on the home screen: the screen performs a Z-plasty and the credits appear underneath ----------
+    // ---------- draw a Z on the home screen: a real Z-plasty is performed on the screen itself ----------
+    // Any Z is accepted – rotated (even with its central limb upright), mirrored, steep or shallow – as long as it has
+    // two arms running roughly the same way and a central limb meeting them at sharp corners that turn opposite ways.
+    // The marker then lays out a proper 60° Z-plasty on it (all three limbs equal). After the incision the two
+    // triangular flaps peel up from their tips towards their bases (the bases stay attached), the credits erupt from the
+    // wound bed with a spray of blood; a tap sends them back down, the flaps transpose on their bases, settle into
+    // their new places and are sutured – the new central limb now lies across the old one.
     (function () {
       let pts = null;
       const onHome = t => t && t.closest && t.closest('.workspace') && !document.getElementById('flap-page').classList.contains('open') &&
         !(window.flapOverview && flapOverview.isOpen()) && !document.getElementById('zp') && !document.querySelector('.sidebar.open');
       const start = (x, y, t) => { pts = onHome(t) ? [[x, y, performance.now()]] : null; };
-      const move = (x, y) => { if (!pts) return; const l = pts[pts.length - 1]; if (Math.hypot(x - l[0], y - l[1]) > 3) pts.push([x, y, performance.now()]); if (pts.length > 500) pts = null; };
+      const move = (x, y) => { if (!pts) return; const l = pts[pts.length - 1]; if (Math.hypot(x - l[0], y - l[1]) > 3) pts.push([x, y, performance.now()]); if (pts.length > 600) pts = null; };
       const end = () => { const q = pts; pts = null; if (q && q.length > 6) { const z = readZ(q); if (z) play(z); } };
       document.addEventListener('touchstart', e => { if (e.touches.length === 1) start(e.touches[0].clientX, e.touches[0].clientY, e.target); else pts = null; }, { passive: true });
       document.addEventListener('touchmove', e => { if (e.touches.length === 1) move(e.touches[0].clientX, e.touches[0].clientY); else pts = null; }, { passive: true });
@@ -5644,152 +5649,380 @@
       document.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' && pts && e.buttons) move(e.clientX, e.clientY); });
       document.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') end(); });
 
-      // the stroke, simplified to its corners
+      // ---- small vector helpers ----
+      const sub = (a, b) => [a[0] - b[0], a[1] - b[1]], add = (a, b) => [a[0] + b[0], a[1] + b[1]], mul = (a, k) => [a[0] * k, a[1] * k];
+      const len = a => Math.hypot(a[0], a[1]), dot = (a, b) => a[0] * b[0] + a[1] * b[1], cross = (a, b) => a[0] * b[1] - a[1] * b[0];
+      const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+      const rot = (a, g) => [a[0] * Math.cos(g) - a[1] * Math.sin(g), a[0] * Math.sin(g) + a[1] * Math.cos(g)];
+      const norm = a => { const l = len(a) || 1; return [a[0] / l, a[1] / l]; };
+      const angle = (a, b) => Math.acos(Math.max(-1, Math.min(1, dot(a, b) / ((len(a) * len(b)) || 1))));
+      const clamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
+      const seg = (t, a, b) => clamp01((t - a) / (b - a));
+      const ease = k => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      // peeling: starts gently at the tip, gathers pace, overshoots a touch and settles
+      const soft = k => k <= 0 ? 0 : k >= 1 ? 1 : ease(k) + 0.07 * Math.sin(Math.PI * k) * Math.max(0, k - 0.45);
+
+      // ---- reading the stroke ----
       function rdp(a, eps) {
         if (a.length < 3) return a.slice();
-        const [x1, y1] = a[0], [x2, y2] = a[a.length - 1], L = Math.hypot(x2 - x1, y2 - y1) || 1;
+        const p = a[0], q = a[a.length - 1], L = len(sub(q, p)) || 1;
         let idx = -1, dmax = 0;
-        for (let i = 1; i < a.length - 1; i++) { const d = Math.abs((y2 - y1) * a[i][0] - (x2 - x1) * a[i][1] + x2 * y1 - y2 * x1) / L; if (d > dmax) { dmax = d; idx = i; } }
-        if (dmax <= eps) return [a[0], a[a.length - 1]];
+        for (let i = 1; i < a.length - 1; i++) { const d = Math.abs(cross(sub(q, p), sub(a[i], p))) / L; if (d > dmax) { dmax = d; idx = i; } }
+        if (dmax <= eps) return [p, q];
         return rdp(a.slice(0, idx + 1), eps).slice(0, -1).concat(rdp(a.slice(idx), eps));
       }
       function readZ(q) {
         const dur = q[q.length - 1][2] - q[0][2];
-        if (dur < 200 || dur > 3500) return null;
-        let v = rdp(q.map(r => [r[0], r[1]]), Math.max(18, innerWidth * 0.045));
-        // drop tiny hooks at either end, then join neighbouring pieces running the same way
-        const seg = i => [v[i + 1][0] - v[i][0], v[i + 1][1] - v[i][1]];
-        while (v.length > 2 && Math.hypot(...seg(0)) < 26) v.shift();
-        while (v.length > 2 && Math.hypot(...seg(v.length - 2)) < 26) v.pop();
-        for (let i = 1; i < v.length - 1;) {
-          const a = seg(i - 1), b = seg(i), ang = Math.abs(Math.atan2(a[0] * b[1] - a[1] * b[0], a[0] * b[0] + a[1] * b[1]));
-          if (ang < 0.6) v.splice(i, 1); else i++;
+        if (dur < 200 || dur > 4500) return null;
+        const m = Math.min(innerWidth, innerHeight);
+        let v = rdp(q.map(r => [r[0], r[1]]), Math.max(12, m * 0.03));
+        const segLen = i => len(sub(v[i + 1], v[i]));
+        while (v.length > 2 && segLen(0) < 22) v.shift();
+        while (v.length > 2 && segLen(v.length - 2) < 22) v.pop();
+        // a wobbly limb drawn in several pieces is joined up: the gentlest bends go first
+        const bend = i => angle(sub(v[i], v[i - 1]), sub(v[i + 1], v[i]));
+        while (v.length > 4) {
+          let k = -1, best = 9;
+          for (let i = 1; i < v.length - 1; i++) { const b = bend(i); if (b < best) { best = b; k = i; } }
+          if (best > 1.25) break;
+          v.splice(k, 1);
         }
         if (v.length !== 4) return null;
-        const W = innerWidth, s1 = seg(0), s2 = seg(1), s3 = seg(2);
-        const flat = s => s[0] > W * 0.22 && Math.abs(s[1]) < s[0] * 0.75;
-        if (!flat(s1) || !flat(s3)) return null;
-        if (!(s2[0] < -W * 0.12 && s2[1] > 60 && s2[1] > -s2[0] * 0.35)) return null;
-        return v;
+        const [p0, p1, p2, p3] = v, s1 = sub(p1, p0), s2 = sub(p2, p1), s3 = sub(p3, p2), L1 = len(s1), L2 = len(s2), L3 = len(s3);
+        if (L2 < Math.max(60, m * 0.14)) return null;                                       // a central limb of some size
+        if (L1 < L2 * 0.3 || L3 < L2 * 0.3 || L1 > L2 * 3.2 || L3 > L2 * 3.2) return null;  // arms neither stubs nor huge
+        if (angle(s1, s3) > 0.8) return null;                                               // the arms run the same way
+        const c1 = angle(sub(p0, p1), sub(p2, p1)), c2 = angle(sub(p1, p2), sub(p3, p2));   // the two corners: sharp…
+        if (c1 < 0.22 || c1 > 1.55 || c2 < 0.22 || c2 > 1.55) return null;
+        if (Math.sign(cross(s1, s2)) === Math.sign(cross(s2, s3))) return null;             // …and turning opposite ways
+        return { raw: q.map(r => [r[0], r[1]]), p0, p1, p2, p3 };
+      }
+      window.__readZ = readZ;
+
+      // ---- the plan: a proper 60° Z-plasty on the drawn central limb (all limbs equal), kept on screen ----
+      function plan(z, W, H) {
+        let M = lerp(z.p1, z.p2, 0.5), L = len(sub(z.p2, z.p1));
+        const u = norm(sub(z.p2, z.p1)), sg = Math.sign(cross(u, sub(z.p0, z.p1))) || 1;
+        const arm = rot(u, sg * Math.PI / 3);
+        const geo = () => {
+          const P1 = add(M, mul(u, -L / 2)), P2 = add(M, mul(u, L / 2));
+          return { L, M, u, P0: add(P1, mul(arm, L)), P1, P2, P3: sub(P2, mul(arm, L)) };
+        };
+        L = Math.max(110, Math.min(L, Math.min(W, H) * 0.56));
+        let g = geo();
+        for (let k = 0; k < 24; k++) {
+          const c = [g.P0, g.P1, g.P2, g.P3], xs = c.map(p => p[0]), ys = c.map(p => p[1]);
+          const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+          if (x1 - x0 > W - 28 || y1 - y0 > H - 100) { L *= 0.9; g = geo(); continue; }
+          const dx = x0 < 14 ? 14 - x0 : x1 > W - 14 ? W - 14 - x1 : 0, dy = y0 < 70 ? 70 - y0 : y1 > H - 30 ? H - 30 - y1 : 0;
+          if (!dx && !dy) break;
+          M = add(M, [dx, dy]); g = geo();
+        }
+        return g;
       }
 
-      // the affine transform taking triangle s onto triangle d
+      // the affine map taking triangle s onto triangle d, as [a, b, c, d, e, f]
       function affine(s, d) {
         const [a, b, c] = s, det = a[0] * (b[1] - c[1]) + b[0] * (c[1] - a[1]) + c[0] * (a[1] - b[1]);
-        if (Math.abs(det) < 1e-6) return 'none';
+        if (Math.abs(det) < 1e-6) return [1, 0, 0, 1, 0, 0];
         const inv = [
           [(b[1] - c[1]) / det, (c[0] - b[0]) / det, (b[0] * c[1] - c[0] * b[1]) / det],
           [(c[1] - a[1]) / det, (a[0] - c[0]) / det, (c[0] * a[1] - a[0] * c[1]) / det],
           [(a[1] - b[1]) / det, (b[0] - a[0]) / det, (a[0] * b[1] - b[0] * a[1]) / det]];
         const row = k => [0, 1, 2].map(j => d[0][k] * inv[0][j] + d[1][k] * inv[1][j] + d[2][k] * inv[2][j]);
         const X = row(0), Y = row(1);
-        return 'matrix(' + [X[0], Y[0], X[1], Y[1], X[2], Y[2]].map(n => n.toFixed(5)).join(',') + ')';
+        return [X[0], Y[0], X[1], Y[1], X[2], Y[2]];
       }
-      const poly = pts => 'polygon(' + pts.map(p => p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px').join(',') + ')';
+      const mapP = (m, p) => [m[0] * p[0] + m[2] * p[1] + m[4], m[1] * p[0] + m[3] * p[1] + m[5]];
+      // the lifted part, folded back over the bend (slightly foreshortened, as a soft flap would be)
+      const reflect = (p, a, b, k) => { const n = norm(sub(b, a)), q = add(a, mul(n, dot(sub(p, a), n))); return add(q, mul(sub(q, p), k)); };
+      const path = (c, ps) => { c.beginPath(); ps.forEach((p, i) => i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])); c.closePath(); };
+      const polyCss = ps => 'polygon(' + ps.map(p => p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px').join(',') + ')';
 
       function play(z) {
         if (document.getElementById('zp')) return;
-        const W = innerWidth, H = innerHeight, [P0, P1, P2, P3] = z;
+        const SLOW = window.__zSlow || 1, D = ms => ms * SLOW;
+        const W = innerWidth, H = innerHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+        const g = plan(z, W, H), { P0, P1, P2, P3, M, L, u } = g;
         const shell = document.getElementById('app-shell'), sr = shell.getBoundingClientRect(), ws = document.querySelector('.workspace');
         const root = document.createElement('div'); root.id = 'zp';
-        // the wound bed under the flaps
-        const bed = document.createElement('div'); bed.className = 'zp-bed';
-        const M = [(P1[0] + P2[0]) / 2, (P1[1] + P2[1]) / 2];
-        bed.style.setProperty('--bx', M[0] + 'px'); bed.style.setProperty('--by', M[1] + 'px');
-        bed.style.clipPath = poly([P0, P1, P3, P2]);
-        root.appendChild(bed);
-        // each flap: a copy of the screen, cut to its triangle
-        const copy = () => {
+        const canvas = cls => {
+          const c = document.createElement('canvas'); c.className = cls;
+          c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); c.style.width = W + 'px'; c.style.height = H + 'px';
+          const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); return [c, x];
+        };
+        const [bedC, bed] = canvas('zp-bedc');
+        const seed = document.createElement('div'); seed.className = 'zp-seed'; seed.innerHTML = '<img src="icons/logo-96.png" alt="">';
+        seed.style.left = M[0] + 'px'; seed.style.top = M[1] + 'px';
+        const skin = () => {
+          const w = document.createElement('div'); w.className = 'zp-skin';
+          const bs = getComputedStyle(document.body); w.style.backgroundColor = bs.backgroundColor; w.style.backgroundImage = bs.backgroundImage;   // the skin is opaque, like the page
           const c = shell.cloneNode(true); c.removeAttribute('id'); c.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
           c.style.cssText += ';position:absolute;left:' + sr.left + 'px;top:' + sr.top + 'px;width:' + sr.width + 'px;height:' + sr.height + 'px;margin:0;pointer-events:none;';
-          return c;
+          w.appendChild(c); return w;
         };
-        const makeFlap = (tri, shade) => {
-          const lift = document.createElement('div'); lift.className = 'zp-layer';
-          const inner = document.createElement('div'); inner.className = 'zp-layer'; inner.style.clipPath = poly(tri);
-          if (shade) { inner.appendChild(Object.assign(document.createElement('div'), { className: 'zp-shade' })); }
-          else inner.appendChild(copy());
-          lift.appendChild(inner); root.appendChild(lift);
-          return { lift, inner };
-        };
-        const A = [P0, P1, P2], B = [P1, P3, P2];
-        const shA = makeFlap(A, true), shB = makeFlap(B, true), fA = makeFlap(A), fB = makeFlap(B);
-        [shA, shB, fA, fB].forEach(f => { f.lift.style.opacity = '0'; });
-        // the marking: drawn with a skin marker along the Z, then cut
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', 'M' + z.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L'));
-        path.setAttribute('fill', 'none'); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round');
-        path.style.stroke = '#7c3aed'; path.style.strokeWidth = '4';
-        svg.appendChild(path); root.appendChild(svg);
+        const skinA = skin(), skinB = skin();
+        const [topC, top] = canvas('zp-top');
+        const veil = document.createElement('div'); veil.className = 'zp-veil';
         const card = document.createElement('div'); card.className = 'zp-card';
         card.innerHTML = '<img src="icons/logo-96.png" alt=""><div class="zp-title">Amanyu’s <span>Flap</span>endium</div>' +
           '<div class="zp-by">conceived, written, designed &amp; built by</div><div class="zp-sign">Dr Amanyu</div>' +
           '<div class="zp-fact">You just performed a <b>Z-plasty</b>.<br>At 60°, the central limb lengthens by about 75%.<br>Very few people ever find this page.</div>' +
-          '<div class="zp-tap">Tap anywhere to close</div>';
-        root.appendChild(card);
+          '<div class="zp-tap">Tap to close the wound</div>';
+        const [bloodC, blood] = canvas('zp-blood');
+        root.append(bedC, seed, skinA, skinB, topC, veil, card, bloodC);
         document.body.appendChild(root);
-        // the copies show the screen exactly as it is, scrolled to the same place
-        root.querySelectorAll('.zp-layer .workspace').forEach(w => { w.scrollTop = ws.scrollTop; });
+        root.querySelectorAll('.zp-skin .workspace').forEach(w => { w.scrollTop = ws.scrollTop; });
+        const img = new Image(); img.src = 'icons/flap-underside.jpg';
 
-        const L = path.getTotalLength();
-        const T = (ms, f) => setTimeout(f, ms);
-        sfx('press'); hapt(HAPTIC.peek);
-        path.style.strokeDasharray = L; path.animate([{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: 650, easing: 'cubic-bezier(0.4, 0, 0.3, 1)', fill: 'both' });
-        // incision
-        T(720, () => {
-          path.animate([{ stroke: '#7c3aed', strokeWidth: 4 }, { stroke: '#7a0b1c', strokeWidth: 2.2 }], { duration: 220, fill: 'forwards' });
-          fA.lift.style.opacity = '1'; fB.lift.style.opacity = '1';
-          bed.style.opacity = '1';
-          sfx('flick'); hapt(30);
-        });
-        // the flaps are raised: they lift a little away from the central limb
-        const v = [P2[0] - P1[0], P2[1] - P1[1]], vl = Math.hypot(v[0], v[1]) || 1, n = [-v[1] / vl, v[0] / vl];
-        const side = ((P0[0] - P1[0]) * n[0] + (P0[1] - P1[1]) * n[1]) > 0 ? 1 : -1;
-        const cen = t => [(t[0][0] + t[1][0] + t[2][0]) / 3, (t[0][1] + t[1][1] + t[2][1]) / 3];
-        const raise = (f, sh, tri, s) => {
-          const c = cen(tri), dx = n[0] * s * 10, dy = n[1] * s * 10;
-          f.lift.style.transformOrigin = c[0] + 'px ' + c[1] + 'px'; sh.lift.style.transformOrigin = c[0] + 'px ' + c[1] + 'px';
-          const up = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(1.04)';
-          f.lift.animate([{ transform: 'none' }, { transform: up }], { duration: 300, easing: 'cubic-bezier(0.3, 0.7, 0.3, 1)', fill: 'forwards' });
-          sh.lift.style.opacity = '1';
-          sh.lift.animate([{ transform: 'none', opacity: 0 }, { transform: 'translate(' + (dx + 6).toFixed(1) + 'px,' + (dy + 12).toFixed(1) + 'px) scale(1.03)', opacity: 1 }], { duration: 300, easing: 'ease-out', fill: 'forwards' });
-        };
-        T(900, () => { raise(fA, shA, A, side); raise(fB, shB, B, -side); svg.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards' }); });
-        // transposition: each flap swings across the central limb into the other's place
-        // flap A keeps its base P0–P2 and its tip moves from P1 to P3; flap B keeps P1–P3 and its tip moves from P2 to P0
-        const mA = affine(A, [P0, P3, P2]), mB = affine(B, [P1, P3, P0]);
-        T(1220, () => {
-          sfx('page');
-          const o = { duration: 900, easing: 'cubic-bezier(0.55, 0, 0.25, 1)', fill: 'forwards' };
-          fA.inner.animate([{ transform: 'none' }, { transform: mA }], o); shA.inner.animate([{ transform: 'none' }, { transform: mA }], o);
-          fB.inner.animate([{ transform: 'none' }, { transform: mB }], Object.assign({}, o, { delay: 60 })); shB.inner.animate([{ transform: 'none' }, { transform: mB }], Object.assign({}, o, { delay: 60 }));
-        });
-        // inset: the flaps settle down into their new places
-        T(2200, () => {
-          [fA, fB, shA, shB].forEach(f => f.lift.getAnimations().forEach(a => a.reverse()));
-          sfx('land'); hapt(HAPTIC.land);
-        });
-        // the credits rise out of the new central limb
-        T(2480, () => {
-          const c = [(P0[0] + P3[0]) / 2, (P0[1] + P3[1]) / 2];
-          const dx = c[0] - W / 2, dy = c[1] - H / 2;
-          const veil = document.createElement('div'); veil.style.cssText = 'position:absolute;inset:0;background:rgba(2,8,22,0.62);opacity:0;';
-          root.insertBefore(veil, card);
-          veil.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 500, fill: 'forwards' });
-          card.animate([{ opacity: 0, transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(0.15)' },
-            { offset: 0.7, opacity: 1, transform: 'translate(-50%, -50%) scale(1.04)' }, { opacity: 1, transform: 'translate(-50%, -50%) scale(1)' }],
-            { duration: 640, easing: 'cubic-bezier(0.2, 0.8, 0.25, 1)', fill: 'forwards' });
-          card.querySelector('.zp-sign').animate([{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)' }], { duration: 900, delay: 520, easing: 'ease-in-out', fill: 'forwards' });
-          sfx('done'); hapt(HAPTIC.fav);
-          T(700, () => root.classList.add('live'));
-        });
+        // A: tip P1, base P0–P2, its tip ends at P3.   B: tip P2, base P3–P1, its tip ends at P0.
+        const flaps = [{ el: skinA, b0: P0, b1: P2, tip: P1, to: P3 }, { el: skinB, b0: P3, b1: P1, tip: P2, to: P0 }];
+        flaps.forEach(F => { F.out = norm(sub(lerp(F.tip, F.to, 0.5), lerp(F.b0, F.b1, 0.5))); F.css = ''; });
+
+        // ---------- the wound bed (painted once, at the incision) ----------
+        function paintBed() {
+          const c = bed; c.save(); path(c, [P0, P1, P3, P2]); c.clip();
+          const gr = c.createRadialGradient(M[0], M[1], 4, M[0], M[1], L);
+          gr.addColorStop(0, '#a5253b'); gr.addColorStop(0.5, '#6c1022'); gr.addColorStop(1, '#2a040b');
+          c.fillStyle = gr; c.fillRect(0, 0, W, H);
+          const n = [-u[1], u[0]];
+          c.lineWidth = 1.1;
+          for (let i = -16; i <= 16; i++) {              // muscle fibres running with the central limb
+            const o = add(M, mul(n, i * L * 0.065)), w = L * (0.7 + Math.random() * 0.5), a = add(o, mul(u, -w)), b = add(o, mul(u, w)), cc = add(o, mul(n, (Math.random() - 0.5) * 10));
+            c.strokeStyle = 'rgba(255,' + (110 + Math.random() * 60 | 0) + ',120,' + (0.08 + Math.random() * 0.12).toFixed(2) + ')';
+            c.beginPath(); c.moveTo(a[0], a[1]); c.quadraticCurveTo(cc[0], cc[1], b[0], b[1]); c.stroke();
+          }
+          for (let i = 0; i < 9; i++) {                  // a wet sheen
+            const p = add(M, [(Math.random() - 0.5) * L * 1.1, (Math.random() - 0.5) * L * 1.1]), r = 8 + Math.random() * 20;
+            const rg = c.createRadialGradient(p[0], p[1], 0, p[0], p[1], r); rg.addColorStop(0, 'rgba(255,235,235,0.28)'); rg.addColorStop(1, 'rgba(255,235,235,0)');
+            c.fillStyle = rg; c.fillRect(p[0] - r, p[1] - r, 2 * r, 2 * r);
+          }
+          for (let i = 0; i < 14; i++) {                 // bleeding points
+            const p = add(M, [(Math.random() - 0.5) * L, (Math.random() - 0.5) * L]);
+            c.fillStyle = 'rgba(190,10,30,0.85)'; c.beginPath(); c.arc(p[0], p[1], 1 + Math.random() * 2.2, 0, 7); c.fill();
+          }
+          c.lineWidth = 22; c.strokeStyle = 'rgba(35,0,6,0.5)'; path(c, [P0, P1, P3, P2]); c.stroke();   // blood pooled in the edges
+          c.restore();
+        }
+
+        // ---------- one flap, at a given fold (0 = flat … 1 = folded right back to its base) and tip position ----------
+        function drawFlap(F, fold, apex, cuts, stitches) {
+          const m = affine([F.b0, F.b1, F.tip], [F.b0, F.b1, apex]);
+          const L0 = lerp(F.tip, F.b0, fold), L1 = lerp(F.tip, F.b1, fold);         // the bend, in the flap's own (original) frame
+          const css = polyCss([F.b0, F.b1, L1, L0]) + '|' + m.map(x => x.toFixed(4)).join(',');
+          if (css !== F.css) { F.css = css; F.el.style.clipPath = polyCss([F.b0, F.b1, L1, L0]); F.el.style.transform = 'matrix(' + m.map(x => x.toFixed(5)).join(',') + ')'; }
+          const f0 = mapP(m, L0), f1 = mapP(m, L1);
+          // the cut edges of the part still lying down
+          if (cuts) {
+            top.lineCap = 'round';
+            [[F.b0, f0], [F.b1, f1]].forEach(([a, b]) => {
+              top.strokeStyle = 'rgba(200,40,60,0.35)'; top.lineWidth = 3.4; top.beginPath(); top.moveTo(a[0], a[1]); top.lineTo(b[0], b[1]); top.stroke();
+              top.strokeStyle = '#6a0614'; top.lineWidth = 1.3; top.beginPath(); top.moveTo(a[0], a[1]); top.lineTo(b[0], b[1]); top.stroke();
+            });
+          }
+          if (stitches > 0) {
+            [[F.b0, apex], [F.b1, apex]].forEach(([a, b]) => {
+              const d = sub(b, a), l = len(d), t = norm(d), n = [-t[1], t[0]], k = Math.floor(l / 19);
+              for (let i = 1; i < k; i++) {
+                if (i / k > stitches) break;
+                const p = add(a, mul(t, i * l / k));
+                top.strokeStyle = '#13235a'; top.lineWidth = 1.6; top.beginPath();
+                top.moveTo(p[0] - n[0] * 5 - t[0] * 1.5, p[1] - n[1] * 5 - t[1] * 1.5); top.lineTo(p[0] + n[0] * 5 + t[0] * 1.5, p[1] + n[1] * 5 + t[1] * 1.5); top.stroke();
+              }
+            });
+          }
+          if (fold < 0.004) return;
+          const tr = reflect(apex, f0, f1, 0.84), lifted = [tr, f0, f1];
+          // its shadow on the bed and the skin beyond
+          top.save(); path(top, lifted); top.shadowColor = 'rgba(25,0,6,0.6)'; top.shadowBlur = 16; top.shadowOffsetX = 3; top.shadowOffsetY = 8;
+          top.fillStyle = '#b3485a'; top.fill(); top.restore();
+          // its underside: dermis with the subdermal plexus, fat at the cut edges
+          top.save(); path(top, lifted); top.clip();
+          const xs = lifted.map(p => p[0]), ys = lifted.map(p => p[1]), bx = Math.min(...xs), by = Math.min(...ys), bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by;
+          if (img.complete && img.naturalWidth) { const s = Math.max(bw / 620, bh / 1100); top.drawImage(img, 60, 250, 620, 1100, bx, by, 620 * s, 1100 * s); }
+          else { top.fillStyle = '#c4566a'; top.fillRect(bx, by, bw, bh); }
+          const mid = lerp(f0, f1, 0.5), foot = add(mid, mul(norm(sub(tr, mid)), Math.max(1, Math.abs(cross(norm(sub(f1, f0)), sub(tr, f0))))));
+          const sh = top.createLinearGradient(mid[0], mid[1], foot[0], foot[1]);
+          sh.addColorStop(0, 'rgba(255,236,228,0.5)'); sh.addColorStop(0.07, 'rgba(255,236,228,0.12)'); sh.addColorStop(0.3, 'rgba(0,0,0,0)'); sh.addColorStop(1, 'rgba(40,0,10,0.32)');
+          top.fillStyle = sh; top.fillRect(bx, by, bw, bh);
+          top.restore();
+          // the free (cut) edges: a rim of yellow fat and the red dermis
+          top.lineJoin = 'round';
+          top.strokeStyle = '#e8bf4a'; top.lineWidth = 4; top.beginPath(); top.moveTo(f0[0], f0[1]); top.lineTo(tr[0], tr[1]); top.lineTo(f1[0], f1[1]); top.stroke();
+          top.strokeStyle = '#c4364c'; top.lineWidth = 1.4; top.stroke();
+        }
+
+        // ---------- blood ----------
+        const drops = [], splats = [];
+        function erupt() {
+          const cw = card.offsetWidth, ch = card.offsetHeight; keepClear = [W / 2 - cw / 2 + 14, H / 2 - ch / 2 + 14, W / 2 + cw / 2 - 14, H / 2 + ch / 2 - 14];
+          for (let i = 0; i < 30; i++) {
+            const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.8, s = 0.45 + Math.random() * 1.05;
+            drops.push({ x: M[0] + (Math.random() - 0.5) * 16, y: M[1] + (Math.random() - 0.5) * 16, vx: Math.cos(a) * s, vy: Math.sin(a) * s, r: 1.4 + Math.random() * 3.4, age: 0, land: 170 + Math.random() * 330 });
+          }
+        }
+        let keepClear = null;                       // the card's words stay readable: no blood lands on them
+        function splat(x, y, R) {
+          if (keepClear && x > keepClear[0] && x < keepClear[2] && y > keepClear[1] && y < keepClear[3]) return;
+          const lobes = [], dots = [];
+          for (let i = 0, n = 4 + (Math.random() * 4 | 0); i < n; i++) { const a = Math.random() * 7, d = R * (0.45 + Math.random() * 0.6); lobes.push([Math.cos(a) * d, Math.sin(a) * d, R * (0.28 + Math.random() * 0.4)]); }
+          for (let i = 0, n = 3 + (Math.random() * 5 | 0); i < n; i++) { const a = Math.random() * 7, d = R * (1.4 + Math.random() * 1.4); dots.push([Math.cos(a) * d, Math.sin(a) * d, 0.6 + Math.random() * 1.6]); }
+          splats.push({ x, y, R, lobes, dots, grow: 0, drip: R > 6 && Math.random() < 0.65 ? { l: 0, max: 30 + Math.random() * 130, v: 0.006 + Math.random() * 0.022, w: R * (0.3 + Math.random() * 0.15) } : null });
+        }
+        function drawBlood(dt) {
+          blood.clearRect(0, 0, W, H);
+          for (let i = drops.length - 1; i >= 0; i--) {
+            const d = drops[i]; d.age += dt; d.vy += 0.0015 * dt; d.x += d.vx * dt; d.y += d.vy * dt;
+            if (d.age > d.land) { drops.splice(i, 1); splat(d.x, d.y, d.r * (1.5 + Math.random() * 1.8)); continue; }
+            blood.save(); blood.translate(d.x, d.y); blood.rotate(Math.atan2(d.vy, d.vx));
+            blood.fillStyle = 'rgba(140,8,22,0.95)'; blood.beginPath(); blood.ellipse(0, 0, d.r * 2, d.r, 0, 0, 7); blood.fill(); blood.restore();
+          }
+          splats.forEach(s => {
+            s.grow = Math.min(1, s.grow + dt / 90); const R = s.R * (0.6 + 0.4 * s.grow);
+            blood.fillStyle = 'rgba(118,6,18,0.93)';
+            blood.beginPath(); blood.arc(s.x, s.y, R, 0, 7); blood.fill();
+            s.lobes.forEach(([dx, dy, r]) => { blood.beginPath(); blood.arc(s.x + dx * s.grow, s.y + dy * s.grow, r, 0, 7); blood.fill(); });
+            s.dots.forEach(([dx, dy, r]) => { blood.beginPath(); blood.arc(s.x + dx * s.grow, s.y + dy * s.grow, r, 0, 7); blood.fill(); });
+            if (s.drip && s.grow >= 1) {
+              const q = s.drip; q.l = Math.min(q.max, q.l + q.v * dt * (1 - q.l / (q.max + 20)) * 1.6);
+              const w = q.w, x = s.x, y = s.y;
+              blood.beginPath(); blood.moveTo(x - w, y); blood.quadraticCurveTo(x - w * 0.45, y + q.l * 0.6, x - w * 0.42, y + q.l);
+              blood.arc(x, y + q.l, w * 0.62, Math.PI, 0, true); blood.quadraticCurveTo(x + w * 0.45, y + q.l * 0.6, x + w, y); blood.closePath(); blood.fill();
+            }
+            blood.fillStyle = 'rgba(255,190,190,0.3)'; blood.beginPath(); blood.ellipse(s.x - R * 0.35, s.y - R * 0.38, R * 0.3, R * 0.18, -0.6, 0, 7); blood.fill();
+          });
+        }
+
+        // ---------- the marking ----------
+        const Zp = [P0, P1, P2, P3], Zl = [len(sub(P1, P0)), len(sub(P2, P1)), len(sub(P3, P2))], Zt = Zl[0] + Zl[1] + Zl[2];
+        function zPart(c, k) {
+          let left = Zt * k; c.beginPath(); c.moveTo(P0[0], P0[1]);
+          for (let i = 0; i < 3 && left > 0; i++) { const s = Math.min(1, left / Zl[i]); const p = lerp(Zp[i], Zp[i + 1], s); c.lineTo(p[0], p[1]); left -= Zl[i]; }
+          c.stroke();
+        }
+        const beads = [];
+        for (let i = 0; i < 3; i++) for (let s = 6; s < Zl[i]; s += 7 + Math.random() * 6) beads.push({ p: add(lerp(Zp[i], Zp[i + 1], s / Zl[i]), [(Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3]), at: 680 + ((Zl.slice(0, i).reduce((a, b) => a + b, 0) + s) / Zt) * 260 + Math.random() * 80, r: 0.9 + Math.random() * 2 });
+        function drawMarking(t) {
+          // the stroke as it was drawn, fading while the marker lays out the proper Z-plasty over it
+          const fadeRaw = 1 - seg(t, 0, 600);
+          if (fadeRaw > 0) {
+            top.strokeStyle = 'rgba(124,58,237,' + (0.45 * fadeRaw).toFixed(3) + ')'; top.lineWidth = 3; top.lineCap = 'round'; top.lineJoin = 'round';
+            top.beginPath(); z.raw.forEach((p, i) => i ? top.lineTo(p[0], p[1]) : top.moveTo(p[0], p[1])); top.stroke();
+          }
+          if (t < 1250) {
+            const a = t < 680 ? 1 : 1 - seg(t, 680, 1250), k = ease(seg(t, 80, 640));
+            top.strokeStyle = 'rgba(109,40,217,' + (0.92 * a).toFixed(3) + ')'; top.lineWidth = 3.2; top.lineCap = 'round'; top.lineJoin = 'round';
+            zPart(top, k);
+            // the two 60° corners
+            const la = seg(t, 420, 600) * (t < 680 ? 1 : 1 - seg(t, 680, 900));
+            if (la > 0) [[P1, P0, P2], [P2, P3, P1]].forEach(([c, a1, a2]) => {
+              const g1 = Math.atan2(a1[1] - c[1], a1[0] - c[0]), g2 = Math.atan2(a2[1] - c[1], a2[0] - c[0]);
+              let d = g2 - g1; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+              top.strokeStyle = 'rgba(109,40,217,' + (0.85 * la).toFixed(3) + ')'; top.lineWidth = 1.6;
+              top.beginPath(); top.arc(c[0], c[1], 20, g1, g1 + d, d < 0); top.stroke();
+              const bis = g1 + d / 2, tp = [c[0] + Math.cos(bis) * 36, c[1] + Math.sin(bis) * 36];
+              top.font = '700 12px Inter, system-ui, sans-serif'; top.textAlign = 'center'; top.textBaseline = 'middle';
+              top.fillStyle = 'rgba(109,40,217,' + la.toFixed(3) + ')'; top.fillText('60°', tp[0], tp[1]);
+            });
+          }
+          // blood welling up along the incision
+          const ba = 1 - seg(t, 950, 1500);
+          if (t > 650 && ba > 0) beads.forEach(b => { if (t < b.at) return; const k = seg(t, b.at, b.at + 160); top.fillStyle = 'rgba(150,6,22,' + (0.9 * ba).toFixed(3) + ')'; top.beginPath(); top.arc(b.p[0], b.p[1], b.r * k, 0, 7); top.fill(); });
+        }
+
+        // ---------- the timeline ----------
+        const FOLD = 0.74, fired = new Set(), once = (k, f) => { if (!fired.has(k)) { fired.add(k); try { f(); } catch (e) {} } };
+        let t0 = performance.now(), tb0 = 0, phase = 'A', last = t0, over = false, live = false;
+        const scar = () => [P1, P0, P3, P2];
+        function arc(F, k) { return add(lerp(F.tip, F.to, k), mul(F.out, Math.sin(Math.PI * k) * L * 0.22)); }
+        let manual = false;
+        function frame(now, step) {
+          if (over || (manual && !step)) return;
+          const dt = Math.min(48, now - last) / SLOW; last = now;
+          const t = (now - t0) / SLOW, tb = phase === 'B' ? (now - tb0) / SLOW : -1;
+          top.clearRect(0, 0, W, H);
+          if (phase === 'A') {
+            once('mark', () => { sfx('press'); hapt(HAPTIC.peek); });
+            if (t >= 650) once('cut', () => { skinA.style.visibility = 'visible'; skinB.style.visibility = 'visible'; paintBed(); sfx('scalpel'); hapt([12, 30, 12, 30, 18]); });
+            if (t >= 950) once('lift', () => { sfx('page'); });
+            if (t >= 1600) once('seed', () => {
+              seed.animate([{ transform: 'translate(-50%,-50%) scale(0)', opacity: 0 }, { offset: 0.6, opacity: 1 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }],
+                { duration: D(620), easing: 'cubic-bezier(0.3, 1.5, 0.5, 1)', fill: 'forwards' });
+              seed.animate([{ boxShadow: '0 0 0 2px rgba(255,234,0,0.5), 0 0 14px 4px rgba(255,200,0,0.35)' }, { boxShadow: '0 0 0 2px rgba(255,234,0,0.9), 0 0 34px 12px rgba(255,210,0,0.6)' }],
+                { duration: D(420), direction: 'alternate', iterations: 3, easing: 'ease-in-out' });
+            });
+            if (t >= 2300) once('erupt', () => {
+              root.insertBefore(seed, veil);       // out of the wound…
+              seed.animate([{ transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }, { transform: 'translate(-50%,-50%) scale(2.4)', opacity: 0 }], { duration: D(260), easing: 'ease-out', fill: 'forwards' });
+              const dx = M[0] - W / 2, dy = M[1] - H / 2;
+              card.animate([
+                { opacity: 0, transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(0.12) rotate(-14deg)' },
+                { offset: 0.55, opacity: 1, transform: 'translate(calc(-50% + ' + (dx * 0.15) + 'px), calc(-50% + ' + (dy * 0.15 - 30) + 'px)) scale(1.06) rotate(3deg)' },
+                { offset: 0.8, opacity: 1, transform: 'translate(-50%, -50%) scale(0.98) rotate(-1deg)' },
+                { opacity: 1, transform: 'translate(-50%, -50%) scale(1) rotate(0deg)' }],
+                { duration: D(820), easing: 'cubic-bezier(0.2, 0.8, 0.3, 1)', fill: 'forwards' });
+              card.querySelector('.zp-sign').animate([{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)' }], { duration: D(900), delay: D(650), easing: 'ease-in-out', fill: 'forwards' });
+              veil.animate([{ opacity: 0 }, { opacity: 1 }], { duration: D(600), fill: 'forwards' });
+              erupt(); sfx('flop'); sfx('finish'); hapt([30, 40, 60, 50, 24]);
+            });
+            if (t >= 3000) once('live', () => { live = true; root.classList.add('live'); });
+            drawMarking(t);
+            if (t >= 650) {
+              const breathe = t > 2200 ? 0.012 * Math.sin(t / 520) : 0;
+              // B underneath, A on top
+              [1, 0].forEach(i => drawFlap(flaps[i], (FOLD + breathe) * soft(seg(t, 950 + i * 170, 2050 + i * 170)), flaps[i].tip, true, 0));
+            }
+          } else {
+            if (tb >= 450) once('swing', () => { sfx('page'); hapt(HAPTIC.peek); });
+            if (tb >= 2250) once('inset', () => { sfx('land'); hapt(HAPTIC.land); });
+            if (tb >= 2900) once('stitched', () => { sfx('done'); });
+            if (tb >= 3800) once('end', () => {
+              over = true;
+              root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: D(700), easing: 'ease-in', fill: 'forwards' }).onfinish = () => root.remove();
+              setTimeout(() => root.remove(), D(700) + 400);     // in case the fade is held up (app in the background)
+            });
+            const stitches = seg(tb, 2300, 2950);
+            [1, 0].forEach(i => {
+              const F = flaps[i], k = ease(seg(tb, 450 + i * 110, 1450 + i * 110)), f = FOLD * (1 - ease(seg(tb, 1450 + i * 110, 2250 + i * 110)));
+              drawFlap(F, f, arc(F, k), true, stitches);
+            });
+            // the result, named for a moment
+            const la = seg(tb, 2700, 3000) * (1 - seg(tb, 3550, 3800));
+            if (la > 0) {
+              const ys = [P0, P1, P2, P3].map(p => p[1]), below = Math.max(...ys) + 28, y = below < H - 40 ? below : Math.min(...ys) - 22;
+              top.font = '700 13px Inter, system-ui, sans-serif'; top.textAlign = 'center'; top.textBaseline = 'middle';
+              top.lineWidth = 4; top.strokeStyle = 'rgba(4,14,34,' + (0.85 * la).toFixed(3) + ')'; top.strokeText('Z-plasty done · central limb +73%', M[0], y);
+              top.fillStyle = 'rgba(255,234,0,' + la.toFixed(3) + ')'; top.fillText('Z-plasty done · central limb +73%', M[0], y);
+            }
+          }
+          drawBlood(dt);
+          if (!step) requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+
+        // a tap closes the wound: the credits sink back into it and the flaps are transposed and sutured
         root.addEventListener('click', () => {
-          if (!root.classList.contains('live')) return;
-          root.classList.remove('live');
-          root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 380, easing: 'ease-in', fill: 'forwards' }).onfinish = () => root.remove();
-          buzz(6);
+          if (!live || phase !== 'A') return;
+          live = false; root.classList.remove('live');
+          phase = 'B'; tb0 = performance.now();
+          const dx = M[0] - W / 2, dy = M[1] - H / 2;
+          card.getAnimations().forEach(a => a.cancel());
+          card.animate([{ opacity: 1, transform: 'translate(-50%, -50%) scale(1)' }, { opacity: 0, transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(0.1) rotate(10deg)' }],
+            { duration: D(440), easing: 'cubic-bezier(0.5, 0, 0.8, 0.4)', fill: 'forwards' });
+          veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: D(500), fill: 'forwards' });
+          sfx('close'); buzz(8);
         });
+        window.__zRoot = root;
+        // for checking single moments: step the whole scene to a given time (A: from the stroke, B: from the tap)
+        let simNow = t0;
+        root.__step = (ms, tapAt) => {
+          manual = true;
+          const target = t0 + ms * SLOW;
+          for (; simNow < target; simNow += 16) {
+            if (tapAt != null && phase === 'A' && simNow >= t0 + tapAt * SLOW) { live = true; root.click(); tb0 = simNow; }
+            frame(simNow, true);
+          }
+        };
       }
       window.__zplasty = play;
     })();
