@@ -1195,6 +1195,7 @@
     .curl-end .ce-s { font-size: 0.72rem; letter-spacing: 0.32em; text-transform: uppercase; color: rgba(245, 196, 81, 0.65); }
     .curl-note { position: absolute; right: 22px; top: 30%; width: 64%; transform: scaleX(-1) rotate(-5deg); font-family: 'Caveat', cursive; font-size: 2rem; line-height: 1.12; color: rgba(255, 248, 230, 0.96); text-shadow: 0 1px 2px rgba(60, 0, 10, 0.75); text-align: center; }
     .curl-note small { display: block; margin-top: 8px; font-size: 1.35rem; color: #ffe46b; }
+    #flap-page .egg-contact { margin: 18px 0 6px; }
   </style>
 </head>
 <body oncontextmenu="return false;">
@@ -2337,7 +2338,7 @@
 
       if (isList) {
         renderListView(canvas, viewData, searchQuery, sortMode, subDropdownValue, searchMatchHtml);
-        addSearchNote(canvas, viewData.length); addEggCard(canvas, searchQuery); decorateGrid(canvas);
+        addSearchNote(canvas, viewData.length); addEggCard(canvas, searchQuery); if (window.flapEggs) flapEggs.maybeManuscript(searchQuery); decorateGrid(canvas);
         updateCompareButton();
         return;
       }
@@ -2388,7 +2389,7 @@
         card.appendChild(makeStarButton(flap.name, 'card-fav'));
         canvas.appendChild(card);
       });
-      addSearchNote(canvas, viewData.length); addEggCard(canvas, searchQuery); decorateGrid(canvas);
+      addSearchNote(canvas, viewData.length); addEggCard(canvas, searchQuery); if (window.flapEggs) flapEggs.maybeManuscript(searchQuery); decorateGrid(canvas);
       updateCompareButton();
     }
 
@@ -3239,7 +3240,7 @@
       const ws = document.querySelector('.workspace'), ind = document.getElementById('ptr');
       if (!ws || !ind) return;
       const svg = ind.querySelector('svg');
-      let y0 = null, pull = 0, busy = false;
+      let y0 = null, pull = 0, busy = false, lastDy = 0;
       const place = () => { ind.style.transform = 'translate(-50%, ' + (pull - 60) + 'px)'; ind.style.opacity = Math.min(1, pull / 45); };
       const reset = () => { pull = 0; ind.classList.remove('dragging', 'ready'); ind.style.transform = ''; ind.style.opacity = ''; svg.style.transform = ''; };
       ws.addEventListener('touchstart', e => {
@@ -3247,11 +3248,11 @@
         if (busy || ws.scrollTop > 0 || e.touches.length > 1) return;
         if (window.visualViewport && window.visualViewport.scale > 1.02) return;
         if (document.getElementById('system-page-view').style.display === 'block') return;
-        y0 = e.touches[0].clientY; pull = 0;
+        y0 = e.touches[0].clientY; pull = 0; lastDy = 0;
       }, { passive: true });
       ws.addEventListener('touchmove', e => {
         if (y0 === null) return;
-        const dy = e.touches[0].clientY - y0;
+        const dy = e.touches[0].clientY - y0; lastDy = dy;
         if (ws.scrollTop > 0 || dy < 0) { y0 = null; reset(); return; }
         pull = Math.min(120, dy * 0.5);
         ind.classList.add('dragging');
@@ -3264,6 +3265,7 @@
       ws.addEventListener('touchend', () => {
         if (y0 === null) return;
         y0 = null;
+        if (lastDy > 380 && window.flapEggs) { reset(); window.flapEggs.underSkin(); return; }   // far further than a refresh needs
         if (pull < 70) { reset(); return; }
         busy = true; sfx('scalpel');
         ind.classList.remove('dragging', 'ready'); ind.classList.add('spin');
@@ -3544,18 +3546,18 @@
       return '\n\n– ' + (nm || 'A Flapendium user') + (em ? ' (' + em + ', signed in to the app)' : '');
     }
     const SUPPORT_OPENING = 'Hello Dr Amanyu, I’m writing to you from Amanyu’s Flapendium –';
-    function openSupportBox(via) {
+    function openSupportBox(via, personal) {
       const wa = via === 'wa';
       openMessageBox({
-        kicker: 'Support', title: wa ? 'Message Amanyu on WhatsApp' : 'Email Amanyu', label: 'Your message',
+        kicker: personal ? 'Dr Amanyu' : 'Support', title: wa ? 'Message Amanyu on WhatsApp' : 'Email Amanyu', label: 'Your message',
         placeholder: 'Type your message – or leave it empty to write it in ' + (wa ? 'WhatsApp' : 'Gmail'),
         sendLabel: wa ? 'Send on WhatsApp' : 'Send with Gmail',
         openLabel: wa ? 'Open WhatsApp chat' : 'Open Gmail',
         emptyHint: wa ? 'Nothing typed – the button opens a blank chat with Amanyu.' : 'Nothing typed – the button opens a blank email to Amanyu.',
         go: q => {
-          const body = q ? SUPPORT_OPENING + '\n\n' + q + senderLine() : '';
+          const body = q ? (personal ? 'Hello Dr Amanyu,' : SUPPORT_OPENING) + '\n\n' + q + senderLine() : '';
           if (wa) openWhatsApp(body);
-          else openGmail('Amanyu’s Flapendium – support' + (formalName() ? ' (' + formalName() + ')' : ''), body);
+          else openGmail((personal ? 'Hello from a Flapendium reader' : 'Amanyu’s Flapendium – support') + (formalName() ? ' (' + formalName() + ')' : ''), body);
         }
       });
     }
@@ -3574,10 +3576,17 @@
     function refreshAskButton() {
       const btn = document.getElementById('fp-ask');
       if (!btn) return;
-      const on = !!(userProfile && userProfile.ask && flapPageName);
+      const egg = document.getElementById('flap-page').classList.contains('egg-page');
+      const on = !!(userProfile && userProfile.ask && flapPageName) && !egg;
       btn.style.display = on ? 'inline-flex' : 'none';
       const inner = document.getElementById('fp-inner'), old = inner && inner.querySelector('.ask-card');
       if (old) old.remove();
+      const oldE = inner && inner.querySelector('.egg-contact'); if (oldE) oldE.remove();
+      if (egg && inner) {      // the hidden page ends with the two ways to reach Amanyu (WhatsApp only for those allowed it)
+        const html = supportLinksHtml().replace(/openSupportBox\('(wa|mail)'\)/g, "openSupportBox('$1', true)");
+        if (html) inner.insertAdjacentHTML('beforeend', '<div class="egg-contact">' + html + '</div>');
+        return;
+      }
       if (!on) return;
       btn.removeAttribute('href');
       btn.onclick = e => { e.preventDefault(); openAskBox(); };
@@ -5314,13 +5323,16 @@
       ['Clinical Pearls', 'Every page, sound and animation here was built by hand. If you are reading this – say hello.']
     ];
     function prepareEgg() {
-      let e = datasetMaster.find(f => f.category === 'System' && /^dev(eloper)?(\s*[:\-–]|\s|$)/i.test(stripHTML(f.name).trim()));
+      // the column with "yes" in a row labelled "Hidden page" (any title); failing that, a column headed "Dev…"
+      const isMark = k => /^hidden(\s*page)?$/i.test(stripHTML(k).trim());
+      let e = datasetMaster.find(f => f.category === 'System' && Object.keys(f).some(k => isMark(k) && /^(yes|y|true|1|✓|✔|x|☑)$/i.test(stripHTML(String(f[k] == null ? '' : f[k])).trim())))
+        || datasetMaster.find(f => f.category === 'System' && /^dev(eloper)?(\s*[:\-–]|\s|$)/i.test(stripHTML(f.name).trim()));
       if (!e) { e = { name: 'Dev: Amanyu', category: 'System' }; EGG_DEFAULT.forEach(([k, v]) => { e[k] = v; }); datasetMaster.push(e); }
       else if (!e.__egg) {
         const keep = {}, order = [];
         Object.keys(e).forEach(k => {
           const label = stripHTML(k).trim(), v = String(e[k] == null ? '' : e[k]).trim();
-          if (k === 'name' || k === 'category' || !v || /support\s*e-?mail/i.test(label)) return;
+          if (k === 'name' || k === 'category' || !v || /support\s*e-?mail/i.test(label) || isMark(k)) return;
           if (label.toLowerCase() !== 'content') { if (!(label in keep)) order.push(label); keep[label] = v; return; }
           // "Heading: text" lines of the Content cell
           let cur = null;
@@ -5340,11 +5352,36 @@
       // marked as the hidden page (not listed among its fields, so it never shows as a section or in searches)
       Object.defineProperty(e, '__egg', { value: true, enumerable: false, configurable: true });
     }
+    // Is the search about who made the app? Read as intent, not fixed phrases: a question word together with any idea of
+    // making or owning ("who did this", "whose app is this", "who's your daddy"), a word for the maker ("developer",
+    // "creator", "made by …"), the hidden page's own title, or Amanyu – small spelling slips allowed. A bare "who", or
+    // a medical search, does not count.
+    const EGG_Q = ['who', 'whos', 'whose', 'whom', 'whoever'];
+    const EGG_MAKE = ['made', 'make', 'makes', 'making', 'maker', 'created', 'create', 'creates', 'creator', 'creation', 'built', 'build', 'builds', 'builder',
+      'developed', 'develop', 'develops', 'developer', 'designed', 'design', 'designer', 'wrote', 'write', 'writes', 'written', 'writer', 'coded', 'code', 'coder',
+      'programmed', 'programmer', 'did', 'do', 'does', 'done', 'behind', 'owns', 'own', 'owner', 'author', 'invented', 'inventor', 'founded', 'founder', 'father',
+      'dad', 'daddy', 'papa', 'mom', 'mum', 'mother', 'boss', 'brain', 'brains', 'mastermind', 'genius', 'responsible', 'thank', 'thanks', 'credit', 'credits',
+      'architect', 'engineer', 'dev', 'devs'];
+    const EGG_MAKER = ['creator', 'developer', 'maker', 'author', 'founder', 'designer', 'programmer', 'coder', 'builder', 'architect', 'inventor', 'mastermind', 'dev', 'devs', 'credits'];
+    const EGG_APP = ['app', 'this', 'you', 'it', 'flapendium', 'website', 'site', 'page', 'thing', 'atlas'];
+    function eggWord(w, list) {
+      if (list.includes(w)) return true;
+      if (w.length < 5) return false;
+      const m = w.length >= 9 ? 2 : 1;
+      return list.some(x => x.length >= 5 && Math.abs(x.length - w.length) <= m && editDistance(w, x, m) <= m);
+    }
     function eggFor(q) {
-      const s = String(q || '').toLowerCase().replace(/[^a-z ]+/g, ' ').replace(/\s+/g, ' ').trim();
-      const egg = datasetMaster.find(f => f.__egg); if (!egg || !s) return null;
-      const title = stripHTML(egg.name).toLowerCase().replace(/[^a-z ]+/g, ' ').replace(/\s+/g, ' ').trim();
-      if (s === title || /^(dr )?amanyu$|^(the )?dev(eloper)?( dr)?( amanyu)?$|^who (made|built|created|designed|developed) (this|you|it)( app)?$|^(creator|made by|built by)$/.test(s)) return egg;
+      const egg = datasetMaster.find(f => f.__egg); if (!egg) return null;
+      const clean = v => String(v || '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+      const s = clean(q); if (s.length < 3) return null;
+      if (s === clean(stripHTML(egg.name))) return egg;
+      const w = s.split(' ');
+      if (w.some(x => x === 'amanyu' || x === 'amanyus' || (x.length >= 5 && x.length <= 8 && editDistance(x, 'amanyu', 1) <= 1))) return egg;
+      const hasQ = w.some(x => EGG_Q.includes(x)), hasMake = w.some(x => eggWord(x, EGG_MAKE)), hasMaker = w.some(x => eggWord(x, EGG_MAKER)), hasApp = w.some(x => EGG_APP.includes(x));
+      if (hasQ && (hasMake || hasMaker || (hasApp && w.length <= 4))) return egg;     // who did this · whose app is this · who's your daddy
+      if (hasMaker && (w.length <= 4 || hasApp)) return egg;                             // developer · the creator · app author
+      if (/\b(made|built|created|developed|designed|written|coded|brought to you) by\b/.test(s)) return egg;
+      if (/\b(about|contact|meet|thank) (the )?(developer|creator|maker|author|dev|amanyu)\b/.test(s)) return egg;
       return null;
     }
     function addEggCard(canvas, q) {
@@ -5525,6 +5562,7 @@
         }, { passive: true });
         el.addEventListener('touchmove', e => {
           if (!pinch || pinch.inOv !== inOv) return;
+          if (window.__eggBusy) { pinch = null; return; }
           if (e.touches.length !== 2) return;
           const a = e.touches[0], b = e.touches[1], s = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / pinch.d0, now = performance.now();
           // on the cards only fingers moving together belong to the overview; spreading them is the browser's own zoom
@@ -5879,7 +5917,11 @@
         const SLOW = window.__zSlow || 1;
         const W = innerWidth, H = innerHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
         const tb = document.querySelector('.top-status-bar'), topY = tb ? Math.max(0, tb.getBoundingClientRect().bottom) : 0;
-        const g = plan(z, W, H, topY), { P0, P1, P2, P3, M, L, u } = g, AF = affine([P0, P1, P2], [g.Q[0], g.Q[1], g.Q[2]]);
+        // The rigid-flap geometry says how far the corners would move; in real skin the flaps and the nearby skin stretch
+        // and the measured gain is roughly half the geometric one (e.g. about 34% instead of 75% for 60° in cadaver skin),
+        // so the bases move only part of the way and the flaps themselves stretch a little to fit.
+        const LAM = 0.4, g = plan(z, W, H, topY), { P0, P1, P2, P3, M, L, u } = g;
+        const QB = g.Q.map((qq, i) => lerp([P0, P1, P2, P3][i], qq, LAM)), AF = affine([P0, P1, P2], [QB[0], QB[1], QB[2]]);
         const SA = Math.sqrt(3);
         const snap = rasterize(W, H, dpr);
         const under = new Image(); under.src = 'icons/flap-underside.jpg';
@@ -5922,7 +5964,7 @@
         const offScreen = ps => ps.every(p => p[0] < -2) || ps.every(p => p[0] > W + 2) || ps.every(p => p[1] > H + 2) || ps.every(p => p[1] < topY - 2);
 
         // ---------- the flaps: soft sheets, cut on two sides, attached at their bases ----------
-        function makeFlap(b0, b1, tip) {
+        function makeFlap(b0, b1, tip, to) {
           const e = norm(sub(b1, b0)), tipPar = dot(sub(tip, b0), e), foot = add(b0, mul(e, tipPar)), n = norm(sub(tip, foot)), Hh = len(sub(tip, foot));
           const NR = 11, NC = 6, V = [], Tt = [];
           const xs = [b0[0], b1[0], tip[0]], ys = [b0[1], b1[1], tip[1]], bx = Math.min(...xs), by = Math.min(...ys), bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by;
@@ -5932,13 +5974,15 @@
           }
           for (let i = 0; i < NR; i++) for (let j = 0; j < NC; j++) { const a = i * (NC + 1) + j, b = a + 1, cc = a + NC + 1, d = cc + 1; Tt.push([a, b, d], [a, d, cc]); }
           const side = Math.sign(cross(e, n)) || 1;
-          return { b0, b1, tip, tipPar, base: len(sub(b1, b0)), H: Hh, V, T: Tt, NR, NC, side };
+          return { b0, b1, tip, to, e, n, tipPar, base: len(sub(b1, b0)), H: Hh, V, T: Tt, NR, NC, side };
         }
-        const flaps = [makeFlap(P0, P2, P1), makeFlap(P3, P1, P2)];   // A: tip P1, base P0–P2;  B: tip P2, base P3–P1
+        const flaps = [makeFlap(P0, P2, P1, P3), makeFlap(P3, P1, P2, P0)];   // each flap's tip is carried to the far end of the other arm   // A: tip P1, base P0–P2;  B: tip P2, base P3–P1
         // the pose: its base where the stretched skin now holds it; raised from the tip towards the base by a soft roll
-        function poseFlap(F, q, ek, breathe) {
-          const B0 = T(q, F.b0), B1 = T(q, F.b1), E = norm(sub(B1, B0)), k = len(sub(B1, B0)) / F.base;
-          const N = F.side > 0 ? [-E[1], E[0]] : [E[1], -E[0]];
+        function poseFlap(F, q, ek, breathe, qt) {
+          // its base where the skin now holds it, its tip where the hook has carried it; the flap stretches between them
+          const B0 = T(q, F.b0), B1 = T(q, F.b1), TIP = lerp(F.tip, T(1, F.to), qt || 0);
+          const Mq = affine([F.b0, F.b1, F.tip], [B0, B1, TIP]);
+          const N = norm([Mq[0] * F.n[0] + Mq[2] * F.n[1], Mq[1] * F.n[0] + Mq[3] * F.n[1]]), E = norm(sub(B1, B0)), k = len(sub(B1, B0)) / F.base;
           const h0 = F.H * (1 - 0.74 * ek) + breathe, R = Math.max(3, F.H * 0.12 * Math.min(1, ek * 2.5 + 0.2));
           for (const vx of F.V) {
             let al = vx.perp, zz = 0, th = 0;
@@ -5948,10 +5992,10 @@
               if (s < arc) { th = s / R; al = h0 + R * Math.sin(th); zz = R * (1 - Math.cos(th)); }
               else { th = Math.PI; al = h0 - (s - arc); zz = 2 * R + (s - arc) * 0.06; }
             }
-            const p = add(add(B0, mul(E, vx.par * k)), mul(N, al * k)), f = 1 + zz / 1500;
+            const p = mapP(Mq, add(add(F.b0, mul(F.e, vx.par)), mul(F.n, al))), f = 1 + zz / 1500;
             vx.x = M[0] + (p[0] - M[0]) * f; vx.y = M[1] + (p[1] - M[1]) * f - zz * 0.05; vx.z = zz; vx.th = th;
           }
-          F.N = N; F.B0 = B0; F.B1 = B1; F.h0 = h0; F.k = k; F.E = E;
+          F.N = N; F.B0 = B0; F.B1 = B1; F.TIP = TIP; F.h0 = h0; F.k = k; F.E = E;
         }
         function drawFlap(F) {
           const up = F.V.filter(p => p.z > 0.4);
@@ -5964,7 +6008,7 @@
             c.restore();
           }
           // the part still lying flat moves as one piece (one drawing instead of many small ones)
-          const tipNow0 = add(add(F.B0, mul(F.E, F.tipPar * F.k)), mul(F.N, F.H * F.k)), fr0 = Math.min(1, F.h0 / F.H);
+          const tipNow0 = F.TIP, fr0 = Math.min(1, F.h0 / F.H);
           const flatPoly = fr0 >= 0.999 ? [F.B0, F.B1, tipNow0] : [F.B0, F.B1, lerp(F.B1, tipNow0, fr0), lerp(F.B0, tipNow0, fr0)];
           texPoly(c, snap, dpr, [F.b0, F.b1, F.tip], [F.B0, F.B1, tipNow0], flatPoly);
           const W1 = F.NC + 1, quads = [];
@@ -5997,13 +6041,25 @@
           // where the flap still lies, its cut edges are a fine wound edge
           if (F.h0 < F.H - 0.5) {
             const fr = F.h0 / F.H;
-            const tipNow = add(add(F.B0, mul(F.E, F.tipPar * F.k)), mul(F.N, F.H * F.k));
+            const tipNow = F.TIP;
             [F.B0, F.B1].forEach(B => {
               const e2 = lerp(B, tipNow, fr);
               c.strokeStyle = 'rgba(205,50,70,0.35)'; c.lineWidth = 3; c.beginPath(); c.moveTo(B[0], B[1]); c.lineTo(e2[0], e2[1]); c.stroke();
               c.strokeStyle = '#5e0612'; c.lineWidth = 1.2; c.stroke();
             });
           }
+        }
+        function drawHook(p, d) {
+          const n = [-d[1], d[0]], a = add(p, mul(d, 12)), b = add(p, mul(d, 320));
+          c.save(); c.lineCap = 'round';
+          c.strokeStyle = 'rgba(10,0,4,0.25)'; c.lineWidth = 5; c.beginPath(); c.moveTo(a[0] + 4, a[1] + 7); c.lineTo(b[0] + 4, b[1] + 7); c.stroke();
+          c.strokeStyle = '#4b5563'; c.lineWidth = 4.6; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke();
+          const gr = c.createLinearGradient(a[0] - n[0] * 2, a[1] - n[1] * 2, a[0] + n[0] * 2, a[1] + n[1] * 2); gr.addColorStop(0, '#f1f5f9'); gr.addColorStop(1, '#94a3b8');
+          c.strokeStyle = gr; c.lineWidth = 3; c.stroke();
+          // the hook itself, curling down into the flap tip
+          c.strokeStyle = '#cbd5e1'; c.lineWidth = 2; c.beginPath(); c.moveTo(a[0], a[1]); c.quadraticCurveTo(p[0] + n[0] * 9 + d[0] * 4, p[1] + n[1] * 9 + d[1] * 4, p[0] + n[0] * 2, p[1] + n[1] * 2); c.stroke();
+          c.fillStyle = '#e2e8f0'; c.beginPath(); c.arc(p[0] + n[0] * 2, p[1] + n[1] * 2, 1.2, 0, 7); c.fill();
+          c.restore();
         }
         function convexHull(P) {
           const p = P.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
@@ -6085,9 +6141,9 @@
           if ('letterSpacing' in x) x.letterSpacing = '0px';
           if (sig > 0) { x.save(); x.beginPath(); x.rect(0, 166, 30 + (CW - 60) * sig + 30, 60); x.clip(); x.font = '600 46px Caveat, cursive'; x.fillStyle = '#ffea00'; x.shadowColor = 'rgba(255,234,0,0.55)'; x.shadowBlur = 16; x.fillText('Dr Amanyu', CW / 2, 212); x.restore(); }
           x.font = '400 12.5px Inter, system-ui, sans-serif'; x.fillStyle = '#c8d3e6';
-          x.fillText('You just performed a Z-plasty.', CW / 2, 250); x.fillText('Congratulations – very few people', CW / 2, 274); x.fillText('ever find this place.', CW / 2, 292);
+          x.fillText('You have raised the flaps of a Z-plasty.', CW / 2, 250); x.fillText('Very few people ever stumble', CW / 2, 274); x.fillText('upon this easter egg.', CW / 2, 292);
           x.font = '600 10.5px Inter, system-ui, sans-serif'; x.fillStyle = '#7f92b3'; if ('letterSpacing' in x) x.letterSpacing = '1.5px';
-          x.fillText('TAP TO CLOSE THE WOUND', CW / 2, 322); if ('letterSpacing' in x) x.letterSpacing = '0px';
+          x.fillText('TAP TO TRANSPOSE & CLOSE', CW / 2, 322); if ('letterSpacing' in x) x.letterSpacing = '0px';
           sigDrawn = sig;
         }
         { // the blood it is coated in as it comes out: thick below, running in streaks
@@ -6233,13 +6289,17 @@
           if (t < 1100) {
             const a = t < 680 ? 1 : 1 - seg(t, 680, 1100);
             c.strokeStyle = 'rgba(109,40,217,' + (0.92 * a).toFixed(3) + ')'; c.lineWidth = 3.2; c.lineCap = 'round'; c.lineJoin = 'round'; zPart(ease(seg(t, 80, 640)));
-            const la = seg(t, 420, 600) * (t < 680 ? 1 : 1 - seg(t, 680, 900));
+          }
+          {
+            const la = seg(t, 380, 560) * (1 - seg(t, 1150, 1450));
             if (la > 0) [[P1, P0, P2], [P2, P3, P1]].forEach(([cc, a1, a2]) => {
               const g1 = Math.atan2(a1[1] - cc[1], a1[0] - cc[0]), g2 = Math.atan2(a2[1] - cc[1], a2[0] - cc[0]);
               let d = g2 - g1; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
               c.strokeStyle = 'rgba(109,40,217,' + (0.85 * la).toFixed(3) + ')'; c.lineWidth = 1.6; c.beginPath(); c.arc(cc[0], cc[1], 20, g1, g1 + d, d < 0); c.stroke();
-              const bis = g1 + d / 2; c.font = '700 12px Inter, system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
-              c.fillStyle = 'rgba(109,40,217,' + la.toFixed(3) + ')'; c.fillText(g.deg + '°', cc[0] + Math.cos(bis) * 36, cc[1] + Math.sin(bis) * 36);
+              const bis = g1 + d / 2, lx = cc[0] + Math.cos(bis) * 38, ly = cc[1] + Math.sin(bis) * 38;
+              c.font = '800 14px Inter, system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+              c.lineWidth = 4.5; c.strokeStyle = 'rgba(255,255,255,' + (0.92 * la).toFixed(3) + ')'; c.strokeText(g.deg + '°', lx, ly);
+              c.fillStyle = 'rgba(91,33,182,' + la.toFixed(3) + ')'; c.fillText(g.deg + '°', lx, ly);
             });
           }
           if (t > 650 && t < 1100) { c.strokeStyle = 'rgba(96,6,20,' + (seg(t, 650, 760) * (1 - seg(t, 950, 1100))).toFixed(3) + ')'; c.lineWidth = 1.6; zPart(1); }
@@ -6271,14 +6331,16 @@
           const t = (now - t0) / SLOW, tB = phase === 'B' ? (now - tb0) / SLOW : -1;
           c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
           c.save(); c.beginPath(); c.rect(0, topY, W, H - topY); c.clip();
-          let q = 0, eA = 0, eB = 0, pool = 0, breathe = 0, cut = t >= 650;
+          let q = 0, eA = 0, eB = 0, pool = 0, breathe = 0, qtA = 0, qtB = 0, cut = t >= 650;
           if (phase === 'A') {
             eA = soft(seg(t, 950, 2050)); eB = soft(seg(t, 1120, 2220));
             pool = seg(t, 1500, 2700); breathe = t > 2300 ? Math.sin(t / 560) * 1.6 : 0;
           } else {
-            q = ease(seg(tB, 1050, 2500));
-            eA = 1 - soft(seg(tB, 2350, 3350)); eB = 1 - soft(seg(tB, 2520, 3520));
-            pool = 1 - seg(tB, 2300, 3300);
+            q = ease(seg(tB, 1100, 2840));
+            const sA = seg(tB, 1100, 2700), sB = seg(tB, 1240, 2840);
+            qtA = ease(sA); qtB = ease(sB);
+            eA = 1 - smooth(clamp01((sA - 0.08) / 0.84)); eB = 1 - smooth(clamp01((sB - 0.08) / 0.84));
+            pool = 1 - seg(tB, 2200, 2900);
           }
           // the skin: as it is, then stretched by the Z-plasty
           const sa = seg(t, 380, 640);
@@ -6324,8 +6386,15 @@
           }
           // the flaps (B beneath, A above)
           if (cut) {
-            poseFlap(flaps[1], q, eB, breathe); poseFlap(flaps[0], q, eA, breathe);
+            poseFlap(flaps[1], q, eB, breathe, qtB); poseFlap(flaps[0], q, eA, breathe, qtA);
             drawFlap(flaps[1]); drawFlap(flaps[0]);
+            // two skin hooks pick up the flap tips and carry them across
+            if (phase === 'B' && tB > 850 && tB < 3000) flaps.forEach((F, i) => {
+              const tp = F.V[F.NR * (F.NC + 1)], at = [tp.x, tp.y];
+              const inn = smooth(seg(tB, 850, 1100)), out = smooth(seg(tB, 2720 + i * 140, 2980 + i * 140));
+              let d = norm(sub(at, M)); d = rot(d, i ? -0.55 : 0.55);
+              drawHook(add(at, mul(d, (1 - inn + out) * 280)), d);
+            });
           }
           drawMarking(phase === 'A' ? t : 9999);
           if (phase === 'A') {
@@ -6358,11 +6427,11 @@
               drawCard(Math.min(1, k * 4));
             }
             if (tB >= 640) once('sink', () => { ripples.push({ t, q: 0 }); hapt(16); });
-            if (tB >= 1050) once('swing', () => { sfx('page'); hapt(HAPTIC.peek); });
-            if (tB >= 3350) once('inset', () => { sfx('land'); hapt(HAPTIC.land); });
-            if (tB >= 4100) once('stitched', () => sfx('done'));
+            if (tB >= 1100) once('swing', () => { sfx('page'); hapt(HAPTIC.peek); });
+            if (tB >= 2860) once('inset', () => { sfx('land'); hapt(HAPTIC.land); });
+            if (tB >= 3650) once('stitched', () => sfx('done'));
             // the new Z: sutures
-            const st = seg(tB, 3500, 4100);
+            const st = seg(tB, 3000, 3650);
             if (st > 0) {
               const zs = [T(1, P1), T(1, P0), T(1, P3), T(1, P2)];
               c.lineCap = 'round';
@@ -6376,7 +6445,7 @@
                 }
               }
             }
-            if (tB >= 4800) once('end', () => {
+            if (tB >= 4300) once('end', () => {
               over = true;
               root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 800 * SLOW, easing: 'ease-in', fill: 'forwards' }).onfinish = () => root.remove();
               setTimeout(() => root.remove(), 800 * SLOW + 500);
@@ -6404,6 +6473,854 @@
         };
       }
       window.__zplasty = play;
+      window.__rasterize = rasterize;
+    })();
+
+    // ===================== five more hidden things (Nov 2026) =====================
+    window.flapEggs = (function () {
+      const rnd = (a, b) => a + Math.random() * (b - a);
+      const clamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x, seg = (t, a, b) => clamp01((t - a) / (b - a));
+      const ease = k => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, smooth = k => k * k * (3 - 2 * k);
+      const topOf = () => { const tb = document.querySelector('.top-status-bar'); return tb ? Math.max(0, tb.getBoundingClientRect().bottom) : 0; };
+      const busy = () => !!(document.querySelector('.egg-layer') || document.getElementById('zp'));
+      const home = () => !document.getElementById('flap-page').classList.contains('open') && !document.body.classList.contains('sys-page') &&
+        !(window.flapOverview && flapOverview.isOpen()) && !document.querySelector('.sidebar.open') && !document.getElementById('matrix-dock').classList.contains('open') &&
+        document.getElementById('app-shell').style.display !== 'none' && !busy();
+      function layer(z) { const d = document.createElement('div'); d.className = 'egg-layer'; d.style.cssText = 'position:fixed;inset:0;z-index:' + (z || 2960) + ';'; document.body.appendChild(d); return d; }
+      function canvas(W, H) {
+        const dpr = Math.min(2, window.devicePixelRatio || 1), cv = document.createElement('canvas');
+        cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.cssText = 'position:absolute;left:0;top:0;width:' + W + 'px;height:' + H + 'px;';
+        const x = cv.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); return [cv, x, dpr];
+      }
+      function run(step) { const t0 = performance.now(); let alive = true; (function f(now) { if (!alive) return; if (step(now - t0) === false) { alive = false; return; } requestAnimationFrame(f); })(t0); return () => { alive = false; }; }
+      function fadeOut(el, ms, done) { el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms, easing: 'ease-in', fill: 'forwards' }).onfinish = () => { el.remove(); if (done) done(); }; setTimeout(() => el.remove(), ms + 400); }
+      window.__eggBusy = false;
+
+      // ---------- 1. ICG angiography: hold the banner of a flap page ----------
+      // The page turns into near-infrared fluorescence imaging: the dye arrives from a pedicle, runs up a branching
+      // vascular tree, then blushes through the tissue in time with the heartbeat.
+      function icg() {
+        if (busy() || !window.__rasterize || !document.getElementById('flap-page').classList.contains('open')) return;
+        window.__eggBusy = true;
+        const W = innerWidth, H = innerHeight, topY = topOf(), snap = window.__rasterize(W, H, 1);
+        const lum = document.createElement('canvas'); lum.width = snap.width; lum.height = snap.height;
+        const lx = lum.getContext('2d'); lx.drawImage(snap, 0, 0);
+        const id = lx.getImageData(0, 0, lum.width, lum.height), px = id.data;
+        for (let i = 0; i < px.length; i += 4) { const v = Math.pow((px[i] * 0.3 + px[i + 1] * 0.59 + px[i + 2] * 0.11) / 255, 1.5) * 255; px[i] = px[i + 1] = px[i + 2] = v; }
+        lx.putImageData(id, 0, 0);
+        const root = layer(2960), [cv, c, dpr] = canvas(W, H); root.appendChild(cv); root.style.cursor = 'pointer';
+        const mk = document.createElement('canvas'); mk.width = Math.ceil(W / 2); mk.height = Math.ceil(H / 2); const m = mk.getContext('2d'); m.scale(0.5, 0.5);
+        const tmp = document.createElement('canvas'); tmp.width = cv.width; tmp.height = cv.height; const tc = tmp.getContext('2d');
+        // the vascular tree, from a pedicle at the lower edge
+        const segs = [], SP = 0.62;
+        (function branch(p, ang, l, w, d, t0) {
+          const e = [p[0] + Math.cos(ang) * l, p[1] + Math.sin(ang) * l], t1 = t0 + l / SP;
+          const cpt = [(p[0] + e[0]) / 2 - Math.sin(ang) * l * rnd(-0.18, 0.18), (p[1] + e[1]) / 2 + Math.cos(ang) * l * rnd(-0.18, 0.18)];   // vessels curve a little
+          segs.push({ a: p, b: e, cp: cpt, w, t0, t1, d });
+          if (d >= 7 || e[1] < topY - 40) return;
+          const n = d < 2 ? 2 : (Math.random() < 0.75 ? 2 : 3);
+          for (let i = 0; i < n; i++) branch(e, ang + (n === 2 ? (i ? 1 : -1) : i - 1) * rnd(0.32, 0.62) + rnd(-0.12, 0.12), l * rnd(0.68, 0.84), Math.max(0.6, w * 0.68), d + 1, t1);
+        })([W * rnd(0.3, 0.7), H + 6], -Math.PI / 2 + rnd(-0.15, 0.15), (H - topY) * 0.26, 7, 0, 300);
+        let end = false;
+        const finish = () => { if (end) return; end = true; stop(); fadeOut(root, 500, () => { window.__eggBusy = false; }); hapt(10); };
+        root.addEventListener('click', finish);
+        sfx('peek'); hapt(HAPTIC.peek);
+        let beat = 0;
+        const stop = run(t => {
+          if (t > 8200) { finish(); return false; }
+          const pulse = Math.exp(-(((t + 200) % 860) / 140));
+          if (Math.floor((t + 200) / 860) !== beat) { beat = Math.floor((t + 200) / 860); if (t > 400) hapt([14, 70, 8]); }
+          m.globalCompositeOperation = 'source-over'; m.fillStyle = '#000'; m.fillRect(0, 0, W, H);
+          m.lineCap = 'round'; m.strokeStyle = '#fff';
+          for (const s of segs) {
+            if (t < s.t0) continue;
+            const k = clamp01((t - s.t0) / (s.t1 - s.t0)), q1 = [s.a[0] + (s.cp[0] - s.a[0]) * k, s.a[1] + (s.cp[1] - s.a[1]) * k], q2 = [s.cp[0] + (s.b[0] - s.cp[0]) * k, s.cp[1] + (s.b[1] - s.cp[1]) * k];
+            const e = [q1[0] + (q2[0] - q1[0]) * k, q1[1] + (q2[1] - q1[1]) * k];
+            m.lineWidth = s.w * (1 + 0.25 * pulse); m.globalAlpha = 0.95; m.beginPath(); m.moveTo(s.a[0], s.a[1]); m.quadraticCurveTo(q1[0], q1[1], e[0], e[1]); m.stroke();
+            if (k >= 1 && s.d >= 3) {        // the capillary blush spreading from the small vessels
+              const r = Math.min(90, (t - s.t1) * 0.05);
+              if (r > 1) { const g = m.createRadialGradient(s.b[0], s.b[1], 0, s.b[0], s.b[1], r); g.addColorStop(0, 'rgba(255,255,255,0.5)'); g.addColorStop(1, 'rgba(255,255,255,0)'); m.globalAlpha = 1; m.fillStyle = g; m.fillRect(s.b[0] - r, s.b[1] - r, 2 * r, 2 * r); }
+            }
+          }
+          m.globalAlpha = 1;
+          const wash = seg(t, 4300, 6200) * 0.55; if (wash > 0) { m.fillStyle = 'rgba(255,255,255,' + wash.toFixed(3) + ')'; m.fillRect(0, 0, W, H); }
+          // the picture: black where no dye, the tissue glowing where it has arrived, ink still dark
+          c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1; c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+          c.globalAlpha = 0.07; c.drawImage(lum, 0, 0, W, H); c.globalAlpha = 1;
+          tc.setTransform(1, 0, 0, 1, 0, 0); tc.globalCompositeOperation = 'source-over'; tc.drawImage(lum, 0, 0, tmp.width, tmp.height);
+          tc.globalCompositeOperation = 'multiply'; tc.drawImage(mk, 0, 0, tmp.width, tmp.height);
+          c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.82 + 0.18 * pulse; c.drawImage(tmp, 0, 0);
+          c.globalAlpha = 0.2; c.drawImage(mk, 0, 0, tmp.width, tmp.height);
+          c.globalAlpha = 1; c.globalCompositeOperation = 'multiply'; c.fillStyle = '#d4ffe2'; c.fillRect(0, 0, tmp.width, tmp.height);
+          c.globalCompositeOperation = 'source-over'; c.setTransform(dpr, 0, 0, dpr, 0, 0);
+          // the camera's read-out
+          c.font = '600 11px ui-monospace, Menlo, Consolas, monospace'; c.textBaseline = 'top'; c.textAlign = 'left'; c.fillStyle = 'rgba(214,255,226,0.85)';
+          const secs = Math.floor(t / 1000);
+          c.fillText('NIR FLUORESCENCE · ICG', 12, topY + 12); c.fillText('00:' + String(secs).padStart(2, '0') + '  ' + (t < 1500 ? 'INJECTED' : t < 4300 ? 'ARTERIAL' : 'PERFUSION'), 12, topY + 28);
+          c.textAlign = 'right'; c.fillText('♥ ' + (68 + Math.round(4 * Math.sin(t / 2100))) + ' bpm', W - 12, topY + 12);
+          c.textAlign = 'left'; c.globalAlpha = 0.6; c.fillText('tap to close', 12, H - 26); c.globalAlpha = 1;
+          c.save(); c.globalCompositeOperation = 'destination-in'; c.fillStyle = '#000'; c.fillRect(0, topY, W, H - topY); c.restore();
+          root.style.opacity = String(Math.min(1, t / 260));
+        });
+      }
+      (function () {   // press and hold the banner for a moment
+        let timer = 0, sx = 0, sy = 0;
+        document.addEventListener('pointerdown', e => {
+          const h = e.target.closest && e.target.closest('#fp-hero');
+          if (!h || e.target.closest('input, button, a')) return;
+          sx = e.clientX; sy = e.clientY; clearTimeout(timer); timer = setTimeout(icg, 1300);
+        });
+        document.addEventListener('pointermove', e => { if (timer && Math.hypot(e.clientX - sx, e.clientY - sy) > 10) { clearTimeout(timer); timer = 0; } });
+        ['pointerup', 'pointercancel'].forEach(k => document.addEventListener(k, () => { clearTimeout(timer); timer = 0; }));
+      })();
+
+      // ---------- 2. Lights out: two fingers resting still on the home screen ----------
+      // The theatre lights go off; a surgical headlight follows the fingers and the monitor beeps in the corner.
+      (function () {
+        let hold = null, lit = null;
+        const mid = ts => { let x = 0, y = 0; for (const t of ts) { x += t.clientX; y += t.clientY; } return [x / ts.length, y / ts.length]; };
+        document.addEventListener('touchstart', e => {
+          if (lit) return;
+          if (e.touches.length === 2 && home() && !(window.visualViewport && visualViewport.scale > 1.02)) {
+            const p = [...e.touches].map(t => [t.clientX, t.clientY]);
+            clearTimeout(hold && hold.timer);
+            hold = { p, timer: setTimeout(() => { if (hold) { const at = mid(e.touches.length ? e.touches : [{ clientX: (p[0][0] + p[1][0]) / 2, clientY: (p[0][1] + p[1][1]) / 2 }]); hold = null; lightsOff(at); } }, 950) };
+          } else if (hold) { clearTimeout(hold.timer); hold = null; }
+        }, { passive: true });
+        // while the lights are off, the fingers steer the headlight and nothing scrolls or zooms
+        const steer = e => { if (!lit) return; if (e.cancelable) e.preventDefault(); if (e.touches.length) lit.move(mid(e.touches)); };
+        document.addEventListener('touchmove', e => {
+          if (lit || !hold) return;
+          const moved = [...e.touches].some((t, i) => hold.p[i] && Math.hypot(t.clientX - hold.p[i][0], t.clientY - hold.p[i][1]) > 12);
+          if (moved || e.touches.length !== 2) { clearTimeout(hold.timer); hold = null; }
+        }, { passive: true });
+        const up = e => { if (hold) { clearTimeout(hold.timer); hold = null; } if (lit && e.touches.length === 0) lit.off(); };
+        document.addEventListener('touchend', up, { passive: true }); document.addEventListener('touchcancel', up, { passive: true });
+        function lightsOff(at) {
+          if (busy()) return;
+          window.__eggBusy = true;
+          const root = layer(2960); root.style.pointerEvents = 'none';
+          root.style.background = 'radial-gradient(circle at var(--x) var(--y), rgba(255,236,190,0.10) 0, rgba(255,236,190,0.05) 62px, rgba(4,6,12,0.55) 112px, rgba(2,3,8,0.94) 185px)';
+          const W = innerWidth, H = innerHeight;
+          const mon = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1); mon.width = 180 * dpr; mon.height = 54 * dpr;
+          mon.style.cssText = 'position:absolute;left:12px;bottom:calc(16px + env(safe-area-inset-bottom));width:180px;height:54px;border-radius:8px;background:rgba(0,12,6,0.85);box-shadow:0 0 0 1px rgba(80,255,150,0.25);';
+          root.appendChild(mon); const mc = mon.getContext('2d'); mc.scale(dpr, dpr);
+          let pos = at, tx = at; const set = () => { root.style.setProperty('--x', pos[0] + 'px'); root.style.setProperty('--y', pos[1] + 'px'); }; set();
+          root.animate([{ opacity: 0 }, { opacity: 1, offset: 0.25 }, { opacity: 0.6, offset: 0.4 }, { opacity: 1 }], { duration: 420, fill: 'forwards' });
+          sfx('close'); hapt([30, 40, 16]);
+          const trace = [];
+          let beatAt = 0, alive = true;
+          const stop = run(t => {
+            if (!alive) return false;
+            pos = [pos[0] + (tx[0] - pos[0]) * 0.35, pos[1] + (tx[1] - pos[1]) * 0.35]; set();
+            // the monitor: a scrolling ECG with a beep on every beat
+            const ph = t % 860;
+            if (t - beatAt > 860 && ph < 40) { beatAt = t; sfx('tick'); hapt(8); }
+            const y = ph < 60 ? 0 : ph < 80 ? -4 : ph < 92 ? 18 : ph < 104 ? -22 : ph < 118 ? 6 : ph > 320 && ph < 420 ? -5 * Math.sin((ph - 320) / 100 * Math.PI) : 0;
+            trace.push(y); if (trace.length > 150) trace.shift();
+            mc.clearRect(0, 0, 180, 54); mc.strokeStyle = '#4dff9a'; mc.lineWidth = 1.6; mc.shadowColor = '#4dff9a'; mc.shadowBlur = 6; mc.beginPath();
+            trace.forEach((v, i) => { const x = 8 + i * 0.75, yy = 30 + v; i ? mc.lineTo(x, yy) : mc.moveTo(x, yy); }); mc.stroke(); mc.shadowBlur = 0;
+            mc.fillStyle = '#4dff9a'; mc.font = '700 12px ui-monospace, Menlo, Consolas, monospace'; mc.textAlign = 'right'; mc.fillText('♥ 72', 172, 16);
+            mc.font = '600 9px ui-monospace, Menlo, Consolas, monospace'; mc.textAlign = 'left'; mc.fillStyle = 'rgba(77,255,154,0.6)'; mc.fillText('SpO₂ 99%', 8, 14);
+          });
+          document.addEventListener('touchmove', steer, { passive: false });
+          lit = {
+            move: p => { tx = p; },
+            off: () => { alive = false; stop(); lit = null; document.removeEventListener('touchmove', steer, { passive: false }); sfx('open'); hapt(12); fadeOut(root, 380, () => { window.__eggBusy = false; }); }
+          };
+        }
+        window.__lightsOff = lightsOff;
+      })();
+
+      // ---------- 3. Sushruta's manuscript: search for him ----------
+      let lastScroll = '';
+      function manuscript() {
+        if (busy()) return;
+        window.__eggBusy = true;
+        const W = Math.min(380, innerWidth - 24);
+        const root = layer(2960); root.style.cssText += ';display:flex;align-items:center;justify-content:center;cursor:pointer;background:radial-gradient(circle at 50% 42%, rgba(60,30,6,0.55), rgba(6,3,1,0.88) 75%);opacity:0;';
+        const stack = document.createElement('div'); stack.style.cssText = 'position:relative;width:' + W + 'px;display:flex;flex-direction:column;gap:9px;';
+        root.appendChild(stack);
+        const cords = document.createElement('div');
+        cords.style.cssText = 'position:absolute;top:-30px;bottom:-30px;left:0;right:0;pointer-events:none;background:linear-gradient(90deg, transparent calc(7% - 1px), #5a3a1a calc(7% - 1px), #5a3a1a calc(7% + 1px), transparent calc(7% + 1px), transparent calc(93% - 1px), #5a3a1a calc(93% - 1px), #5a3a1a calc(93% + 1px), transparent calc(93% + 1px));opacity:0;';
+        stack.appendChild(cords);
+        const leafCss = 'position:relative;min-height:54px;padding:10px 40px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;text-align:center;border-radius:30px/10px;' +
+          'background:repeating-linear-gradient(0deg, rgba(120,80,30,0.08) 0 2px, transparent 2px 5px), linear-gradient(180deg, #e9cf98, #d8b46e 60%, #c79c55);' +
+          'box-shadow:0 6px 16px rgba(0,0,0,0.45), inset 0 0 18px rgba(120,70,20,0.35);color:#3a2310;transform-origin:50% 50%;transform:scaleX(0);';
+        const holes = '<i style="position:absolute;left:7%;top:50%;width:7px;height:7px;margin:-3.5px;border-radius:50%;background:#4a2c10;box-shadow:inset 0 1px 2px #000"></i><i style="position:absolute;left:93%;top:50%;width:7px;height:7px;margin:-3.5px;border-radius:50%;background:#4a2c10;box-shadow:inset 0 1px 2px #000"></i>';
+        const ink = (html, css) => '<span class="mx-ink" style="position:relative;z-index:1;display:inline-block;clip-path:inset(0 100% 0 0);' + (css || '') + '">' + html + '</span>';
+        const leaves = [
+          ink('सुश्रुत संहिता', "font-family:'Noto Serif Devanagari','Noto Sans Devanagari','Devanagari Sangam MN',serif;font-size:1.55rem;font-weight:700;") + '<div style="position:absolute;bottom:3px;left:0;right:0;font:600 0.6rem Inter,sans-serif;letter-spacing:0.25em;opacity:0.7">SUSHRUTA SAMHITA</div>',
+          ink('Long before modern surgery, a nose that had been lost', "font:italic 600 0.92rem Georgia,serif;"),
+          ink('was rebuilt with a flap of living skin from the cheek,', "font:italic 600 0.92rem Georgia,serif;"),
+          '<svg class="mx-sketch" viewBox="0 0 240 70" width="210" height="62" style="position:relative;z-index:1" fill="none" stroke="#3a2310" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M150 4 C142 10 140 16 139 22 C138 27 128 34 124 38 C122 40 126 42 130 42 C131 45 129 48 126 50 C129 52 129 55 127 57 C130 60 128 66 120 68" />' +
+            '<path d="M146 34 C158 34 170 44 168 56 C160 60 150 56 146 50" stroke-dasharray="3 3"/>' +
+            '<path d="M160 40 C150 26 138 26 130 32" /><path d="M134 27 L129 32 L136 34" />' +
+            '<path d="M60 20 C70 10 86 10 96 20 M60 50 C70 60 86 60 96 50" stroke-width="1" opacity="0.7"/></svg>',
+          ink('kept alive by its own blood – one of the earliest flaps on record.', "font:italic 600 0.86rem Georgia,serif;"),
+          ink('Every flap in this book descends from it. <span style="font-family:Caveat,cursive;font-size:1.35rem;font-style:normal;color:#5a1a08">— A.</span>', "font:italic 600 0.9rem Georgia,serif;")
+        ];
+        const els = leaves.map(h => { const d = document.createElement('div'); d.style.cssText = leafCss; d.innerHTML = holes + h; stack.appendChild(d); return d; });
+        root.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, fill: 'forwards' });
+        cords.animate([{ opacity: 0 }, { opacity: 0.8 }], { duration: 500, delay: 200, fill: 'forwards' });
+        sfx('page');
+        els.forEach((el, i) => {
+          el.animate([{ transform: 'scaleX(0) rotate(' + (i % 2 ? 2 : -2) + 'deg)' }, { transform: 'scaleX(1.04) rotate(0deg)', offset: 0.75 }, { transform: 'scaleX(1)' }], { duration: 520, delay: 250 + i * 260, easing: 'cubic-bezier(0.2, 0.8, 0.3, 1)', fill: 'forwards' });
+          setTimeout(() => sfx('flick'), 250 + i * 260);
+          const tx = el.querySelector('.mx-ink'); if (tx) tx.animate([{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)' }], { duration: 900, delay: 600 + i * 260, easing: 'ease-in-out', fill: 'forwards' });
+          const sk = el.querySelector('.mx-sketch'); if (sk) sk.querySelectorAll('path').forEach((p, j) => { const L = p.getTotalLength ? p.getTotalLength() : 300; p.style.strokeDasharray = p.getAttribute('stroke-dasharray') ? '3 3' : L; if (!p.getAttribute('stroke-dasharray')) p.animate([{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: 900, delay: 700 + i * 260 + j * 200, fill: 'both' }); });
+        });
+        let closing = false;
+        root.addEventListener('click', () => {
+          if (closing) return; closing = true; buzz(6);
+          els.slice().reverse().forEach((el, i) => el.animate([{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration: 300, delay: i * 70, easing: 'ease-in', fill: 'forwards' }));
+          setTimeout(() => fadeOut(root, 300, () => { window.__eggBusy = false; }), els.length * 70 + 200);
+        });
+      }
+      function maybeManuscript(q) {
+        if (window.__searchEggs2 && window.__searchEggs2(q)) { lastScroll = ''; return; }   // the panda, or the night knight
+        const s = String(q || '').toLowerCase().replace(/[^a-z ]+/g, ' ').replace(/\s+/g, ' ').trim();
+        const hit = /^(sush?rutha?|susrutha?|sushrut|sushruta samhita|susruta samhita|father of plastic surgery|indian (method|rhinoplasty))$/.test(s) ||
+          (s.length >= 7 && s.indexOf(' ') < 0 && editDistance(s, 'sushruta', 2) <= 1);
+        if (!hit) { lastScroll = ''; return; }
+        if (s === lastScroll) return;
+        lastScroll = s;
+        setTimeout(manuscript, 450);
+      }
+
+      // ---------- 4. Earthquake: shake the phone hard on the home screen ----------
+      function quake() {
+        if (!home() || !window.__rasterize) return;
+        window.__eggBusy = true;
+        const W = innerWidth, H = innerHeight, topY = topOf(), snap = window.__rasterize(W, H, Math.min(2, devicePixelRatio || 1)), sk = snap.width / W;
+        const els = [...document.querySelectorAll('#flap-grid-canvas .flap-card, #flap-grid-canvas .list-row')].map(e => e.getBoundingClientRect()).filter(r => r.bottom > topY + 4 && r.top < H - 4 && r.width > 20);
+        if (!els.length) { window.__eggBusy = false; return; }
+        const bg = document.createElement('canvas'); bg.width = snap.width; bg.height = snap.height; const bx = bg.getContext('2d');
+        bx.drawImage(snap, 0, 0); bx.fillStyle = getComputedStyle(document.body).backgroundColor; els.forEach(r => bx.fillRect((r.left - 2) * sk, (r.top - 2) * sk, (r.width + 4) * sk, (r.height + 4) * sk));
+        const root = layer(2960), [cv, c] = canvas(W, H); root.appendChild(cv);
+        const floor = H - 6, cards = els.map(r => ({ r, x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height, a: 0, vx: rnd(-0.18, 0.18), vy: rnd(-0.5, -0.1), va: rnd(-0.006, 0.006) }));
+        sfx('erase'); hapt([50, 30, 70, 30, 90, 40, 60, 40, 40]);
+        let last = 0;
+        const half = k => [(Math.abs(k.w * Math.cos(k.a)) + Math.abs(k.h * Math.sin(k.a))) / 2, (Math.abs(k.w * Math.sin(k.a)) + Math.abs(k.h * Math.cos(k.a))) / 2];
+        run(t => {
+          const dt = Math.min(32, t - last); last = t;
+          const back = seg(t, 2900, 3900);
+          if (t < 2900) {
+            for (const k of cards) {
+              k.vy += 0.0021 * dt; k.x += k.vx * dt; k.y += k.vy * dt; k.a += k.va * dt;
+              const [hw, hh] = half(k);
+              if (k.y + hh > floor) { k.y = floor - hh; k.vy *= -0.3; k.vx *= 0.82; const tgt = Math.round(k.a / (Math.PI / 2)) * (Math.PI / 2); k.va = k.va * 0.55 + (tgt - k.a) * 0.004; }
+              if (k.x - hw < 0) { k.x = hw; k.vx = Math.abs(k.vx) * 0.5; } if (k.x + hw > W) { k.x = W - hw; k.vx = -Math.abs(k.vx) * 0.5; }
+            }
+            // the cards pile up instead of passing through one another
+            for (let i = 0; i < cards.length; i++) for (let j = 0; j < cards.length; j++) {
+              if (i === j) continue; const a = cards[i], b = cards[j], [aw, ah] = half(a), [bw, bh] = half(b);
+              if (Math.abs(a.x - b.x) < (aw + bw) * 0.86 && a.y < b.y && a.y + ah > b.y - bh) { a.y = b.y - bh - ah; a.vy = Math.min(a.vy, 0) * 0.2; a.vx += (a.x < b.x ? -0.02 : 0.02); }
+            }
+          }
+          const shake = t < 1400 ? (1 - t / 1400) * 7 : 0;
+          c.setTransform(Math.min(2, devicePixelRatio || 1), 0, 0, Math.min(2, devicePixelRatio || 1), 0, 0);
+          c.clearRect(0, 0, W, H);
+          c.save(); c.translate(rnd(-shake, shake), rnd(-shake, shake));
+          c.save(); c.beginPath(); c.rect(0, topY, W, H - topY); c.clip(); c.drawImage(bg, 0, 0, W, H);
+          if (back > 0 && !cards.sx) cards.forEach(k => { k.sx = k.x; k.sy = k.y; k.sa = k.a; }), cards.sx = 1;
+          cards.forEach((k, i) => {
+            let x = k.x, y = k.y, a = k.a;
+            if (back > 0) { const e = ease(clamp01(back * 1.3 - i * 0.03)); x = k.sx + (k.r.left + k.w / 2 - k.sx) * e; y = k.sy + (k.r.top + k.h / 2 - k.sy) * e - Math.sin(Math.PI * e) * 40; a = k.sa * (1 - e); }
+            c.save(); c.translate(x, y); c.rotate(a);
+            c.fillStyle = 'rgba(0,0,0,0.12)'; c.fillRect(-k.w / 2 + 3, -k.h / 2 + 5, k.w, k.h);
+            c.drawImage(snap, k.r.left * sk, k.r.top * sk, k.w * sk, k.h * sk, -k.w / 2, -k.h / 2, k.w, k.h); c.restore();
+          });
+          c.restore(); c.restore();
+          if (t > 3950) { root.remove(); window.__eggBusy = false; return false; }
+        });
+      }
+      (function () {
+        let lastA = null, shakes = [];
+        window.addEventListener('devicemotion', e => {
+          const a = e.accelerationIncludingGravity; if (!a || a.x == null) return;
+          if (lastA) {
+            const d = Math.abs(a.x - lastA.x) + Math.abs(a.y - lastA.y) + Math.abs(a.z - lastA.z), now = Date.now();
+            if (d > 32) { shakes = shakes.filter(x => now - x < 1300); if (!shakes.length || now - shakes[shakes.length - 1] > 140) shakes.push(now); if (shakes.length >= 4) { shakes = []; quake(); } }
+          }
+          lastA = { x: a.x, y: a.y, z: a.z };
+        });
+      })();
+
+      // ---------- 5. Under the skin: pull the list down much further than a refresh needs ----------
+      function underSkin() {
+        if (!home() || !window.__rasterize) return;
+        window.__eggBusy = true;
+        const W = innerWidth, H = innerHeight, topY = topOf(), dpr = Math.min(2, devicePixelRatio || 1), snap = window.__rasterize(W, H, dpr);
+        const root = layer(2960), [cv, c] = canvas(W, H); root.appendChild(cv); root.style.cursor = 'pointer';
+        const cutY = topY + (H - topY) * 0.34;
+        const L = [ ['EPIDERMIS', 5, '#ecc9b1'], ['DERMIS', 30, '#e59a93'], ['SUBCUTANEOUS FAT', 66, '#f0c64a'], ['DEEP FASCIA', 8, '#f3efe6'], ['MUSCLE', 58, '#9c2436'], ['BONE', 44, '#eee4cc'] ];
+        const TOT = L.reduce((s, l) => s + l[1], 0);
+        const lob = [], fib = [], tra = [];
+        for (let i = 0; i < 70; i++) lob.push([rnd(0, W), rnd(0, 1), rnd(6, 13)]);
+        for (let i = 0; i < 40; i++) fib.push([rnd(0, W), rnd(0, 1), rnd(-0.5, 0.5)]);
+        for (let i = 0; i < 90; i++) tra.push([rnd(0, W), rnd(0, 1), rnd(0.8, 2.4)]);
+        sfx('scalpel'); hapt([16, 30, 16, 30, 24]);
+        let phase = 'open', tClose = 0, now0 = 0;
+        root.addEventListener('click', () => { if (phase === 'open' && now0 > 1500) { phase = 'close'; tClose = now0; buzz(6); } });
+        const stitches = [];
+        run(t => {
+          now0 = t;
+          if (phase === 'open' && t > 6200) { phase = 'close'; tClose = t; }
+          const cutK = seg(t, 0, 650), g = phase === 'open' ? TOT * ease(seg(t, 700, 1500)) : TOT * (1 - ease(seg(t, tClose, tClose + 650)));
+          const up = g * 0.42, down = g - up;
+          c.clearRect(0, 0, W, H);
+          c.save(); c.beginPath(); c.rect(0, topY, W, H - topY); c.clip();
+          // the opened layers, from the skin surface down to bone
+          let y = cutY - up; const sc = g / TOT;
+          L.forEach(([name, th, col], li) => {
+            const h = th * sc; if (h <= 0.2) return;
+            c.fillStyle = col; c.fillRect(0, y, W, h + 0.5);
+            c.save(); c.beginPath(); c.rect(0, y, W, h); c.clip();
+            if (li === 1) { c.strokeStyle = 'rgba(160,40,50,0.25)'; c.lineWidth = 1; fib.forEach(([x, f, s]) => { c.beginPath(); c.moveTo(x, y + f * h); c.lineTo(x + 30, y + f * h + s * 10); c.stroke(); }); }
+            if (li === 2) lob.forEach(([x, f, r]) => { c.fillStyle = 'rgba(255,230,140,0.7)'; c.strokeStyle = 'rgba(200,150,40,0.55)'; c.lineWidth = 1; c.beginPath(); c.arc(x, y + f * h, r * sc + 1, 0, 7); c.fill(); c.stroke(); });
+            if (li === 3) { const gr = c.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, 'rgba(255,255,255,0.9)'); gr.addColorStop(1, 'rgba(210,205,190,0.6)'); c.fillStyle = gr; c.fillRect(0, y, W, h); }
+            if (li === 4) { c.strokeStyle = 'rgba(70,0,10,0.35)'; c.lineWidth = 1; for (let x = -40; x < W + 40; x += 6) { c.beginPath(); c.moveTo(x, y); c.lineTo(x + 18, y + h); c.stroke(); } }
+            if (li === 5) { tra.forEach(([x, f, r]) => { c.fillStyle = 'rgba(190,170,130,0.55)'; c.beginPath(); c.arc(x, y + f * h, r * sc, 0, 7); c.fill(); }); }
+            // a wet sheen drifting across
+            const sx = ((t * 0.12 + li * 70) % (W + 200)) - 100, sh = c.createLinearGradient(sx - 60, 0, sx + 60, 0); sh.addColorStop(0, 'rgba(255,255,255,0)'); sh.addColorStop(0.5, 'rgba(255,255,255,0.18)'); sh.addColorStop(1, 'rgba(255,255,255,0)');
+            c.fillStyle = sh; c.fillRect(0, y, W, h);
+            c.restore();
+            // the labels, written in one after another
+            const la = seg(t, 1500 + li * 220, 1800 + li * 220) * (phase === 'open' ? 1 : 1 - seg(t, tClose, tClose + 250));
+            if (la > 0 && h > 7) {
+              c.font = '800 9.5px Inter, system-ui, sans-serif'; c.textAlign = 'right'; c.textBaseline = 'middle'; if ('letterSpacing' in c) c.letterSpacing = '1.5px';
+              c.lineWidth = 3; c.strokeStyle = 'rgba(0,0,0,' + (0.55 * la).toFixed(3) + ')'; c.strokeText(name, W - 14, y + h / 2);
+              c.fillStyle = 'rgba(255,255,255,' + la.toFixed(3) + ')'; c.fillText(name, W - 14, y + h / 2); if ('letterSpacing' in c) c.letterSpacing = '0px';
+              c.strokeStyle = 'rgba(255,255,255,' + (0.6 * la).toFixed(3) + ')'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(W - 14 - c.measureText(name).width - 30, y + h / 2); c.lineTo(W - 18 - c.measureText(name).width, y + h / 2); c.stroke();
+            }
+            if (li === 5 && h > 20) {   // carved into the bone
+              const ea = seg(t, 2900, 3600) * (phase === 'open' ? 1 : 1 - seg(t, tClose, tClose + 250));
+              c.font = '600 1.15rem Caveat, cursive'; c.textAlign = 'left'; c.textBaseline = 'middle';
+              c.fillStyle = 'rgba(255,255,255,' + (0.5 * ea).toFixed(3) + ')'; c.fillText('built to the bone – Dr Amanyu', 18, y + h / 2 + 1);
+              c.fillStyle = 'rgba(120,96,60,' + (0.85 * ea).toFixed(3) + ')'; c.fillText('built to the bone – Dr Amanyu', 17.4, y + h / 2);
+            }
+            y += h;
+          });
+          // the skin above and below, drawn back from the cut edges
+          c.save(); c.beginPath(); c.rect(0, topY, W, cutY - topY - up); c.clip(); c.drawImage(snap, 0, 0, snap.width, snap.height, 0, -up, W, H); c.restore();
+          c.save(); c.beginPath(); c.rect(0, cutY + down, W, H); c.clip(); c.drawImage(snap, 0, 0, snap.width, snap.height, 0, down, W, H); c.restore();
+          if (g > 1) {
+            [[cutY - up, -1], [cutY + down, 1]].forEach(([yy, s]) => {
+              const gr = c.createLinearGradient(0, yy, 0, yy + s * 10); gr.addColorStop(0, 'rgba(110,8,20,0.75)'); gr.addColorStop(1, 'rgba(110,8,20,0)');
+              c.fillStyle = gr; c.fillRect(0, Math.min(yy, yy + s * 10), W, 10);
+            });
+          }
+          // the scalpel's cut
+          if (t < 1000 && phase === 'open') {
+            const x = W * ease(cutK);
+            c.strokeStyle = 'rgba(140,10,24,' + (1 - seg(t, 650, 900)).toFixed(3) + ')'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(0, cutY); c.lineTo(x, cutY); c.stroke();
+            if (cutK < 1) {
+              c.save(); c.translate(x, cutY); c.rotate(-0.5);
+              c.fillStyle = '#e5e7eb'; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-8, -10, -26, -8); c.lineTo(-26, -2); c.closePath(); c.fill();
+              c.fillStyle = '#9ca3af'; c.fillRect(-70, -7, 44, 6); c.restore();
+            }
+          }
+          // closing: a running suture along the line
+          if (phase === 'close') {
+            const sk = seg(t, tClose + 650, tClose + 1350), n = Math.floor(W / 16);
+            c.strokeStyle = '#13235a'; c.lineWidth = 1.5;
+            for (let i = 0; i < n * sk; i++) { const x = 8 + i * 16; c.beginPath(); c.moveTo(x, cutY - 5); c.lineTo(x + 10, cutY + 5); c.stroke(); }
+            c.strokeStyle = 'rgba(100,10,24,0.7)'; c.lineWidth = 1; c.beginPath(); c.moveTo(0, cutY); c.lineTo(W * sk, cutY); c.stroke();
+            if (t > tClose + 1400) { fadeOut(root, 600, () => { window.__eggBusy = false; }); return false; }
+          }
+          c.restore();
+        });
+      }
+
+      return { icg, manuscript, maybeManuscript, quake, underSkin };
+    })();
+
+    // ===================== two personal ones: the kung fu panda, and the one who is (definitely not) Batman =====================
+    // Both are original drawings made for this app (an homage, not the film's character or the comic's artwork).
+    (function () {
+      const busy = () => !!(document.querySelector('.egg-layer') || document.getElementById('zp'));
+      const layer = () => { const d = document.createElement('div'); d.className = 'egg-layer'; d.style.cssText = 'position:fixed;inset:0;z-index:2960;'; document.body.appendChild(d); return d; };
+      const fadeOut = (el, ms) => { el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms, fill: 'forwards' }).onfinish = () => { el.remove(); window.__eggBusy = false; }; setTimeout(() => { if (el.isConnected) { el.remove(); window.__eggBusy = false; } }, ms + 400); };
+      const A = (el, kf, o) => el.animate(kf, Object.assign({ fill: 'forwards' }, o));
+      const rnd = (a, b) => a + Math.random() * (b - a);
+
+      // ---------- the kung fu panda: a chubby giant panda in a red sash, animated part by part ----------
+      const PANDA = '<svg viewBox="0 0 200 250" width="100%" height="100%" style="overflow:visible">' +
+        '<ellipse class="pd-shadow" cx="100" cy="242" rx="52" ry="7" fill="rgba(0,0,0,0.18)"/>' +
+        '<g class="pd-all">' +
+        '<g class="pd-legL"><ellipse cx="74" cy="214" rx="21" ry="24" fill="#1d1d1f"/><ellipse cx="74" cy="226" rx="11" ry="8" fill="#3a3a3c"/></g>' +
+        '<g class="pd-legR"><ellipse cx="126" cy="214" rx="21" ry="24" fill="#1d1d1f"/><ellipse cx="126" cy="226" rx="11" ry="8" fill="#3a3a3c"/></g>' +
+        '<g class="pd-body"><ellipse cx="100" cy="164" rx="60" ry="58" fill="#fbfbf8" stroke="#1d1d1f" stroke-width="2.5"/><ellipse cx="100" cy="176" rx="36" ry="32" fill="#f1ede3"/>' +
+          '<path d="M42 182 C80 194 120 194 158 182 L158 194 C120 206 80 206 42 194 Z" fill="#d62828"/></g>' +
+        '<g class="pd-armL"><ellipse cx="50" cy="150" rx="17" ry="30" fill="#1d1d1f" transform="rotate(28 50 150)"/></g>' +
+        '<g class="pd-armR"><ellipse cx="150" cy="150" rx="17" ry="30" fill="#1d1d1f" transform="rotate(-28 150 150)"/></g>' +
+        '<g class="pd-head">' +
+          '<g class="pd-earL"><circle cx="58" cy="38" r="18" fill="#1d1d1f"/><circle cx="58" cy="38" r="8" fill="#48484a"/></g>' +
+          '<g class="pd-earR"><circle cx="142" cy="38" r="18" fill="#1d1d1f"/><circle cx="142" cy="38" r="8" fill="#48484a"/></g>' +
+          '<circle cx="100" cy="80" r="52" fill="#fbfbf8" stroke="#1d1d1f" stroke-width="2.5"/>' +
+          '<path d="M50 60 Q100 38 150 60 L150 70 Q100 50 50 70 Z" fill="#d62828"/><path class="pd-tails" d="M148 62 C164 58 170 70 182 64 M148 67 C160 70 166 82 178 80" stroke="#d62828" stroke-width="6" stroke-linecap="round" fill="none"/>' +
+          '<ellipse cx="79" cy="84" rx="14" ry="18" transform="rotate(-25 79 84)" fill="#1d1d1f"/><ellipse cx="121" cy="84" rx="14" ry="18" transform="rotate(25 121 84)" fill="#1d1d1f"/>' +
+          '<g class="pd-lids"><circle cx="81" cy="82" r="6.5" fill="#fff"/><circle cx="119" cy="82" r="6.5" fill="#fff"/><circle cx="82.5" cy="83" r="3.6" fill="#111"/><circle cx="117.5" cy="83" r="3.6" fill="#111"/>' +
+          '<circle cx="84" cy="81" r="1.4" fill="#fff"/><circle cx="119" cy="81" r="1.4" fill="#fff"/></g>' +
+          '<ellipse cx="100" cy="101" rx="7.5" ry="5.2" fill="#1d1d1f"/><path d="M90 109 Q100 119 110 109" stroke="#1d1d1f" stroke-width="2.6" fill="none" stroke-linecap="round"/>' +
+          '<circle cx="64" cy="104" r="8.5" fill="#ff9eb5" opacity="0.6"/><circle cx="136" cy="104" r="8.5" fill="#ff9eb5" opacity="0.6"/>' +
+        '</g></g></svg>';
+      // a wobble that dies away (belly and cheeks after a landing)
+      function jiggle(n, amp, sx) { const k = []; for (let i = 0; i <= n; i++) { const f = i / n, d = Math.exp(-4.5 * f) * Math.cos(f * Math.PI * 7) * amp; k.push({ transform: 'scale(' + (1 + d * (sx || 1)) + ',' + (1 - d) + ')' }); } return k; }
+      function panda() {
+        if (busy()) return;
+        window.__eggBusy = true;
+        const W = innerWidth, H = innerHeight, root = layer();
+        root.style.cursor = 'pointer'; root.style.background = 'radial-gradient(ellipse at 50% 85%, rgba(255,236,190,0.35), rgba(20,26,40,0.45) 72%)'; root.style.opacity = '0';
+        A(root, [{ opacity: 0 }, { opacity: 1 }], { duration: 350 });
+        const size = Math.min(210, W * 0.52), box = document.createElement('div');
+        box.style.cssText = 'position:absolute;left:50%;bottom:calc(130px + env(safe-area-inset-bottom));width:' + size + 'px;height:' + (size * 1.25) + 'px;margin-left:' + (-size / 2) + 'px;';
+        box.innerHTML = PANDA; root.appendChild(box);
+        const q = s => box.querySelector(s), all = q('.pd-all');
+        box.querySelectorAll('g').forEach(g => { g.style.transformBox = 'fill-box'; g.style.transformOrigin = 'center'; });
+        const origin = (s, o) => { q(s).style.transformOrigin = o; };
+        origin('.pd-all', '50% 100%'); origin('.pd-head', '50% 92%'); origin('.pd-body', '50% 100%'); origin('.pd-armL', '72% 6%'); origin('.pd-armR', '28% 6%');
+        origin('.pd-legL', '50% 8%'); origin('.pd-legR', '50% 8%'); origin('.pd-earL', '70% 80%'); origin('.pd-earR', '30% 80%'); origin('.pd-tails', '100% 20%'); origin('.pd-lids', '50% 50%');
+        const at = (ms, f) => setTimeout(f, ms);
+        // 1. waddles in from the side: body rocks, legs step, arms swing, head bobs against the step
+        const walk = 1700, steps = 6, wk = n => Array.from({ length: n * 2 + 1 }, (_, i) => i);
+        A(box, [{ transform: 'translateX(' + (W * 0.75) + 'px)' }, { transform: 'translateX(0)' }], { duration: walk, easing: 'cubic-bezier(0.2, 0.5, 0.4, 1)' });
+        A(all, wk(steps).map(i => ({ transform: 'rotate(' + (i % 2 ? (i % 4 === 1 ? 6 : -6) : 0) + 'deg) translateY(' + (i % 2 ? -7 : 0) + 'px)' })), { duration: walk, fill: 'none' });
+        A(q('.pd-legL'), wk(steps).map(i => ({ transform: 'rotate(' + (i % 4 === 1 ? 20 : i % 4 === 3 ? -14 : 0) + 'deg)' })), { duration: walk, fill: 'none' });
+        A(q('.pd-legR'), wk(steps).map(i => ({ transform: 'rotate(' + (i % 4 === 3 ? 20 : i % 4 === 1 ? -14 : 0) + 'deg)' })), { duration: walk, fill: 'none' });
+        A(q('.pd-armL'), wk(steps).map(i => ({ transform: 'rotate(' + (i % 4 === 3 ? 16 : i % 4 === 1 ? -12 : 0) + 'deg)' })), { duration: walk, fill: 'none' });
+        A(q('.pd-armR'), wk(steps).map(i => ({ transform: 'rotate(' + (i % 4 === 1 ? -16 : i % 4 === 3 ? 12 : 0) + 'deg)' })), { duration: walk, fill: 'none' });
+        A(q('.pd-head'), wk(steps).map(i => ({ transform: 'rotate(' + (i % 2 ? (i % 4 === 1 ? -4 : 4) : 0) + 'deg) translateY(' + (i % 2 ? 2 : 0) + 'px)' })), { duration: walk, fill: 'none' });
+        A(q('.pd-body'), wk(steps).map(i => ({ transform: 'scale(' + (i % 2 ? '1.02,0.98' : '1,1') + ')' })), { duration: walk, fill: 'none' });
+        for (let i = 0; i < steps; i++) at(i * (walk / steps) + 120, () => hapt(6));
+        // 2. stops, looks at you, blinks, and gives the kung fu salute with a bow
+        at(walk, () => {
+          A(q('.pd-lids'), [{ transform: 'scaleY(1)' }, { transform: 'scaleY(0.1)', offset: 0.5 }, { transform: 'scaleY(1)' }], { duration: 170, fill: 'none' });
+          A(q('.pd-earL'), [{ transform: 'rotate(0)' }, { transform: 'rotate(-12deg)' }, { transform: 'rotate(4deg)' }, { transform: 'rotate(0)' }], { duration: 420, fill: 'none' });
+          A(q('.pd-earR'), [{ transform: 'rotate(0)' }, { transform: 'rotate(12deg)' }, { transform: 'rotate(-4deg)' }, { transform: 'rotate(0)' }], { duration: 420, fill: 'none' });
+        });
+        at(walk + 300, () => {
+          sfx('tick');
+          A(q('.pd-armL'), [{ transform: 'rotate(0)' }, { transform: 'rotate(-48deg)', offset: 0.35 }, { transform: 'rotate(-48deg)', offset: 0.8 }, { transform: 'rotate(0)' }], { duration: 1000, easing: 'ease-in-out', fill: 'none' });
+          A(q('.pd-armR'), [{ transform: 'rotate(0)' }, { transform: 'rotate(48deg)', offset: 0.35 }, { transform: 'rotate(48deg)', offset: 0.8 }, { transform: 'rotate(0)' }], { duration: 1000, easing: 'ease-in-out', fill: 'none' });
+          A(q('.pd-head'), [{ transform: 'rotate(0)' }, { transform: 'rotate(0) translateY(0)', offset: 0.35 }, { transform: 'rotate(0) translateY(9px) scaleY(0.96)', offset: 0.55 }, { transform: 'rotate(0) translateY(0)', offset: 0.8 }, { transform: 'rotate(0)' }], { duration: 1000, fill: 'none' });
+          A(all, [{ transform: 'rotate(0)' }, { transform: 'rotate(0)', offset: 0.35 }, { transform: 'scale(1.02,0.97) translateY(3px)', offset: 0.55 }, { transform: 'scale(1,1)', offset: 0.8 }, { transform: 'rotate(0)' }], { duration: 1000, fill: 'none' });
+        });
+        // 3. anticipation – a deep crouch – then a leaping, spinning kick
+        const J = walk + 1400;
+        at(J, () => { A(all, [{ transform: 'scale(1,1)' }, { transform: 'scale(1.12,0.84)' }], { duration: 260, easing: 'ease-out', fill: 'none' }); A(q('.pd-armL'), [{ transform: 'rotate(0)' }, { transform: 'rotate(40deg)' }], { duration: 260, fill: 'none' }); A(q('.pd-armR'), [{ transform: 'rotate(0)' }, { transform: 'rotate(-40deg)' }], { duration: 260, fill: 'none' }); });
+        at(J + 260, () => {
+          sfx('flick'); hapt(14);
+          const up = H * 0.3, D = 950;
+          A(box, [{ transform: 'translate(0,0)' }, { transform: 'translate(-' + W * 0.08 + 'px,-' + up + 'px)', offset: 0.45, easing: 'ease-in' }, { transform: 'translate(-' + W * 0.12 + 'px,-' + up * 0.85 + 'px)', offset: 0.6 }, { transform: 'translate(0,0)' }], { duration: D, easing: 'cubic-bezier(0.3, 0.6, 0.4, 1)', fill: 'none' });
+          A(all, [{ transform: 'scale(0.9,1.14) rotate(0deg)' }, { transform: 'scale(1,1) rotate(-200deg)', offset: 0.45 }, { transform: 'scale(1,1) rotate(-330deg)', offset: 0.75 }, { transform: 'scale(1,1) rotate(-360deg)' }], { duration: D, fill: 'none' });
+          A(q('.pd-legR'), [{ transform: 'rotate(0)' }, { transform: 'rotate(-20deg)', offset: 0.3 }, { transform: 'rotate(-100deg) translateY(10px)', offset: 0.55 }, { transform: 'rotate(-100deg) translateY(10px)', offset: 0.78 }, { transform: 'rotate(0)' }], { duration: D, fill: 'none' });
+          A(q('.pd-legL'), [{ transform: 'rotate(0)' }, { transform: 'rotate(30deg)', offset: 0.5 }, { transform: 'rotate(0)' }], { duration: D, fill: 'none' });
+          A(q('.pd-armL'), [{ transform: 'rotate(40deg)' }, { transform: 'rotate(110deg)', offset: 0.5 }, { transform: 'rotate(0)' }], { duration: D, fill: 'none' });
+          A(q('.pd-armR'), [{ transform: 'rotate(-40deg)' }, { transform: 'rotate(-60deg)', offset: 0.5 }, { transform: 'rotate(0)' }], { duration: D, fill: 'none' });
+          A(q('.pd-tails'), [{ transform: 'rotate(0)' }, { transform: 'rotate(35deg)' }, { transform: 'rotate(-15deg)' }, { transform: 'rotate(25deg)' }, { transform: 'rotate(0)' }], { duration: D, fill: 'none' });
+          A(q('.pd-shadow'), [{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(0.5)', opacity: 0.4, offset: 0.45 }, { transform: 'scale(1)', opacity: 1 }], { duration: D, fill: 'none' });
+        });
+        // 4. the landing: a heavy thud, belly and cheeks wobbling, dust, the cards shaking
+        const L = J + 260 + 950;
+        at(L, () => {
+          sfx('land'); hapt([70, 30, 40]);
+          A(all, [{ transform: 'scale(1.16,0.8)' }, { transform: 'scale(0.96,1.05)', offset: 0.45 }, { transform: 'scale(1,1)' }], { duration: 380, fill: 'none' });
+          A(q('.pd-body'), jiggle(14, 0.07, 1.2), { duration: 1100, fill: 'none' });
+          A(q('.pd-head'), jiggle(12, 0.035), { duration: 900, delay: 60, fill: 'none' });
+          // a shock ring along the ground, then billowing dust clouds that roll outwards and rise
+          const ring = document.createElement('i');
+          ring.style.cssText = 'position:absolute;left:50%;bottom:calc(122px + env(safe-area-inset-bottom));width:120px;height:26px;margin-left:-60px;border-radius:50%;border:3px solid rgba(120,100,70,0.55);box-sizing:border-box;';
+          root.appendChild(ring);
+          A(ring, [{ transform: 'scale(0.4)', opacity: 1 }, { transform: 'scale(3.2)', opacity: 0 }], { duration: 650, easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)' });
+          for (let i = 0; i < 16; i++) {
+            const p = document.createElement('i'), side = i % 2 ? 1 : -1, k = (i >> 1) / 7, dx = side * (14 + k * 70), sz = rnd(22, 40);
+            p.style.cssText = 'position:absolute;left:50%;bottom:calc(' + (126 + rnd(-4, 8)) + 'px + env(safe-area-inset-bottom));width:' + sz + 'px;height:' + sz + 'px;margin-left:' + (dx - sz / 2) + 'px;border-radius:50%;' +
+              'background:radial-gradient(circle at 40% 40%, rgba(176,158,128,0.95), rgba(150,132,104,0.7) 45%, rgba(150,132,104,0) 72%);';
+            root.appendChild(p);
+            A(p, [{ transform: 'translate(0,0) scale(0.35)', opacity: 1 }, { transform: 'translate(' + side * rnd(30, 60) + 'px,-' + rnd(6, 18) + 'px) scale(1.6)', opacity: 0.85, offset: 0.35 },
+              { transform: 'translate(' + side * rnd(70, 120) + 'px,-' + rnd(26, 60) + 'px) scale(2.8)', opacity: 0 }], { duration: rnd(900, 1300), easing: 'cubic-bezier(0.15, 0.7, 0.35, 1)' });
+          }
+          // the whole screen jolts, and every card jumps in a wave spreading out from where he landed
+          const ws = document.querySelector('.workspace');
+          if (ws) ws.animate([{ transform: 'none' }, { transform: 'translateY(9px)' }, { transform: 'translateY(-4px)' }, { transform: 'translateY(2px)' }, { transform: 'none' }], { duration: 420, easing: 'ease-out' });
+          const land = [W / 2, H - 130];
+          document.querySelectorAll('#flap-grid-canvas .flap-card, #flap-grid-canvas .list-row').forEach((c, i) => {
+            const r = c.getBoundingClientRect(); if (r.bottom < 0 || r.top > H) return;
+            const cx = r.left + r.width / 2, cy = r.top + r.height / 2, d = Math.hypot(cx - land[0], cy - land[1]), k = Math.max(0.35, 1 - d / 900), s = cx < land[0] ? -1 : 1;
+            c.animate([{ transform: 'none' }, { transform: 'translate(' + (s * 6 * k) + 'px,' + (-22 * k) + 'px) rotate(' + (s * 4 * k) + 'deg)', offset: 0.3 },
+              { transform: 'translate(' + (-s * 3 * k) + 'px,' + (4 * k) + 'px) rotate(' + (-s * 1.5 * k) + 'deg)', offset: 0.62 }, { transform: 'translateY(' + (-3 * k) + 'px)', offset: 0.82 }, { transform: 'none' }],
+              { duration: 620, delay: d * 0.35, easing: 'ease-out' });
+          });
+        });
+        // 5. "Hi-ya!", a proud pose, a pat on the belly
+        const bubble = document.createElement('div'); bubble.textContent = 'Hi-ya!';
+        bubble.style.cssText = 'position:absolute;left:50%;bottom:calc(' + (130 + size * 1.2) + 'px + env(safe-area-inset-bottom));margin-left:' + (size * 0.16) + 'px;padding:8px 15px;border-radius:16px 16px 16px 4px;background:#fff;color:#c1121f;font:900 1.2rem Inter,system-ui,sans-serif;box-shadow:0 6px 16px rgba(0,0,0,0.25);transform:scale(0);transform-origin:0 100%;';
+        root.appendChild(bubble);
+        at(L + 120, () => A(bubble, [{ transform: 'scale(0) rotate(-12deg)' }, { transform: 'scale(1.18) rotate(4deg)', offset: 0.6 }, { transform: 'scale(1) rotate(0)' }], { duration: 420, easing: 'ease-out' }));
+        at(L + 500, () => {
+          A(q('.pd-armR'), [{ transform: 'rotate(0)' }, { transform: 'rotate(-150deg)', offset: 0.4 }, { transform: 'rotate(-140deg)' }], { duration: 600, easing: 'cubic-bezier(0.3, 1.4, 0.5, 1)' });
+          A(q('.pd-head'), [{ transform: 'rotate(0)' }, { transform: 'rotate(-7deg)' }], { duration: 500 });
+          A(q('.pd-armL'), [{ transform: 'rotate(0)' }, { transform: 'rotate(-22deg)' }, { transform: 'rotate(-14deg)' }, { transform: 'rotate(-22deg)' }, { transform: 'rotate(-14deg)' }, { transform: 'rotate(-22deg)' }, { transform: 'rotate(0)' }], { duration: 1300, delay: 300, fill: 'none' });
+          A(q('.pd-body'), jiggle(10, 0.03), { duration: 1300, delay: 300, fill: 'none' });
+        });
+        const cap = document.createElement('div');
+        cap.innerHTML = '<div style="font:800 0.7rem Inter,system-ui,sans-serif;letter-spacing:0.18em;text-transform:uppercase;color:#8a6d00">The Kung Fu Panda behind this app</div><div style="font:600 2rem Caveat,cursive;color:#2a2300;line-height:1.1">Dr Amanyu</div>';
+        cap.style.cssText = 'position:absolute;left:16px;right:16px;bottom:calc(30px + env(safe-area-inset-bottom));text-align:center;padding:10px 12px;border-radius:18px;background:linear-gradient(135deg,#fffbd6,#ffea00);box-shadow:0 10px 30px rgba(0,0,0,0.3);opacity:0;';
+        root.appendChild(cap);
+        at(L + 700, () => { A(cap, [{ opacity: 0, transform: 'translateY(20px)' }, { opacity: 1, transform: 'none' }], { duration: 500 }); sfx('fav'); });
+        // 6. a tap (or a little later): a wave, and off it waddles
+        let gone = false; const started = performance.now();
+        const leave = () => {
+          if (gone) return; gone = true;
+          A(q('.pd-armR'), [{ transform: 'rotate(-140deg)' }, { transform: 'rotate(-110deg)' }, { transform: 'rotate(-150deg)' }, { transform: 'rotate(-110deg)' }, { transform: 'rotate(-150deg)' }], { duration: 800 });
+          A(q('.pd-head'), [{ transform: 'rotate(-7deg)' }, { transform: 'rotate(6deg)' }], { duration: 800 });
+          at(700, () => {
+            A(box, [{ transform: 'translateX(0)' }, { transform: 'translateX(-' + (W * 0.8) + 'px)' }], { duration: 1200, easing: 'ease-in' });
+            A(all, Array.from({ length: 9 }, (_, i) => ({ transform: 'rotate(' + (i % 2 ? (i % 4 === 1 ? 6 : -6) : 0) + 'deg) translateY(' + (i % 2 ? -7 : 0) + 'px)' })), { duration: 1200 });
+            A(q('.pd-legL'), Array.from({ length: 9 }, (_, i) => ({ transform: 'rotate(' + (i % 4 === 1 ? 20 : i % 4 === 3 ? -14 : 0) + 'deg)' })), { duration: 1200 });
+            A(q('.pd-legR'), Array.from({ length: 9 }, (_, i) => ({ transform: 'rotate(' + (i % 4 === 3 ? 20 : i % 4 === 1 ? -14 : 0) + 'deg)' })), { duration: 1200 });
+          });
+          at(1500, () => fadeOut(root, 500));
+        };
+        root.addEventListener('click', () => { if (performance.now() - started > 1500) leave(); });
+        at(L + 5200, leave);
+      }
+
+      // ---------- the night knight: a city at night and a searchlight; a steel bat-wing blade spins out of the dark, strikes
+      // the glass point first and cracks it; the shards fall away and an angry, pointy-eared mask rises from the dark.
+      // (An original homage – not the comic's or the films' artwork.) ----------
+      const BLADE = [[-1, 0.04], [-0.82, -0.17], [-0.56, -0.12], [-0.3, -0.18], [-0.13, -0.26], [-0.07, -0.16], [0.07, -0.16], [0.13, -0.26], [0.3, -0.18], [0.56, -0.12], [0.82, -0.17], [1, 0.04],
+        [0.84, 0.02], [0.66, 0.15], [0.44, 0.08], [0.24, 0.19], [0, 0.11], [-0.24, 0.19], [-0.44, 0.08], [-0.66, 0.15], [-0.84, 0.02]];
+      function bat(s) {
+        const R = [[0, -6], [3, -13], [5, -7], [12, -11], [26, -15], [42, -13], [54, -4], [47, 1], [41, -1], [35, 5], [28, 2], [21, 8], [13, 4], [6, 9], [0, 12]];
+        return R.concat(R.slice(1, -1).reverse().map(([x, y]) => [-x, y])).map(([x, y]) => [x * s, y * s]);
+      }
+      // ---- the blade as a thin steel plate in 3D ----
+      const rX = (p, a) => [p[0], p[1] * Math.cos(a) - p[2] * Math.sin(a), p[1] * Math.sin(a) + p[2] * Math.cos(a)];
+      const rY = (p, a) => [p[0] * Math.cos(a) + p[2] * Math.sin(a), p[1], -p[0] * Math.sin(a) + p[2] * Math.cos(a)];
+      const rZ = (p, a) => [p[0] * Math.cos(a) - p[1] * Math.sin(a), p[0] * Math.sin(a) + p[1] * Math.cos(a), p[2]];
+      const orient = (p, o) => rX(rY(rZ(p, o.spin), o.yaw), o.tilt);
+      const v3 = { add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k], dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2] };
+      function drawBlade3(c, C, o, S, F, W, H, alpha) {
+        const pr = P => P[2] < 0.15 ? null : [W / 2 + F * P[0] / P[2], H / 2 + F * P[1] / P[2]];
+        const n = orient([0, 0, 1], o), th = 0.022, face = BLADE.map(([x, y]) => v3.add(C, orient([x * S, y * S, 0], o))), back = face.map(P => v3.add(P, v3.mul(n, th)));
+        const pf = face.map(pr), pb = back.map(pr); if (pf.some(p => !p) || pb.some(p => !p)) return;
+        const front = v3.dot(n, C) < 0, near = front ? pf : pb, far = front ? pb : pf;
+        const L = [-0.45, -0.65, -0.6], lit = Math.abs(v3.dot(n, L)), lv = Math.round(40 + 120 * lit);
+        c.save(); c.globalAlpha *= alpha; c.lineJoin = 'round';
+        const poly = ps => { c.beginPath(); ps.forEach((p, i) => i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])); c.closePath(); };
+        poly(far); c.fillStyle = '#05060a'; c.fill();
+        // the plate's thickness: the rim between the two faces
+        for (let i = 0; i < pf.length; i++) { const j = (i + 1) % pf.length; c.beginPath(); c.moveTo(pf[i][0], pf[i][1]); c.lineTo(pf[j][0], pf[j][1]); c.lineTo(pb[j][0], pb[j][1]); c.lineTo(pb[i][0], pb[i][1]); c.closePath(); c.fillStyle = 'rgb(' + (lv + 30) + ',' + (lv + 34) + ',' + (lv + 44) + ')'; c.fill(); }
+        // the face: dark gunmetal, a band of brushed light across it
+        const xs = near.map(p => p[0]), ys = near.map(p => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+        const g = c.createLinearGradient(x0, y0, x1, y1);
+        g.addColorStop(0, 'rgb(' + (lv * 0.35 | 0) + ',' + (lv * 0.37 | 0) + ',' + (lv * 0.42 | 0) + ')'); g.addColorStop(0.45, 'rgb(' + (lv * 0.75 | 0) + ',' + (lv * 0.78 | 0) + ',' + (lv * 0.86 | 0) + ')');
+        g.addColorStop(0.55, 'rgb(' + (lv * 0.42 | 0) + ',' + (lv * 0.44 | 0) + ',' + (lv * 0.5 | 0) + ')'); g.addColorStop(1, 'rgb(' + (lv * 0.2 | 0) + ',' + (lv * 0.21 | 0) + ',' + (lv * 0.25 | 0) + ')');
+        poly(near); c.fillStyle = g; c.fill();
+        // the ground cutting edges catch the light
+        c.strokeStyle = 'rgba(225,232,245,' + (0.55 + 0.4 * lit) + ')'; c.lineWidth = 1.4; c.stroke();
+        const mid = [v3.add(C, orient([-0.9 * S, 0, 0], o)), v3.add(C, orient([0.9 * S, 0, 0], o))].map(pr);
+        if (mid[0] && mid[1]) { c.strokeStyle = 'rgba(255,255,255,0.18)'; c.lineWidth = 1; c.beginPath(); c.moveTo(mid[0][0], mid[0][1]); c.lineTo(mid[1][0], mid[1][1]); c.stroke(); }
+        c.restore();
+      }
+      // ---- the cowl: an original drawing with the classic features – a black hood with two tall pointed ears, angled
+      // brows over narrow white eyes, the edge cutting across the cheekbones to a point at the nose, the moonlit jaw and a
+      // stern mouth left bare, the hood running down into the shoulders of a cape ----
+      function drawCowl(c, cx, cy, s, light, eye) {
+        c.save(); c.translate(cx, cy); c.scale(s * 1.1, s * 0.95);
+        const hood = () => {
+          c.beginPath();
+          c.moveTo(-158, 178); c.quadraticCurveTo(-128, 126, -66, 112);                 // left shoulder up to the neck
+          c.quadraticCurveTo(-75, 72, -74, 30); c.bezierCurveTo(-74, -10, -73, -40, -70, -62);   // side of the head
+          c.lineTo(-57, -132);                                                           // the ear: straight edges, a sharp tip
+          c.lineTo(-31, -84);
+          c.quadraticCurveTo(0, -89, 31, -84);                                           // a low, flat crown between the ears
+          c.lineTo(57, -132); c.lineTo(70, -62);
+          c.bezierCurveTo(73, -40, 74, -10, 74, 30); c.quadraticCurveTo(75, 72, 66, 112);
+          c.quadraticCurveTo(128, 126, 158, 178); c.closePath();
+        };
+        // the opening: the cowl's edge runs from the cheekbones down to a sharp point that covers the nose
+        const face = () => {
+          c.beginPath();
+          c.moveTo(-57, 2); c.lineTo(-11, 30); c.lineTo(0, 44); c.lineTo(11, 30); c.lineTo(57, 2);
+          c.quadraticCurveTo(55, 58, 31, 86); c.quadraticCurveTo(0, 106, -31, 86); c.quadraticCurveTo(-55, 58, -57, 2); c.closePath();
+        };
+        // a cold halo behind the head
+        const halo = c.createRadialGradient(0, -30, 20, 0, -30, 200); halo.addColorStop(0, 'rgba(120,150,220,' + (0.26 * light) + ')'); halo.addColorStop(1, 'rgba(120,150,220,0)');
+        c.fillStyle = halo; c.fillRect(-240, -240, 480, 440);
+        // the hood: matte black, fading out at the shoulders
+        const hf = c.createLinearGradient(0, -160, 0, 178); hf.addColorStop(0, '#0d0e14'); hf.addColorStop(0.72, '#0a0b10'); hf.addColorStop(1, 'rgba(10,11,16,0)');
+        hood(); c.fillStyle = hf; c.fill();
+        c.save(); hood(); c.clip();
+        const sh = c.createLinearGradient(-80, -150, 60, 40); sh.addColorStop(0, 'rgba(170,190,235,' + (0.16 * light) + ')'); sh.addColorStop(0.45, 'rgba(170,190,235,0.03)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+        c.fillStyle = sh; c.fillRect(-160, -160, 320, 340);
+        // brow ridge and the line of the nose, catching a little light
+        c.strokeStyle = 'rgba(150,170,215,' + (0.35 * light) + ')'; c.lineWidth = 2; c.lineCap = 'round';
+        c.beginPath(); c.moveTo(-54, -30); c.quadraticCurveTo(-30, -24, -6, -12); c.moveTo(54, -30); c.quadraticCurveTo(30, -24, 6, -12); c.stroke();
+        c.lineWidth = 1.4; c.beginPath(); c.moveTo(0, -6); c.lineTo(0, 38); c.stroke();
+        c.strokeStyle = 'rgba(150,170,215,' + (0.2 * light) + ')'; c.lineWidth = 1; c.beginPath(); c.moveTo(-6, 16); c.lineTo(-9, 30); c.stroke();
+        c.restore();
+        // rim light along the edge of the hood (not the shoulders)
+        c.save(); c.beginPath(); c.rect(-200, -200, 400, 300); c.clip(); hood(); c.strokeStyle = 'rgba(150,175,230,' + (0.45 * light) + ')'; c.lineWidth = 1.5; c.stroke(); c.restore();
+        c.save(); c.beginPath(); c.rect(-200, 100, 400, 80); c.clip();
+        const rim = c.createLinearGradient(0, 105, 0, 172); rim.addColorStop(0, 'rgba(150,175,230,' + (0.4 * light) + ')'); rim.addColorStop(1, 'rgba(150,175,230,0)');
+        hood(); c.strokeStyle = rim; c.lineWidth = 1.5; c.stroke(); c.restore();
+        // the bare lower face, lit by the moon
+        const sk = c.createLinearGradient(0, 6, 0, 100); sk.addColorStop(0, '#9aa4b6'); sk.addColorStop(1, '#5d6678');
+        face(); c.fillStyle = sk; c.fill();
+        c.save(); face(); c.clip();
+        c.strokeStyle = 'rgba(10,12,18,0.5)'; c.lineWidth = 4; c.shadowColor = 'rgba(0,0,0,0.85)'; c.shadowBlur = 9;   // shadow under the edge of the cowl
+        c.beginPath(); c.moveTo(-57, 2); c.lineTo(-11, 30); c.lineTo(0, 44); c.lineTo(11, 30); c.lineTo(57, 2); c.stroke();
+        c.restore();
+        const ns = c.createRadialGradient(0, 47, 1, 0, 49, 13); ns.addColorStop(0, 'rgba(20,24,34,0.45)'); ns.addColorStop(1, 'rgba(20,24,34,0)');
+        c.fillStyle = ns; c.beginPath(); c.ellipse(0, 48, 13, 7, 0, 0, 2 * Math.PI); c.fill();
+        c.strokeStyle = '#1e2330'; c.lineWidth = 2.6; c.lineCap = 'round';
+        c.beginPath(); c.moveTo(-19, 66); c.quadraticCurveTo(0, 61, 19, 66); c.stroke();          // a stern, level mouth
+        c.strokeStyle = 'rgba(30,35,48,0.45)'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(-8, 89); c.quadraticCurveTo(0, 93, 8, 89); c.stroke();
+        // the eyes: narrow, angled down towards the nose, glowing white
+        [-1, 1].forEach(m => {
+          c.beginPath(); c.moveTo(m * 46, -15); c.lineTo(m * 13, -5); c.quadraticCurveTo(m * 16, 6, m * 29, 6); c.quadraticCurveTo(m * 43, 4, m * 46, -15); c.closePath();
+          c.fillStyle = '#000'; c.fill();
+          if (eye > 0) { c.save(); c.fillStyle = 'rgba(240,246,255,' + eye + ')'; c.shadowColor = 'rgba(190,220,255,1)'; c.shadowBlur = 16; c.fill(); c.restore(); }
+        });
+        c.restore();
+      }
+      function nightKnight() {
+        if (busy()) return;
+        window.__eggBusy = true;
+        const W = innerWidth, H = innerHeight, dpr = Math.min(2, devicePixelRatio || 1), F = W * 0.95;
+        const root = layer(); root.style.cursor = 'pointer';
+        const cv = document.createElement('canvas'); cv.width = W * dpr; cv.height = H * dpr; cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
+        root.appendChild(cv); const c = cv.getContext('2d'); c.scale(dpr, dpr);
+        const bld = []; for (let x = -10; x < W + 20;) { const w = 26 + Math.random() * 48, h = 60 + Math.random() * 190; bld.push([x, w, h, Array.from({ length: 14 }, () => [Math.random(), Math.random(), Math.random() < 0.35])]); x += w + 2; }
+        const clouds = Array.from({ length: 9 }, () => [Math.random() * W, H * (0.06 + Math.random() * 0.3), 70 + Math.random() * 120, Math.random() * 0.02 + 0.006]);
+        const src = [W * 0.18, H - 40], spot = [W * 0.6, H * 0.18], hit = [W * 0.48, H * 0.42];
+        const T_FLY = 1900, T_HIT = 3250, T_FALL = 4400, T_MASK = 5300;
+        // the flight: far away near the searchlight, spinning in its own plane, turning as it comes so a wing tip leads
+        const S = 0.5, FIN = { spin: 0, yaw: 0.95, tilt: 0.42 }, TURNS = Math.PI * 2 * 6;
+        const tipL = [1 * S, 0.04 * S, 0], tipW = [(hit[0] - W / 2) / F, (hit[1] - H / 2) / F, 1];
+        const Cend = v3.sub(tipW, orient(tipL, FIN)), Zs = 34, Cstart = [((spot[0] - 20) - W / 2) / F * Zs, ((spot[1] + 50) - H / 2) / F * Zs, Zs];
+        const poseAt = f => {
+          const g = 1 - Math.pow(1 - f, 1.0), pf = Math.pow(f, 2.3), e = 1 - Math.pow(1 - f, 2);
+          return { C: v3.add(Cstart, v3.mul(v3.sub(Cend, Cstart), pf)), o: { spin: TURNS * e - TURNS, yaw: 0.15 + (FIN.yaw - 0.15) * Math.pow(f, 1.6), tilt: 1.15 + (FIN.tilt - 1.15) * Math.pow(f, 1.4) } };
+        };
+        let frozen = null, shards = null, shook = 0;
+        const t0 = performance.now(); let alive = true, closing = 0;
+        sfx('close'); hapt([20, 50, 20]);
+        function scene(t, withBlade) {
+          const k = v => Math.max(0, Math.min(1, v));
+          const sky = c.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#05070f'); sky.addColorStop(0.6, '#0b1428'); sky.addColorStop(1, '#141c30');
+          c.globalAlpha = k(t / 600); c.fillStyle = sky; c.fillRect(0, 0, W, H);
+          clouds.forEach(cl => { cl[0] = (cl[0] + cl[3] * 16) % (W + 200); const gg = c.createRadialGradient(cl[0] - 100, cl[1], 0, cl[0] - 100, cl[1], cl[2]); gg.addColorStop(0, 'rgba(70,80,105,0.55)'); gg.addColorStop(1, 'rgba(70,80,105,0)'); c.fillStyle = gg; c.fillRect(cl[0] - 100 - cl[2], cl[1] - cl[2], cl[2] * 2, cl[2] * 2); });
+          const sw = k((t - 500) / 1100), ang0 = -2.3, ang1 = Math.atan2(spot[1] - src[1], spot[0] - src[0]), ang = ang0 + (ang1 - ang0) * (1 - Math.pow(1 - sw, 3));
+          if (t > 500) {
+            const len = Math.hypot(spot[0] - src[0], spot[1] - src[1]), end = [src[0] + Math.cos(ang) * len, src[1] + Math.sin(ang) * len], n = [-Math.sin(ang), Math.cos(ang)];
+            const bg = c.createLinearGradient(src[0], src[1], end[0], end[1]); bg.addColorStop(0, 'rgba(255,248,210,0.5)'); bg.addColorStop(1, 'rgba(255,248,210,0.12)');
+            c.fillStyle = bg; c.beginPath(); c.moveTo(src[0] - n[0] * 6, src[1] - n[1] * 6); c.lineTo(end[0] - n[0] * 40, end[1] - n[1] * 40); c.lineTo(end[0] + n[0] * 40, end[1] + n[1] * 40); c.lineTo(src[0] + n[0] * 6, src[1] + n[1] * 6); c.closePath(); c.fill();
+            const on = k((t - 1300) / 400);
+            c.save(); c.translate(end[0], end[1]);
+            const og = c.createRadialGradient(0, 0, 0, 0, 0, 78); og.addColorStop(0, 'rgba(255,246,200,' + (0.85 * on) + ')'); og.addColorStop(0.75, 'rgba(255,240,180,' + (0.55 * on) + ')'); og.addColorStop(1, 'rgba(255,240,180,0)');
+            c.fillStyle = og; c.beginPath(); c.ellipse(0, 0, 80, 52, 0, 0, 7); c.fill();
+            if (on > 0) { const fl = 1 + 0.08 * Math.sin(t / 140); c.fillStyle = 'rgba(8,10,18,' + (0.92 * on) + ')'; c.beginPath(); bat(0.95).forEach(([x, y], i) => { y *= x === 0 ? 1 : fl; i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.closePath(); c.fill(); }
+            c.restore();
+          }
+          bld.forEach(([x, w, h, win]) => { c.fillStyle = '#04060c'; c.fillRect(x, H - h, w, h); win.forEach(([a, b, lit]) => { if (lit) { c.fillStyle = 'rgba(255,214,120,0.55)'; c.fillRect(x + 4 + a * (w - 10), H - h + 8 + b * (h - 16), 3, 4); } }); });
+          c.fillStyle = '#222a3a'; c.fillRect(src[0] - 9, src[1] - 6, 18, 12);
+          c.globalAlpha = 1;
+          if (withBlade && t > T_FLY) {
+            const f = Math.min(1, (t - T_FLY) / (T_HIT - T_FLY));
+            for (let gh = 3; gh >= 1; gh--) { const q = poseAt(Math.max(0, f - gh * 0.025)); drawBlade3(c, q.C, q.o, S, F, W, H, 0.13); }
+            const q = poseAt(f); drawBlade3(c, q.C, q.o, S, F, W, H, 1);
+            if (!scene.whoosh && f > 0.05) { scene.whoosh = 1; sfx('flick'); }
+          }
+        }
+        function makeShards() {
+          const N = 15, rings = [8, 44, 100, 186, 320, 560, 1200], P = [];
+          const angs = Array.from({ length: N }, (_, i) => i / N * Math.PI * 2 + rnd(-0.12, 0.12));
+          for (let i = 0; i < N; i++) P.push(rings.map((r, j) => { const rr = r * (j ? rnd(0.82, 1.18) : 1); return [hit[0] + Math.cos(angs[i]) * rr, hit[1] + Math.sin(angs[i]) * rr]; }));
+          const out = [];
+          for (let i = 0; i < N; i++) for (let j = 0; j < rings.length - 1; j++) {
+            const a = P[i][j], b = P[(i + 1) % N][j], c2 = P[(i + 1) % N][j + 1], d = P[i][j + 1], cx = (a[0] + b[0] + c2[0] + d[0]) / 4, cy = (a[1] + b[1] + c2[1] + d[1]) / 4;
+            const xs = [a[0], b[0], c2[0], d[0]], ys = [a[1], b[1], c2[1], d[1]];
+            if (Math.min(...xs) >= W || Math.min(...ys) >= H || Math.max(...xs) <= 0 || Math.max(...ys) <= 0) continue;
+            const bx = Math.max(0, Math.floor(Math.min(...xs))), by = Math.max(0, Math.floor(Math.min(...ys)));
+            out.push({ poly: [a, b, c2, d], bx, by, bw: Math.max(1, Math.min(W, Math.ceil(Math.max(...xs))) - bx), bh: Math.max(1, Math.min(H, Math.ceil(Math.max(...ys))) - by),
+              cx, cy, vx: (cx - hit[0]) * rnd(0.0002, 0.0007), vy: rnd(-0.08, 0.02), va: rnd(-0.004, 0.004), x: 0, y: 0, a: 0, delay: j * 70 + rnd(0, 160) });
+          }
+          return out;
+        }
+        (function f(now) {
+          if (!alive) return;
+          const t = now - t0;
+          c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+          if (t < T_HIT) scene(t, true);
+          else {
+            if (!frozen) {
+              scene(T_HIT - 1, false);                        // the scene behind the glass at the instant of impact
+              frozen = document.createElement('canvas'); frozen.width = cv.width; frozen.height = cv.height; frozen.getContext('2d').drawImage(cv, 0, 0);
+              shards = makeShards(); sfx('land'); sfx('flop'); hapt([90, 30, 60, 20, 30]); shook = now;
+            }
+            c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+            const sh = Math.max(0, 1 - (now - shook) / 450) * 9;
+            c.save(); c.translate(rnd(-sh, sh), rnd(-sh, sh));
+            const fall = t > T_FALL, grow = Math.min(1, (t - T_HIT) / 260);
+            for (const p of shards) {
+              if (fall && t > T_FALL + p.delay) { p.vy += 0.0018 * 16; p.x += p.vx * 16; p.y += p.vy * 16; p.a += p.va * 16; }
+              if (p.cy + p.y > H + 400) continue;
+              c.save(); c.translate(p.cx + p.x, p.cy + p.y); c.rotate(p.a); c.translate(-p.cx, -p.cy);
+              c.beginPath(); p.poly.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath();
+              c.save(); c.clip(); c.drawImage(frozen, p.bx * dpr, p.by * dpr, p.bw * dpr, p.bh * dpr, p.bx, p.by, p.bw, p.bh);
+              const sheen = c.createLinearGradient(p.bx, p.by, p.bx + p.bw, p.by + p.bh); sheen.addColorStop(0, 'rgba(255,255,255,0.07)'); sheen.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = sheen; c.fillRect(p.bx, p.by, p.bw, p.bh);
+              c.restore();
+              c.strokeStyle = 'rgba(235,242,255,' + (0.75 * grow) + ')'; c.lineWidth = 1.1; c.stroke();
+              c.restore();
+            }
+            // the blade, stuck in the glass by its tip – it shudders, then drops with the shards
+            const q = poseAt(1), sh2 = Math.max(0, 1 - (t - T_HIT) / 380), o = { spin: q.o.spin, yaw: q.o.yaw + Math.sin((t - T_HIT) / 22) * 0.06 * sh2, tilt: q.o.tilt + Math.sin((t - T_HIT) / 17) * 0.05 * sh2 };
+            const drop = fall ? Math.pow((t - T_FALL) / 1000, 2) * H * 0.9 : 0;
+            if (drop < H) { c.save(); c.translate(0, drop); c.translate(hit[0], hit[1]); c.rotate(fall ? (t - T_FALL) / 900 : 0); c.translate(-hit[0], -hit[1]); drawBlade3(c, q.C, o, S, F, W, H, 1); c.restore(); }
+            const fl = Math.max(0, 1 - (t - T_HIT) / 220);
+            if (fl > 0) { const g = c.createRadialGradient(hit[0], hit[1], 0, hit[0], hit[1], 220); g.addColorStop(0, 'rgba(255,255,255,' + fl + ')'); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, 0, W, H); }
+            c.restore();
+            if (t > T_MASK) {
+              const m = Math.min(1, (t - T_MASK) / 900), s = Math.min(1.45, W / 250) * (0.94 + 0.06 * m);
+              c.globalAlpha = m; drawCowl(c, W / 2, H * 0.34, s * 0.78, Math.min(1, (t - T_MASK) / 1400), Math.max(0, Math.min(1, (t - T_MASK - 700) / 500)) * (0.78 + 0.22 * Math.sin(t / 650)));
+              c.globalAlpha = 1;
+              const tx = Math.max(0, Math.min(1, (t - T_MASK - 1300) / 700));
+              if (tx > 0) {
+                c.globalAlpha = tx; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#e6ebf5'; const y0 = H * 0.34 + 168 * s;
+                c.font = '600 14px Georgia, serif'; c.fillText('I’m not saying I’m Batman.', W / 2, y0);
+                c.fillText('I’m just saying nobody has ever seen us', W / 2, y0 + 22); c.fillText('in the same room.', W / 2, y0 + 42);
+                c.font = '600 28px Caveat, cursive'; c.fillStyle = '#ffea00'; c.fillText('— A.', W / 2, y0 + 78); c.globalAlpha = 1;
+              }
+            }
+          }
+          if (closing) { const k2 = Math.min(1, (now - closing) / 500); root.style.opacity = String(1 - k2); if (k2 >= 1) { alive = false; root.remove(); window.__eggBusy = false; return; } }
+          requestAnimationFrame(f);
+        })(t0);
+        root.addEventListener('click', () => { if (!closing && performance.now() - t0 > T_MASK + 800) { closing = performance.now(); sfx('open'); buzz(6); } });
+        setTimeout(() => { if (!closing && alive) closing = performance.now(); }, 13500);
+      }
+
+      // search words that bring them out (once per search)
+      let lastQ = '';
+      window.__searchEggs2 = q => {
+        const s = String(q || '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z ]+/g, ' ').replace(/\s+/g, ' ').trim();
+        let fn = null;
+        if (/^(kung ?fu ?panda|panda|the panda|kungfupanda|kung fu|kungfu)$/.test(s)) fn = panda;
+        else if (/^(i ?a?m ?batman|batman|the batman|bat ?signal|bat ?man|dark knight|the dark knight|gotham|bruce wayne|batarang)$/.test(s)) fn = nightKnight;
+        if (!fn) { lastQ = ''; return false; }
+        if (s !== lastQ) { lastQ = s; setTimeout(fn, 450); }
+        return true;
+      };
+      // ---- the kung fu panda: a palm strike – slap the home screen with four or five fingers at once ----
+      (function () {
+        let t0 = 0, hit = null, max = 0;
+        const home = el => el && el.closest && el.closest('.workspace') && !document.getElementById('flap-page').classList.contains('open') &&
+          !(window.flapOverview && flapOverview.isOpen()) && !document.querySelector('.sidebar.open') && !busy();
+        document.addEventListener('touchstart', e => {
+          const now = performance.now();
+          if (e.touches.length === 1 || now - t0 > 900) { t0 = now; hit = null; max = 0; }
+          if (!home(e.target)) { t0 = -1e9; return; }
+          max = Math.max(max, e.touches.length);
+          if (e.touches.length >= 4 && now - t0 < 260 && !hit) { let x = 0, y = 0; for (const p of e.touches) { x += p.clientX; y += p.clientY; } hit = [x / e.touches.length, y / e.touches.length]; }
+        }, { passive: true });
+        document.addEventListener('touchend', e => {
+          if (e.touches.length || !hit) return;
+          const at = hit; hit = null;
+          if (performance.now() - t0 > 650) return;            // a quick slap, not a resting hand
+          strike(at);
+        }, { passive: true });
+        function strike(at) {
+          if (busy()) return;
+          // the blow lands: a flash and a ripple where the palm struck, the screen jolts, then he arrives
+          const fx = layer(); fx.style.pointerEvents = 'none';
+          const ring = document.createElement('i');
+          ring.style.cssText = 'position:absolute;left:' + at[0] + 'px;top:' + at[1] + 'px;width:160px;height:160px;margin:-80px 0 0 -80px;border-radius:50%;' +
+            'background:radial-gradient(circle, rgba(255,255,255,0.9), rgba(255,234,0,0.45) 38%, rgba(255,234,0,0) 66%);';
+          fx.appendChild(ring);
+          ring.animate([{ transform: 'scale(0.2)', opacity: 1 }, { transform: 'scale(2.4)', opacity: 0 }], { duration: 520, easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)', fill: 'forwards' });
+          const ws = document.querySelector('.workspace');
+          if (ws) ws.animate([{ transform: 'none' }, { transform: 'translate(-6px,4px)' }, { transform: 'translate(5px,-3px)' }, { transform: 'translate(-2px,1px)' }, { transform: 'none' }], { duration: 300 });
+          sfx('land'); hapt([40, 20, 30]);
+          setTimeout(() => { fx.remove(); panda(); }, 420);
+        }
+        window.__palmStrike = strike;
+      })();
+      // ---- the night knight: draw the signal – trace a full circle on the home screen and it lights up in the sky ----
+      (function () {
+        let pts = null;
+        const home = el => el && el.closest && el.closest('.workspace') && !document.getElementById('flap-page').classList.contains('open') &&
+          !(window.flapOverview && flapOverview.isOpen()) && !document.querySelector('.sidebar.open') && !busy();
+        const start = (x, y, el) => { pts = home(el) ? [[x, y, performance.now()]] : null; };
+        const move = (x, y) => { if (!pts) return; const l = pts[pts.length - 1]; if (Math.hypot(x - l[0], y - l[1]) > 3) pts.push([x, y, performance.now()]); if (pts.length > 500) pts = null; };
+        const end = () => { const q = pts; pts = null; const c = q && readCircle(q); if (c) signal(c, q); };
+        document.addEventListener('touchstart', e => { if (e.touches.length === 1) start(e.touches[0].clientX, e.touches[0].clientY, e.target); else pts = null; }, { passive: true });
+        document.addEventListener('touchmove', e => { if (e.touches.length === 1) move(e.touches[0].clientX, e.touches[0].clientY); else pts = null; }, { passive: true });
+        document.addEventListener('touchend', e => { if (!e.touches.length) end(); }, { passive: true });
+        document.addEventListener('touchcancel', () => { pts = null; }, { passive: true });
+        document.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && e.button === 0) start(e.clientX, e.clientY, e.target); });
+        document.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' && pts && e.buttons) move(e.clientX, e.clientY); });
+        document.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') end(); });
+        // a circle: round (every point about the same distance from the centre), big enough, closed, and swept all the way round
+        function readCircle(q) {
+          if (q.length < 14) return null;
+          const dur = q[q.length - 1][2] - q[0][2]; if (dur < 250 || dur > 4000) return null;
+          let cx = 0, cy = 0; q.forEach(p => { cx += p[0]; cy += p[1]; }); cx /= q.length; cy /= q.length;
+          const rs = q.map(p => Math.hypot(p[0] - cx, p[1] - cy)), R = rs.reduce((a, b) => a + b, 0) / rs.length;
+          if (R < 45) return null;
+          const sd = Math.sqrt(rs.reduce((a, r) => a + (r - R) * (r - R), 0) / rs.length); if (sd / R > 0.24) return null;
+          let sweep = 0; for (let i = 1; i < q.length; i++) { let d = Math.atan2(q[i][1] - cy, q[i][0] - cx) - Math.atan2(q[i - 1][1] - cy, q[i - 1][0] - cx); if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; sweep += d; }
+          if (Math.abs(sweep) < 5.5 || Math.abs(sweep) > 9.5) return null;
+          if (Math.hypot(q[0][0] - q[q.length - 1][0], q[0][1] - q[q.length - 1][1]) > R * 0.75) return null;
+          return { x: cx, y: cy, r: R };
+        }
+        // the drawn ring glows, the night falls around it, a beam reaches up from below and the bat appears in the light
+        function signal(c, q) {
+          if (busy()) return;
+          window.__eggBusy = true;
+          const W = innerWidth, H = innerHeight, root = layer(2960); root.style.pointerEvents = 'none';
+          const cv = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
+          root.appendChild(cv); const x = cv.getContext('2d'); x.scale(dpr, dpr);
+          const R = Math.min(Math.max(c.r, 70), W * 0.42), bat = new Path2D('M90 21L94.5 10.5L97.5 19.5L108 13.5L129 7.5L153 10.5L171 24L160.5 31.5L151.5 28.5L142.5 37.5L132 33L121.5 42L109.5 36L99 43.5L90 48L81 43.5L70.5 36L58.5 42L48 33L37.5 37.5L28.5 28.5L19.5 31.5L9 24L27 10.5L51 7.5L72 13.5L82.5 19.5L85.5 10.5Z');
+          sfx('peek'); hapt([20, 40, 20]);
+          const stop = run(t => {
+            x.clearRect(0, 0, W, H);
+            const dark = Math.min(1, t / 700), lit = Math.max(0, Math.min(1, (t - 450) / 600)), out = Math.max(0, Math.min(1, (t - 2300) / 400));
+            x.fillStyle = 'rgba(3,5,12,' + (0.88 * dark) + ')'; x.fillRect(0, 0, W, H);
+            // the drawn stroke, glowing
+            x.save(); x.globalAlpha = 1 - lit * 0.7; x.strokeStyle = '#ffea00'; x.lineWidth = 3; x.shadowColor = '#ffea00'; x.shadowBlur = 14; x.lineJoin = x.lineCap = 'round';
+            x.beginPath(); q.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.stroke(); x.restore();
+            if (lit > 0) {
+              // the beam from the bottom of the screen
+              x.save(); x.globalAlpha = lit * 0.5; const g = x.createLinearGradient(0, H, 0, c.y);
+              g.addColorStop(0, 'rgba(255,240,190,0.55)'); g.addColorStop(1, 'rgba(255,240,190,0.08)'); x.fillStyle = g;
+              x.beginPath(); x.moveTo(W / 2 - 16, H + 4); x.lineTo(W / 2 + 16, H + 4); x.lineTo(c.x + R * 0.95, c.y); x.lineTo(c.x - R * 0.95, c.y); x.closePath(); x.fill(); x.restore();
+              // the disc of light with the bat in it
+              const flick = 0.92 + 0.08 * Math.sin(t / 37) * Math.sin(t / 91);
+              x.save(); x.globalAlpha = lit * flick;
+              const d = x.createRadialGradient(c.x, c.y, R * 0.2, c.x, c.y, R * 1.25);
+              d.addColorStop(0, 'rgba(255,246,205,0.98)'); d.addColorStop(0.72, 'rgba(255,232,150,0.9)'); d.addColorStop(0.8, 'rgba(255,220,120,0.35)'); d.addColorStop(1, 'rgba(255,220,120,0)');
+              x.fillStyle = d; x.beginPath(); x.arc(c.x, c.y, R * 1.25, 0, 2 * Math.PI); x.fill();
+              const k = (R * 1.5) / 180 * (0.85 + 0.15 * lit); x.translate(c.x - 90 * k, c.y - 27 * k); x.scale(k, k); x.fillStyle = '#07080c'; x.fill(bat); x.restore();
+            }
+            if (out > 0) { x.fillStyle = 'rgba(3,5,12,' + out + ')'; x.fillRect(0, 0, W, H); }
+            if (t > 2750) {
+              stop(); window.__eggBusy = false; root.classList.remove('egg-layer');
+              nightKnight();                                       // his layer opens over ours; then ours goes quietly
+              setTimeout(() => root.remove(), 600);
+              return false;
+            }
+          });
+        }
+        window.__batSignal = signal;
+        function run(step) { const t0 = performance.now(); let alive = true; (function f(now) { if (!alive) return; if (step(now - t0) === false) { alive = false; return; } requestAnimationFrame(f); })(t0); return () => { alive = false; }; }
+      })();
+      window.__panda = panda; window.__nightKnight = nightKnight;
     })();
 
     // ---------- five quick taps on "Flap" in the title bar: the word lifts like a raised flap ----------
@@ -6420,12 +7337,23 @@
         const r = f.getBoundingClientRect(), cs = getComputedStyle(f);
         const wrap = document.createElement('div'); wrap.className = 'flap-lift';
         wrap.style.cssText = 'left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height + 'px;';
-        const under = document.createElement('div'); under.className = 'fl-under'; under.textContent = 'Amanyu';
+        const under = document.createElement('div'); under.className = 'fl-under';      // a soft glow where the flap was raised
         under.style.fontSize = Math.min(r.height * 1.05, r.width / 2.9).toFixed(1) + 'px';
         const leaf = document.createElement('div'); leaf.className = 'fl-leaf'; leaf.textContent = f.textContent;
         leaf.style.fontFamily = cs.fontFamily; leaf.style.fontSize = cs.fontSize; leaf.style.fontWeight = cs.fontWeight; leaf.style.letterSpacing = cs.letterSpacing;
         wrap.append(under, leaf); document.body.appendChild(wrap);
         f.style.visibility = 'hidden';
+        // the rest of the title dims into the bar, and the maker's name writes itself across it
+        const brand = f.closest('.brand-name'), br = brand.getBoundingClientRect();
+        const sig = document.createElement('div');
+        sig.style.cssText = 'position:fixed;z-index:1002;pointer-events:none;left:' + br.left + 'px;top:' + (br.top - 6) + 'px;width:' + br.width + 'px;height:' + (br.height + 12) + 'px;' +
+          'display:flex;align-items:center;justify-content:center;font-family:Caveat,cursive;font-weight:600;font-size:' + Math.max(24, br.height * 1.45).toFixed(0) + 'px;' +
+          'color:#ffea00;text-shadow:0 0 10px rgba(255,234,0,0.85),0 0 24px rgba(255,234,0,0.45);white-space:nowrap;clip-path:inset(0 100% 0 0);';
+        sig.textContent = 'Dr Amanyu';
+        document.body.appendChild(sig);
+        brand.animate([{ opacity: 1 }, { offset: 0.1, opacity: 1 }, { offset: 0.2, opacity: 0.06 }, { offset: 0.8, opacity: 0.06 }, { offset: 0.94, opacity: 1 }, { opacity: 1 }], { duration: 3800 });
+        sig.animate([{ clipPath: 'inset(0 100% 0 0)', opacity: 1 }, { offset: 0.17, clipPath: 'inset(0 100% 0 0)', opacity: 1 }, { offset: 0.43, clipPath: 'inset(0 0% 0 0)', opacity: 1 },
+          { offset: 0.76, clipPath: 'inset(0 0% 0 0)', opacity: 1 }, { offset: 0.86, clipPath: 'inset(0 0% 0 0)', opacity: 0 }, { clipPath: 'inset(0 0% 0 0)', opacity: 0 }], { duration: 3800, fill: 'forwards' });
         sfx('peek'); hapt(HAPTIC.peek);
         under.animate([{ opacity: 0 }, { offset: 0.12, opacity: 1 }, { offset: 0.86, opacity: 1 }, { opacity: 0 }], { duration: 3800, fill: 'forwards' });
         leaf.animate([
@@ -6434,8 +7362,9 @@
           { offset: 0.8, transform: 'rotateY(-78deg)', easing: 'cubic-bezier(0.6, 0, 0.8, 0.4)' },
           { offset: 0.9, transform: 'rotateY(4deg)' },
           { transform: 'rotateY(0deg)' }
-        ], { duration: 3800, fill: 'forwards' }).onfinish = () => { wrap.remove(); f.style.visibility = ''; busy = false; };
+        ], { duration: 3800, fill: 'forwards' }).onfinish = () => { wrap.remove(); sig.remove(); f.style.visibility = ''; busy = false; };
         setTimeout(() => showToast('✦ Flap raised by its maker – Dr Amanyu'), 450);
+        setTimeout(() => { if (wrap.isConnected) { wrap.remove(); sig.remove(); f.style.visibility = ''; busy = false; } }, 4800);   // never left half-done (e.g. app sent to the background)
         setTimeout(() => { sfx('land'); hapt(HAPTIC.land); }, 3300);
       }
     })();
