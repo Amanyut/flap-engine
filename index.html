@@ -4850,7 +4850,7 @@
         const wrap = document.createElement('div'); wrap.className = 'pm-backdrop';
         wrap.innerHTML = '<div class="pm-card"><div class="pm-kicker">Swipe log</div><pre class="diag-pre"></pre>' +
           '<button type="button" class="pm-btn">Close</button></div>';
-        wrap.querySelector('pre').textContent = info.join('\n') + '\n\n' + (log.length ? log.join('\n') : '(no swipes on a flap page yet)');
+        const eg = window.__eggLog || []; wrap.querySelector('pre').textContent = info.join('\n') + '\n\n' + (log.length ? log.join('\n') : '(no swipes on a flap page yet)') + (eg.length ? '\n\n' + eg.join('\n') : '');
         wrap.querySelector('.pm-btn').onclick = () => wrap.remove();
         document.body.appendChild(wrap);
       });
@@ -7268,16 +7268,20 @@
         document.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') end(); });
         // a circle: round (every point about the same distance from the centre), big enough, closed, and swept all the way round
         function readCircle(q) {
-          if (q.length < 14) return null;
-          const dur = q[q.length - 1][2] - q[0][2]; if (dur < 250 || dur > 4000) return null;
+          const note = m => { try { const L = window.__eggLog || (window.__eggLog = []); L.push(new Date().toTimeString().slice(0, 8) + ' circle: ' + m); if (L.length > 30) L.shift(); } catch (e) {} };
+          if (q.length < 10) return null;                                   // a tap or a tiny flick – not worth a note
+          const dur = q[q.length - 1][2] - q[0][2];
           let cx = 0, cy = 0; q.forEach(p => { cx += p[0]; cy += p[1]; }); cx /= q.length; cy /= q.length;
           const rs = q.map(p => Math.hypot(p[0] - cx, p[1] - cy)), R = rs.reduce((a, b) => a + b, 0) / rs.length;
-          if (R < 45) return null;
-          const sd = Math.sqrt(rs.reduce((a, r) => a + (r - R) * (r - R), 0) / rs.length); if (sd / R > 0.24) return null;
+          const sd = Math.sqrt(rs.reduce((a, r) => a + (r - R) * (r - R), 0) / rs.length);
           let sweep = 0; for (let i = 1; i < q.length; i++) { let d = Math.atan2(q[i][1] - cy, q[i][0] - cx) - Math.atan2(q[i - 1][1] - cy, q[i - 1][0] - cx); if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; sweep += d; }
-          if (Math.abs(sweep) < 5.5 || Math.abs(sweep) > 9.5) return null;
-          if (Math.hypot(q[0][0] - q[q.length - 1][0], q[0][1] - q[q.length - 1][1]) > R * 0.75) return null;
-          return { x: cx, y: cy, r: R };
+          const turn = Math.abs(sweep) * 180 / Math.PI, gap = Math.hypot(q[0][0] - q[q.length - 1][0], q[0][1] - q[q.length - 1][1]) / (R || 1);
+          const info = Math.round(turn) + '° turn, size ' + Math.round(R) + ', roundness ' + (sd / (R || 1)).toFixed(2) + ', gap ' + gap.toFixed(2) + ', ' + Math.round(dur) + ' ms, ' + q.length + ' pts';
+          // forgiving on purpose: a thumb-drawn oval that stops a little short, or runs a little past the start, still counts
+          const why = dur < 120 || dur > 5000 ? 'too quick or too slow' : R < 28 ? 'too small' : sd / R > 0.34 ? 'not round enough' :
+            turn < 275 ? 'not closed (needs about ¾ of a turn or more)' : turn > 760 ? 'too many loops' : gap > 1.3 && turn < 330 ? 'ends too far from the start' : '';
+          if (turn > 120) note((why ? 'no – ' + why : 'yes') + ' (' + info + ')');   // only strokes that curve at all
+          return why ? null : { x: cx, y: cy, r: R };
         }
         // the drawn ring glows, the night falls around it, a beam reaches up from below and the bat appears in the light
         function signal(c, q) {
