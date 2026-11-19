@@ -3348,7 +3348,7 @@
       const ws = document.querySelector('.workspace'), ind = document.getElementById('ptr');
       if (!ws || !ind) return;
       const svg = ind.querySelector('svg');
-      let y0 = null, pull = 0, busy = false, lastDy = 0;
+      let y0 = null, pull = 0, busy = false, lastDy = 0, lastY = 0;
       const place = () => { ind.style.transform = 'translate(-50%, ' + (pull - 60) + 'px)'; ind.style.opacity = Math.min(1, pull / 45); };
       const reset = () => { pull = 0; ind.classList.remove('dragging', 'ready'); ind.style.transform = ''; ind.style.opacity = ''; svg.style.transform = ''; };
       ws.addEventListener('touchstart', e => {
@@ -3360,7 +3360,7 @@
       }, { passive: true });
       ws.addEventListener('touchmove', e => {
         if (y0 === null) return;
-        const dy = e.touches[0].clientY - y0; lastDy = dy;
+        const dy = e.touches[0].clientY - y0; lastDy = dy; lastY = e.touches[0].clientY;
         if (ws.scrollTop > 0 || dy < 0) { y0 = null; reset(); return; }
         pull = Math.min(120, dy * 0.5);
         ind.classList.add('dragging');
@@ -3373,7 +3373,9 @@
       ws.addEventListener('touchend', () => {
         if (y0 === null) return;
         y0 = null;
-        if (lastDy > 380 && window.flapEggs) { reset(); window.flapEggs.underSkin(); return; }   // far further than a refresh needs
+        // the egg only for a deliberate, very long pull: the finger travels over half the screen and ends in its bottom quarter
+        const vh = (window.visualViewport && window.visualViewport.height) || innerHeight;
+        if (lastDy > vh * 0.55 && lastY > vh * 0.75 && window.flapEggs) { reset(); window.flapEggs.underSkin(); return; }
         if (pull < 70) { reset(); return; }
         busy = true; sfx('scalpel');
         ind.classList.remove('dragging', 'ready'); ind.classList.add('spin');
@@ -3591,7 +3593,7 @@
       const finish = () => { if (ended) return; ended = true; lsAdd('flap_msgs_seen', next.id); reportSeen(next.id); wrap.remove(); popupOpen = false; setTimeout(queuePopups, 400); };
       const close = () => { buzz(6); if (collect && !answered) sendAnswer({ id: next.id, q: steps[0].qText, b: '(closed)', t: '' }); finish(); };
       const head = '<button type="button" class="pm-x" aria-label="Close">✕</button><div class="pm-kicker">' +
-        (next.style === 'reply' ? 'Amanyu replied' : next.style === 'question' ? 'A question from Amanyu' : 'A message from Amanyu') + '</div>';
+        (next.style === 'reply' ? 'Amanyu replied' : 'A message from Amanyu') + '</div>';
       if (next.style === 'reply') {
         card.innerHTML = head + (next.title ? '<h3>' + escapeAttr(next.title) + '</h3>' : '<div style="height:10px"></div>') +
           (next.yours ? '<div class="pm-yours"><span>' + (next.kind === 'support' ? 'You wrote' : 'You answered' + (next.q ? ': “' + escapeAttr(next.q) + '”' : '')) + '</span>' + escapeAttr(next.yours) + '</div>' : '') +
@@ -3685,6 +3687,27 @@
       return answersFlushing;
     }
     window.addEventListener('online', () => flushAnswers());
+
+    // New messages are fetched whenever the app comes back to the screen (phones usually resume the app rather than
+    // restart it) and every few minutes while it is open – a light request for messages only, at most once a minute.
+    (function () {
+      let lastCheck = Date.now(), busy = false;
+      function checkMessages(force) {
+        const email = localStorage.getItem('flap_email'), token = localStorage.getItem('flap_token');
+        if (busy || !email || !token || navigator.onLine === false || !datasetMaster.length) return;
+        if (!force && Date.now() - lastCheck < 60000) return;
+        busy = true; lastCheck = Date.now();
+        fetch(API_URL + '?action=messages&email=' + encodeURIComponent(email) + '&token=' + encodeURIComponent(token))
+          .then(r => r.json())
+          .then(data => { if (data && Array.isArray(data.messages)) personalise(data, true); })
+          .catch(() => {})
+          .finally(() => { busy = false; });
+      }
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkMessages(); });
+      window.addEventListener('focus', () => checkMessages());
+      setInterval(() => { if (document.visibilityState === 'visible') checkMessages(); }, 5 * 60 * 1000);
+      window.checkMessages = checkMessages;
+    })();
 
     // ---- the inbox (only for users ticked in the Users tab's "Inbox" column): answers and typed replies ----
     var inboxInfo = (function () { try { return JSON.parse(localStorage.getItem('flap_inbox') || 'null'); } catch (e) { return null; } })();
