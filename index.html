@@ -600,6 +600,11 @@
     .ib-act { margin-top: 6px; background: none; border: none; padding: 4px 0; color: var(--accent-blue); font: inherit; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
     .ib-sheet { display: block; text-align: center; margin-top: 12px; font-size: 0.9rem; color: var(--accent-blue); }
     .ib-empty { padding: 24px 0 10px; text-align: center; color: var(--text-muted); }
+    .ib-push { display: flex; align-items: center; gap: 10px; margin: 4px 0 10px; padding: 10px 12px; border-radius: 12px; background: rgba(59, 130, 246, 0.08); font-size: 0.88rem; line-height: 1.35; }
+    .ib-push span { flex: 1; }
+    .ib-push button { border: none; border-radius: 999px; padding: 8px 14px; background: var(--accent-blue); color: #fff; font: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
+    .ib-push.on { background: rgba(22, 163, 74, 0.1); }
+    .ib-push.on button { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); }
     .pm-card.letter { border-top: 5px solid #f5c451; background-image: linear-gradient(rgba(245, 196, 81, 0.07), transparent 120px); }
     .pm-body { font-size: 1.02rem; line-height: 1.6; }
     .pm-sign { font-family: 'Caveat', cursive; font-size: 1.7rem; text-align: right; color: var(--accent-blue); margin-top: 8px; }
@@ -3399,6 +3404,7 @@
         try { localStorage.setItem('flap_inbox', JSON.stringify(inboxInfo)); } catch (e) {}
         if (inboxInfo && inboxInfo.unread && inboxInfo.unread !== before) setTimeout(() => showToast(inboxInfo.unread + (inboxInfo.unread === 1 ? ' new answer' : ' new answers') + ' in your Inbox'), 2600);
         flushAnswers();
+        openInboxFromLink();
       }
       paintInbox();
       paintProfile();
@@ -3696,8 +3702,9 @@
     function openInbox() {
       if (document.getElementById('inbox-backdrop')) return;
       const wrap = document.createElement('div'); wrap.className = 'pm-backdrop'; wrap.id = 'inbox-backdrop';
-      wrap.innerHTML = '<div class="pm-card inbox-card has-x"><button type="button" class="pm-x" aria-label="Close">✕</button><div class="pm-kicker">Answers to your messages</div><h3>Inbox</h3><div class="ib-list"><div class="ib-empty">Loading…</div></div></div>';
+      wrap.innerHTML = '<div class="pm-card inbox-card has-x"><button type="button" class="pm-x" aria-label="Close">✕</button><div class="pm-kicker">Answers to your messages</div><h3>Inbox</h3><div class="ib-push"></div><div class="ib-list"><div class="ib-empty">Loading…</div></div></div>';
       document.body.appendChild(wrap);
+      paintPushSwitch(wrap.querySelector('.ib-push'));
       wrap.querySelector('.pm-x').onclick = () => { buzz(6); wrap.remove(); };
       const list = wrap.querySelector('.ib-list');
       inboxCall({ action: 'inbox' }).then(res => {
@@ -3714,6 +3721,52 @@
         list.querySelectorAll('.ib-item').forEach(el => wireReply(el, res.items[+el.dataset.k]));
       }).catch(() => { list.innerHTML = '<div class="ib-empty">The inbox could not be loaded. Please check the connection and try again.</div>'; });
     }
+    // ---- notifications on the owner's phone (Firebase Cloud Messaging; the backend sends them) ----
+    const FIREBASE_CONFIG = { apiKey: 'AIzaSyDGY-9ummupaeT7pDuUaD14aOugbbw3_xw', authDomain: 'flapendium.firebaseapp.com', projectId: 'flapendium',
+      storageBucket: 'flapendium.firebasestorage.app', messagingSenderId: '878430419607', appId: '1:878430419607:web:faeff2e20650bf1bc4c7d2' };   // public web settings of the Firebase project
+    const FCM_VAPID = 'BGSNgotqASxcNKhI5Y3x-2xD8Sr88P6hYlcaC83U904ox0O_nIs6-0Y7PuDEXdWnGsR9eruW13oqzHg_uCP1De0';   // the public Web Push key of the Firebase project
+    const FIREBASE_SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+    const pushOn = () => !!localStorage.getItem('flap_push') && 'Notification' in window && Notification.permission === 'granted';
+    function paintPushSwitch(box) {
+      if (!box) return;
+      if (!FIREBASE_CONFIG || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) { box.remove(); return; }
+      const on = pushOn();
+      box.classList.toggle('on', on);
+      box.innerHTML = '<span>' + (on ? '🔔 This phone is told about new answers, even when the app is closed.' : 'Get a notification on this phone when someone answers.') + '</span><button type="button">' + (on ? 'Turn off' : 'Turn on') + '</button>';
+      box.querySelector('button').onclick = function () { (on ? pushDisable : pushEnable)(this).then(() => paintPushSwitch(box)); };
+    }
+    async function pushToken() {
+      const [fa, fm] = await Promise.all([import(FIREBASE_SDK + 'firebase-app.js'), import(FIREBASE_SDK + 'firebase-messaging.js')]);
+      const app = fa.getApps().length ? fa.getApp() : fa.initializeApp(FIREBASE_CONFIG);
+      const reg = await navigator.serviceWorker.ready;
+      return { fm: fm, messaging: fm.getMessaging(app), token: await fm.getToken(fm.getMessaging(app), { vapidKey: FCM_VAPID, serviceWorkerRegistration: reg }) };
+    }
+    async function pushEnable(btn) {
+      try {
+        btn.disabled = true; btn.textContent = 'Turning on…';
+        if (await Notification.requestPermission() !== 'granted') { showToast('Notifications are blocked – allow them for this app in the phone’s settings'); return; }
+        const p = await pushToken();
+        if (!p.token) throw new Error('no token');
+        const res = await inboxCall({ action: 'push_register', push: p.token });
+        if (!res || !res.saved) throw new Error(res && res.error);
+        localStorage.setItem('flap_push', p.token); buzz(12); showToast('Notifications are on for this phone');
+      } catch (e) { showToast('Notifications could not be turned on – please try again'); }
+    }
+    async function pushDisable(btn) {
+      btn.disabled = true; btn.textContent = 'Turning off…';
+      const token = localStorage.getItem('flap_push');
+      try { await inboxCall({ action: 'push_unregister', push: token }); } catch (e) {}
+      try { const p = await pushToken(); await p.fm.deleteToken(p.messaging); } catch (e) {}
+      localStorage.removeItem('flap_push'); showToast('Notifications are off for this phone');
+    }
+    // a tap on a notification opens the inbox (the service worker passes it on, or the app opens at #inbox)
+    if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'open-inbox' && inboxInfo) openInbox(); });
+    function openInboxFromLink() {
+      if (location.hash !== '#inbox') return;
+      history.replaceState(history.state, '', location.pathname + location.search);
+      if (inboxInfo) setTimeout(openInbox, 600);
+    }
+
     function replyHtml(it) {
       if (it.reply) return '<div class="ib-replied">' + escapeAttr(it.reply) + '<small>Your reply' + (it.repliedAt ? ' · ' + escapeAttr(it.repliedAt) : '') + (it.replySeen ? ' · seen ✓' : '') + '</small></div>';
       return it.anon ? '' : '<button type="button" class="ib-act">Reply</button>';

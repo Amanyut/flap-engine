@@ -3,10 +3,10 @@
    works without a connection. A new version is downloaded in the background; the page then offers an
    "Update" button, and the new version takes over only when the user taps it.
    VERSION is a fingerprint of the app files (set by bump_sw.py) - any change to them makes a new version. */
-const VERSION = '0baf061ce5a8';
-const RELEASE = '1.0.74';   // shown as the version number (set by bump_sw.py)
+const VERSION = '854c289aa2f7';
+const RELEASE = '1.0.75';   // shown as the version number (set by bump_sw.py)
 const CODE = 'R26K19';     // coded build stamp: R + year + month letter (A = Jan) + day (set by bump_sw.py)
-const BUILT = '19 Nov 2026, 5:59 AM';   // when this version was made (set by bump_sw.py)
+const BUILT = '19 Nov 2026, 6:18 AM';   // when this version was made (set by bump_sw.py)
 const SHELL = 'flapendium-shell-' + VERSION;
 const RUNTIME = 'flapendium-runtime';
 const IMAGES = 'flapendium-images';
@@ -86,4 +86,24 @@ self.addEventListener('fetch', event => {
       return res;
     }))));
   }
+});
+
+// Notifications for the inbox owner (sent by the backend through Firebase Cloud Messaging as data messages)
+self.addEventListener('push', event => {
+  let d = {};
+  try { const j = event.data ? event.data.json() : {}; d = j.data || j.notification || j; } catch (e) {}
+  event.waitUntil(self.registration.showNotification(d.title || 'Amanyu’s Flapendium', {
+    body: d.body || 'There is a new answer in your Inbox.', icon: 'icons/icon-192.png', badge: 'icons/favicon-32.png',
+    tag: 'flap-inbox', renotify: true, data: { url: d.url || './#inbox' }
+  }));
+});
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const url = new URL((event.notification.data && event.notification.data.url) || './#inbox', self.registration.scope).href;
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) {
+      if (c.url.indexOf(self.registration.scope) === 0) { c.postMessage({ type: 'open-inbox' }); return c.focus(); }
+    }
+    return self.clients.openWindow(url);
+  }));
 });
