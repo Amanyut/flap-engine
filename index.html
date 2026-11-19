@@ -203,6 +203,10 @@
     .support-link svg { width: 26px; height: 26px; flex-shrink: 0; }
     .support-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
     .support-row .support-link { margin-top: 0; border: none; font-family: inherit; cursor: pointer; }
+    .support-link.inapp { background: #042551; color: #fff000; box-shadow: 0 6px 16px rgba(4, 37, 81, 0.25); }
+    .support-link.inapp svg { width: 24px; height: 24px; }
+    .ib-push-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: -4px 0 10px; font-size: 0.78rem; color: var(--text-muted); }
+    .ib-push-tools button { background: none; border: none; padding: 2px 0; color: var(--accent-blue); font: inherit; font-weight: 700; cursor: pointer; }
     .support-link.gmail { background: #ffffff; color: #1f2937; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.14), inset 0 0 0 1px rgba(15, 23, 42, 0.1); }
 
     .flap-card { background: var(--panel-light); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 10px;}
@@ -2183,12 +2187,14 @@
     const WHATSAPP_SVG = `<svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#fff" d="M16 3C8.8 3 3 8.7 3 15.8c0 2.5.7 4.9 2 7L3 29l6.4-2c2 1.1 4.3 1.7 6.6 1.7 7.2 0 13-5.7 13-12.8S23.2 3 16 3zm0 23.4c-2.1 0-4.1-.6-5.9-1.7l-.4-.3-3.8 1.2 1.2-3.7-.3-.4a10.5 10.5 0 0 1-1.7-5.7C5.1 9.9 10 5.1 16 5.1s10.9 4.8 10.9 10.7S22 26.4 16 26.4z"/>`
       + `<path fill="#fff" d="M12.2 9.6c-.3-.6-.6-.6-.9-.6h-.8c-.3 0-.7.1-1 .5-.4.4-1.3 1.3-1.3 3.1s1.4 3.6 1.5 3.8c.2.3 2.6 4.1 6.4 5.6 3.2 1.2 3.8 1 4.5.9.7-.1 2.2-.9 2.5-1.8.3-.9.3-1.6.2-1.8-.1-.2-.3-.3-.7-.5l-2.4-1.2c-.3-.1-.6-.2-.8.2-.2.4-.9 1.2-1.1 1.4-.2.2-.4.3-.8.1-.4-.2-1.6-.6-3-1.9-1.1-1-1.9-2.2-2.1-2.6-.2-.4 0-.6.2-.8l.6-.7c.2-.2.3-.4.4-.6.1-.3 0-.5 0-.7l-1.2-2.8z"/></svg>`
 ;
-    function supportLinksHtml() {
+    const INAPP_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff000" d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path fill="#042551" d="M7 8h10v1.6H7zM7 11.4h7v1.6H7z"/></svg>';
+    function supportLinksHtml(inApp) {
       const wa = !!(userProfile && userProfile.ask), mail = !!supportEmail();
-      if (!wa && !mail) return '';
+      if (!wa && !mail && !inApp) return '';
       return '<div class="support-row">' +
         (wa ? '<button type="button" class="support-link" onclick="openSupportBox(\'wa\')">' + WHATSAPP_SVG + '<span>WhatsApp</span></button>' : '') +
-        (mail ? '<button type="button" class="support-link gmail" onclick="openSupportBox(\'mail\')">' + GMAIL_SVG + '<span>Gmail</span></button>' : '') + '</div>';
+        (mail ? '<button type="button" class="support-link gmail" onclick="openSupportBox(\'mail\')">' + GMAIL_SVG + '<span>Gmail</span></button>' : '') +
+        (inApp ? '<button type="button" class="support-link inapp" onclick="openAppMessageBox()">' + INAPP_SVG + '<span>In the app</span></button>' : '') + '</div>';
     }
 
     function viewSystemPage(pageName, element) {
@@ -2213,7 +2219,7 @@
       
       const pageKey = stripHTML(pageData.name).trim().toLowerCase();
       document.getElementById('system-page-view').innerHTML = `<h2>${stripHTML(pageData.name)}</h2><div>${contentBody}</div>` +
-        (pageKey === 'help' ? supportLinksHtml() : '') + (pageKey === 'about' ? SOCIAL_LINKS_HTML + '<div class="app-version about-version">' + escapeAttr(appVersionText) + '</div><button type="button" class="update-check" onclick="checkForUpdates(this)">Check for updates</button>' : '');
+        (pageKey === 'help' ? supportLinksHtml(true) : '') + (pageKey === 'about' ? SOCIAL_LINKS_HTML + '<div class="app-version about-version">' + escapeAttr(appVersionText) + '</div><button type="button" class="update-check" onclick="checkForUpdates(this)">Check for updates</button>' : '');
       
       closeSidebarDrawer(); // Auto-close global sidebar drawer
     }
@@ -3588,7 +3594,7 @@
         (next.style === 'reply' ? 'Amanyu replied' : next.style === 'question' ? 'A question from Amanyu' : 'A message from Amanyu') + '</div>';
       if (next.style === 'reply') {
         card.innerHTML = head + (next.title ? '<h3>' + escapeAttr(next.title) + '</h3>' : '<div style="height:10px"></div>') +
-          (next.yours ? '<div class="pm-yours"><span>You answered' + (next.q ? ': “' + escapeAttr(next.q) + '”' : '') + '</span>' + escapeAttr(next.yours) + '</div>' : '') +
+          (next.yours ? '<div class="pm-yours"><span>' + (next.kind === 'support' ? 'You wrote' : 'You answered' + (next.q ? ': “' + escapeAttr(next.q) + '”' : '')) + '</span>' + escapeAttr(next.yours) + '</div>' : '') +
           '<div class="pm-body">' + fillNames(next.html) + '</div><div class="pm-sign">– Amanyu</div><button type="button" class="pm-btn">Thank you</button>';
         card.querySelector('.pm-x').onclick = () => { buzz(6); finish(); };
         card.querySelector('.pm-btn').onclick = finish;
@@ -3734,6 +3740,27 @@
       box.classList.toggle('on', on);
       box.innerHTML = '<span>' + (on ? '🔔 This phone is told about new answers, even when the app is closed.' : 'Get a notification on this phone when someone answers.') + '</span><button type="button">' + (on ? 'Turn off' : 'Turn on') + '</button>';
       box.querySelector('button').onclick = function () { (on ? pushDisable : pushEnable)(this).then(() => paintPushSwitch(box)); };
+      // when on: when the last notification reached this phone, and a button to send a test through the server
+      let tools = box.nextElementSibling;
+      if (!tools || !tools.classList.contains('ib-push-tools')) { tools = document.createElement('div'); tools.className = 'ib-push-tools'; box.after(tools); }
+      if (!on) { tools.remove(); return; }
+      tools.innerHTML = '<span class="ib-last">Last notification on this phone: …</span><button type="button">Send a test</button>';
+      lastPushText().then(s => { const el = tools.querySelector('.ib-last'); if (el) el.textContent = 'Last notification on this phone: ' + s; });
+      tools.querySelector('button').onclick = function () {
+        const b = this; b.disabled = true; b.textContent = 'Sending…';
+        inboxCall({ action: 'push_test' }).then(res => {
+          showToast(res && res.sent ? 'Test sent – it should arrive in a few seconds' : 'The server could not send it' + (res && res.phones === 0 ? ' (no phone is registered)' : ''));
+          setTimeout(() => paintPushSwitch(box), 8000);
+        }).catch(() => showToast('Could not reach the server')).finally(() => { b.disabled = false; b.textContent = 'Send a test'; });
+      };
+    }
+    function lastPushText() {
+      if (!('caches' in window)) return Promise.resolve('unknown');
+      return caches.open('flapendium-push').then(c => c.match('last-push')).then(r => r ? r.json() : null).then(j => {
+        if (!j || !j.at) return 'none yet';
+        const d = new Date(j.at);
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) + (j.err ? ' (could not be shown: ' + j.err + ')' : '');
+      }).catch(() => 'unknown');
     }
     async function pushToken() {
       const [fa, fm] = await Promise.all([import(FIREBASE_SDK + 'firebase-app.js'), import(FIREBASE_SDK + 'firebase-messaging.js')]);
@@ -3750,6 +3777,7 @@
         const res = await inboxCall({ action: 'push_register', push: p.token });
         if (!res || !res.saved) throw new Error(res && res.error);
         localStorage.setItem('flap_push', p.token); buzz(12); showToast('Notifications are on for this phone');
+        try { const reg = await navigator.serviceWorker.ready; await reg.showNotification('Notifications are on', { body: 'New answers will appear like this.', icon: 'icons/icon-192.png', tag: 'flap-inbox' }); } catch (e) {}
       } catch (e) { showToast('Notifications could not be turned on – please try again'); }
     }
     async function pushDisable(btn) {
@@ -3895,6 +3923,36 @@
           else openGmail((personal ? 'Hello from a Flapendium reader' : 'Amanyu’s Flapendium – support') + (formalName() ? ' (' + formalName() + ')' : ''), body);
         }
       });
+    }
+    // A message to Amanyu without leaving the app: it reaches his inbox (and his phone); his reply comes back here
+    function openAppMessageBox() {
+      if (document.getElementById('ask-backdrop')) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'pm-backdrop'; wrap.id = 'ask-backdrop';
+      wrap.innerHTML = '<div class="pm-card has-x"><button type="button" class="pm-x" aria-label="Close">✕</button><div class="pm-kicker">Support</div><h3>Message Amanyu</h3>' +
+        '<label for="ask-text">Your message</label><textarea id="ask-text" rows="5" maxlength="4000" placeholder="Type your message"></textarea>' +
+        '<div class="pf-hint">It goes straight to Amanyu, inside the app. His reply will appear here too.</div>' +
+        '<button type="button" class="pm-btn" id="ask-send" disabled>Send</button></div>';
+      document.body.appendChild(wrap);
+      const box = document.getElementById('ask-text'), send = document.getElementById('ask-send');
+      box.oninput = () => { send.disabled = !box.value.trim(); };
+      setTimeout(() => box.focus(), 250);
+      wrap.querySelector('.pm-x').onclick = () => { buzz(6); wrap.remove(); };
+      send.onclick = () => {
+        const text = box.value.trim(); if (!text) return;
+        send.disabled = true; send.textContent = 'Sending…'; buzz(10);
+        const sent = sendAnswer({ action: 'support_message', t: text });
+        const done = ok => {
+          const card = wrap.querySelector('.pm-card');
+          card.innerHTML = '<button type="button" class="pm-x" aria-label="Close">✕</button><div class="pm-thanks"><div class="pm-tick">✓</div>' +
+            (ok ? 'Sent – Amanyu will see it in the app. His reply will appear here.' : 'You seem to be offline – your message will be sent as soon as the connection is back.') + '</div>';
+          card.querySelector('.pm-x').onclick = () => wrap.remove();
+          setTimeout(() => wrap.remove(), 2600);
+        };
+        let settled = false;
+        sent.then(r => { if (!settled) { settled = true; done(!!r); } });
+        setTimeout(() => { if (!settled) { settled = true; done(navigator.onLine); } }, 9000);
+      };
     }
     // Ask Amanyu (only for friends ticked in the Users tab)
     function openAskBox() {
