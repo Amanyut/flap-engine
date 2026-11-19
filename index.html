@@ -3593,7 +3593,7 @@
       const finish = () => { if (ended) return; ended = true; lsAdd('flap_msgs_seen', next.id); reportSeen(next.id); wrap.remove(); popupOpen = false; setTimeout(queuePopups, 400); };
       const close = () => { buzz(6); if (collect && !answered) sendAnswer({ id: next.id, q: steps[0].qText, b: '(closed)', t: '' }); finish(); };
       const head = '<button type="button" class="pm-x" aria-label="Close">✕</button><div class="pm-kicker">' +
-        (next.style === 'reply' ? 'Amanyu replied' : 'A message from Amanyu') + '</div>';
+        (next.style === 'reply' ? 'Amanyu replied' : next.style === 'question' ? 'A notification from Amanyu' : 'A message from Amanyu') + '</div>';
       if (next.style === 'reply') {
         card.innerHTML = head + (next.title ? '<h3>' + escapeAttr(next.title) + '</h3>' : '<div style="height:10px"></div>') +
           (next.yours ? '<div class="pm-yours"><span>' + (next.kind === 'support' ? 'You wrote' : 'You answered' + (next.q ? ': “' + escapeAttr(next.q) + '”' : '')) + '</span>' + escapeAttr(next.yours) + '</div>' : '') +

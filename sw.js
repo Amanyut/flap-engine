@@ -3,8 +3,8 @@
    works without a connection. A new version is downloaded in the background; the page then offers an
    "Update" button, and the new version takes over only when the user taps it.
    VERSION is a fingerprint of the app files (set by bump_sw.py) - any change to them makes a new version. */
-const VERSION = 'e6bb02838d86';
-const RELEASE = '1.0.77';   // shown as the version number (set by bump_sw.py)
+const VERSION = '9be7c4f34da0';
+const RELEASE = '1.0.78';   // shown as the version number (set by bump_sw.py)
 const CODE = 'R26K19';     // coded build stamp: R + year + month letter (A = Jan) + day (set by bump_sw.py)
 const BUILT = '19 Nov 2026, 1:48 PM';   // when this version was made (set by bump_sw.py)
 const SHELL = 'flapendium-shell-' + VERSION;
