@@ -533,6 +533,11 @@
 
     .pm-backdrop { position: fixed; inset: 0; z-index: 3000; background: rgba(8, 15, 30, 0.55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 18px; animation: fadeIn 0.25s ease-out; }
     .pm-card { width: min(430px, 100%); max-height: 86vh; overflow-y: auto; background: var(--panel-light); color: var(--text-dark); border-radius: 20px; padding: 24px 22px 18px; box-shadow: 0 30px 70px rgba(0, 0, 0, 0.4); animation: peekIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+    .pm-card { position: relative; }
+    .pm-x { position: absolute; top: 10px; right: 10px; width: 38px; height: 38px; border: none; border-radius: 50%; background: rgba(127, 127, 127, 0.14); color: var(--text-muted);
+      font-size: 1.05rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .pm-x:active { transform: scale(0.92); }
+    .pm-card.has-x .pm-kicker { padding-right: 44px; }
     .pm-kicker { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
     .pm-card h3 { margin: 4px 0 12px; font-size: 1.35rem; color: var(--accent-blue); }
     .pm-card label { display: block; font-size: 0.85rem; font-weight: 700; margin: 14px 0 6px; }
@@ -544,9 +549,57 @@
     body.yellow-theme .pm-btn { background: #0e3b43; color: #fff000; }
     .app-version { margin-top: 6px; font-size: 0.72rem; color: #94a3b8; opacity: 0.8; cursor: default; user-select: none; -webkit-user-select: none; }
     .about-version { margin-top: 22px; text-align: center; color: var(--text-muted); }
+    .app-version { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; letter-spacing: 0.02em; }
+    .update-check { margin-top: 6px; padding: 5px 12px; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.35); background: transparent; color: #94a3b8;
+      font: inherit; font-size: 0.74rem; font-weight: 600; cursor: pointer; }
+    .update-check.ready { border-color: #f5c451; background: #f5c451; color: #042551; }
+    .update-check:disabled { opacity: 0.6; cursor: default; }
+    .about-version + .update-check { display: block; margin: 8px auto 0; }
+    .hamburger-btn.has-update { position: relative; }
+    .hamburger-btn.has-update::after { content: ''; position: absolute; top: 4px; right: 2px; width: 9px; height: 9px; border-radius: 50%; background: #f5c451; box-shadow: 0 0 0 2px var(--topbar-bg, #042551); }
     .diag-pre { max-height: 55vh; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 0.72rem; line-height: 1.45; background: rgba(15, 23, 42, 0.06); padding: 10px; border-radius: 10px; }
     .pf-hint { min-height: 1.1em; margin: 6px 2px 0; font-size: 0.82rem; color: var(--text-muted); }
     .pm-link { display: block; margin: 10px auto 0; background: none; border: none; color: var(--text-muted); font: inherit; font-size: 0.9rem; cursor: pointer; text-decoration: underline; }
+    .pm-card textarea { width: 100%; box-sizing: border-box; margin-top: 12px; padding: 12px 14px; min-height: 100px; resize: vertical; font: inherit; font-size: 1rem; line-height: 1.45;
+      border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-dark); }
+    .pm-card textarea:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18); }
+    .pm-btns { margin-top: 6px; }
+    .pm-btns .pm-btn + .pm-btn { margin-top: 10px; }
+    .pm-btns.two { display: flex; gap: 10px; }
+    .pm-btns.two .pm-btn { flex: 1; margin-top: 14px; }
+    .pm-btns.many .pm-btn { background: transparent; color: var(--accent-blue); border: 1.5px solid var(--accent-blue); }
+    .pm-q { font-size: 1.12rem; font-weight: 700; line-height: 1.45; margin-top: 6px; }
+    .pm-dots { display: flex; gap: 6px; margin: 8px 0 4px; }
+    .pm-dots i { width: 22px; height: 4px; border-radius: 2px; background: rgba(127, 127, 127, 0.25); }
+    .pm-dots i.done { background: rgba(245, 196, 81, 0.7); }
+    .pm-dots i.on { background: #f5c451; }
+    .pm-thanks { text-align: center; padding: 26px 6px 12px; font-size: 1.05rem; font-weight: 600; line-height: 1.5; }
+    .pm-tick { width: 58px; height: 58px; margin: 0 auto 12px; border-radius: 50%; background: #16a34a; color: #fff; font-size: 2rem; line-height: 58px; animation: peekIn 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+    .pm-results { margin-top: 12px; }
+    .pm-res { margin: 10px 0; }
+    .pm-res .rl { display: flex; justify-content: space-between; font-size: 0.92rem; font-weight: 600; margin-bottom: 4px; }
+    .pm-res .rb { height: 10px; border-radius: 5px; background: rgba(127, 127, 127, 0.18); overflow: hidden; }
+    .pm-res .rb i { display: block; height: 100%; width: 0; border-radius: 5px; background: var(--accent-blue); transition: width 0.9s cubic-bezier(0.2, 0.9, 0.3, 1); }
+    .pm-res.mine .rb i { background: #f5c451; }
+    .pm-res-note { font-size: 0.82rem; color: var(--text-muted); margin-top: 8px; }
+    .pm-yours { margin: 6px 0 12px; padding: 10px 12px; border-left: 3px solid #f5c451; border-radius: 8px; background: rgba(245, 196, 81, 0.1); font-size: 0.95rem; }
+    .pm-yours span { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 3px; }
+    .inbox-item .inbox-badge { display: inline-block; min-width: 18px; margin-left: 7px; padding: 1px 6px; border-radius: 999px; background: #f5c451; color: #042551; font-size: 0.75rem; font-weight: 800; text-align: center; }
+    .inbox-card { width: min(560px, 100%); }
+    .ib-item { padding: 12px 0; border-top: 1px solid var(--border-color); }
+    .ib-item.new { position: relative; }
+    .ib-item.new::before { content: ''; position: absolute; left: -12px; top: 18px; width: 7px; height: 7px; border-radius: 50%; background: #f5c451; }
+    .ib-top { display: flex; justify-content: space-between; gap: 10px; font-size: 0.95rem; }
+    .ib-top span { color: var(--text-muted); font-size: 0.8rem; white-space: nowrap; }
+    .ib-msg { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+    .ib-q { font-size: 0.9rem; margin-top: 6px; color: var(--text-muted); }
+    .ib-ans { margin-top: 4px; font-size: 1rem; line-height: 1.5; white-space: pre-wrap; }
+    .ib-chip { display: inline-block; padding: 2px 10px; margin-right: 6px; border-radius: 999px; background: var(--accent-blue); color: #fff; font-size: 0.8rem; font-weight: 700; white-space: normal; }
+    .ib-replied { margin-top: 8px; padding: 8px 10px; border-left: 3px solid #f5c451; border-radius: 8px; background: rgba(245, 196, 81, 0.1); font-size: 0.92rem; white-space: pre-wrap; }
+    .ib-replied small { display: block; color: var(--text-muted); font-size: 0.75rem; margin-top: 3px; }
+    .ib-act { margin-top: 6px; background: none; border: none; padding: 4px 0; color: var(--accent-blue); font: inherit; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+    .ib-sheet { display: block; text-align: center; margin-top: 12px; font-size: 0.9rem; color: var(--accent-blue); }
+    .ib-empty { padding: 24px 0 10px; text-align: center; color: var(--text-muted); }
     .pm-card.letter { border-top: 5px solid #f5c451; background-image: linear-gradient(rgba(245, 196, 81, 0.07), transparent 120px); }
     .pm-body { font-size: 1.02rem; line-height: 1.6; }
     .pm-sign { font-family: 'Caveat', cursive; font-size: 1.7rem; text-align: right; color: var(--accent-blue); margin-top: 8px; }
@@ -707,7 +760,7 @@
       opacity: 0; pointer-events: none; transform: translate(-50%, -14px) scale(0.55, 0.7); transform-origin: 50% 0;
       transition: transform 0.5s cubic-bezier(0.2, 1.35, 0.35, 1), opacity 0.22s ease-out; }
     .toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
-    .toast.has-action { pointer-events: auto; }
+    .toast.show { pointer-events: auto; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
     .toast-undo { background: none; border: none; padding: 4px 2px; color: #f5c451; font: inherit; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; font-size: 0.85rem; cursor: pointer; }
     body.offline .toast { top: calc(var(--topbar-h) + 54px); }
     .net-island { position: fixed; left: 50%; top: calc(var(--topbar-h) + 10px); z-index: 3050; display: flex; align-items: center; gap: 9px; padding: 9px 16px; border-radius: 999px;
@@ -1267,6 +1320,7 @@
         <button type="button" class="profile-name" id="display-user-name" onclick="showProfilePrompt(false)" style="display:none" title="Edit your name and birthday"></button>
         <div class="profile-email" id="display-user-email"></div>
         <div class="app-version" id="app-version" title="The version of the app on this device">Version …</div>
+        <button type="button" class="update-check" onclick="checkForUpdates(this)">Check for updates</button>
         <div class="profile-controls">
           <button class="btn-sidebar" onclick="toggleTheme(event)" title="Toggle Dark Mode">🌓 Theme</button>
           <button class="btn-sidebar" id="anim-btn" onclick="toggleAnim()" title="Animations on – tap to turn them off" aria-label="Animations on – tap to turn them off">✨</button>
@@ -2009,6 +2063,7 @@
         guide.className = 'menu-item guide-item'; guide.innerText = 'Guide';
         guide.onclick = function() { closeSidebarDrawer(); if (window.flapTour) window.flapTour.start(); };
         systemMenu.appendChild(guide);
+        paintInbox();
       }
 
       renderWorkspaceGrid();
@@ -2153,7 +2208,7 @@
       
       const pageKey = stripHTML(pageData.name).trim().toLowerCase();
       document.getElementById('system-page-view').innerHTML = `<h2>${stripHTML(pageData.name)}</h2><div>${contentBody}</div>` +
-        (pageKey === 'help' ? supportLinksHtml() : '') + (pageKey === 'about' ? SOCIAL_LINKS_HTML + '<div class="app-version about-version">' + escapeAttr(appVersionText) + '</div>' : '');
+        (pageKey === 'help' ? supportLinksHtml() : '') + (pageKey === 'about' ? SOCIAL_LINKS_HTML + '<div class="app-version about-version">' + escapeAttr(appVersionText) + '</div><button type="button" class="update-check" onclick="checkForUpdates(this)">Check for updates</button>' : '');
       
       closeSidebarDrawer(); // Auto-close global sidebar drawer
     }
@@ -2955,6 +3010,48 @@
       clearTimeout(showToast.timer); showToast.timer = setTimeout(() => el.classList.remove('show', 'has-action'), undo ? 4500 : 1900);
     }
 
+    // Pills can be flicked away sideways (or tapped away); they also step aside as soon as the user starts typing
+    (function () {
+      const el = document.getElementById('toast');
+      if (!el) return;
+      let sx = null, sy = 0, st = 0, dx = 0, moved = false, pid = null;
+      const clear = () => { el.style.transition = ''; el.style.transform = ''; el.style.opacity = ''; };
+      const hide = dir => {
+        clearTimeout(showToast.timer); sx = null;
+        el.style.transition = 'transform 0.24s ease-in, opacity 0.24s ease-in';
+        el.style.transform = dir ? 'translate(calc(-50% + ' + (dir * 110) + 'vw), 0) rotate(' + (dir * 8) + 'deg)' : 'translate(-50%, -24px) scale(0.85)';
+        el.style.opacity = '0';
+        setTimeout(() => { el.classList.remove('show', 'has-action'); clear(); }, 250);
+      };
+      el.addEventListener('pointerdown', e => {
+        if (!el.classList.contains('show')) return;
+        sx = e.clientX; sy = e.clientY; st = performance.now(); dx = 0; moved = false; pid = e.pointerId;
+        clearTimeout(showToast.timer); el.style.transition = 'none';
+        try { el.setPointerCapture(pid); } catch (err) {}
+      });
+      el.addEventListener('pointermove', e => {
+        if (sx === null || e.pointerId !== pid) return;
+        dx = e.clientX - sx;
+        if (Math.abs(dx) > 6 || Math.abs(e.clientY - sy) > 6) moved = true;
+        el.style.transform = 'translate(calc(-50% + ' + dx + 'px), 0) rotate(' + (dx / 40) + 'deg)';
+        el.style.opacity = String(Math.max(0.15, 1 - Math.abs(dx) / 260));
+      });
+      const end = e => {
+        if (sx === null || e.pointerId !== pid) return;
+        const v = Math.abs(dx) / Math.max(1, performance.now() - st);
+        if (Math.abs(dx) > 55 || (Math.abs(dx) > 20 && v > 0.5)) { buzz(6); hide(dx < 0 ? -1 : 1); return; }
+        if (!moved && !(e.target.closest && e.target.closest('.toast-undo'))) { hide(0); return; }   // a tap puts it away too
+        sx = null; el.style.transition = 'transform 0.3s cubic-bezier(0.2, 1.3, 0.4, 1), opacity 0.2s'; el.style.transform = ''; el.style.opacity = '';
+        setTimeout(clear, 320);
+        showToast.timer = setTimeout(() => el.classList.remove('show', 'has-action'), 2500);
+      };
+      el.addEventListener('pointerup', end);
+      el.addEventListener('pointercancel', end);
+      document.addEventListener('focusin', e => {
+        if (el.classList.contains('show') && e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) hide(0);
+      });
+    })();
+
     // A short vibration on phones that support it
     // Vibration. Modern precise motors (e.g. OnePlus O-Haptics) don't register pulses shorter than ~15 ms, so the app's
     // short taps are scaled up; richer effects use patterns timed to their animation and sound (HAPTIC below).
@@ -3296,6 +3393,14 @@
       runLaunchAction();
       if (data && data.profile) { userProfile = data.profile; try { localStorage.setItem('flap_profile', JSON.stringify(userProfile)); } catch (e) {} }
       if (data && Array.isArray(data.messages)) { amanyuMessages = data.messages; try { localStorage.setItem('flap_msgs', JSON.stringify(amanyuMessages)); } catch (e) {} }
+      if (fromServer && data && Array.isArray(data.messages)) {
+        const before = inboxInfo ? inboxInfo.unread : 0;
+        inboxInfo = data.inbox || null;
+        try { localStorage.setItem('flap_inbox', JSON.stringify(inboxInfo)); } catch (e) {}
+        if (inboxInfo && inboxInfo.unread && inboxInfo.unread !== before) setTimeout(() => showToast(inboxInfo.unread + (inboxInfo.unread === 1 ? ' new answer' : ' new answers') + ' in your Inbox'), 2600);
+        flushAnswers();
+      }
+      paintInbox();
       paintProfile();
       renderBanner();
       if (activeCategoryFilter === 'ALL' && !document.getElementById('search-input').value.trim()) renderWorkspaceGrid();
@@ -3438,22 +3543,199 @@
     }
 
     // ---- Messages from Amanyu ----
+    // A popup can have its own buttons ("Yes | No → What could be better?" – the arrow opens a box for a few words after
+    // that button), a text box (the "Question" style), more questions (one per screen) and can collect the answers.
+    // Amanyu's replies to answers arrive the same way (style "reply").
+    function parseButtons(raw) {
+      return String(raw || '').split(/\n|\|/).map(s => s.trim()).filter(Boolean).map(s => {
+        const m = s.split(/\s*(?:→|->)\s*/);
+        return { label: m[0].trim(), follow: (m.slice(1).join(' ') || '').trim() };
+      }).filter(b => b.label);
+    }
+    function messageSteps(m) {
+      const plain = s => String(s || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+      const steps = [{ main: true, title: m.title, html: fillNames(m.html), qText: plain(m.title) || plain(m.html).slice(0, 140),
+                       buttons: parseButtons(m.buttons), text: m.style === 'question' }];
+      String(m.more || '').split('\n').map(s => s.trim()).filter(Boolean).forEach(line => {
+        const i = line.indexOf('::'), q = (i === -1 ? line : line.slice(0, i)).trim(), btns = i === -1 ? [] : parseButtons(line.slice(i + 2));
+        if (q) steps.push({ html: fillNames(escapeAttr(q)), qText: q, buttons: btns, text: !btns.length });
+      });
+      return steps;
+    }
     function queuePopups() {
       if (popupOpen || document.getElementById('pf-backdrop') || document.querySelector('.bday-backdrop')) return;
       const seen = lsList('flap_msgs_seen');
-      const next = amanyuMessages.find(m => m.style === 'popup' && seen.indexOf(m.id) === -1);
+      const next = amanyuMessages.find(m => (m.style === 'popup' || m.style === 'question' || m.style === 'reply') && seen.indexOf(m.id) === -1);
       if (!next) return;
       popupOpen = true;
-      const wrap = document.createElement('div');
-      wrap.className = 'pm-backdrop';
-      wrap.innerHTML = '<div class="pm-card letter"><div class="pm-kicker">A message from Amanyu</div>' + (next.title ? '<h3>' + fillNames(escapeAttr(next.title)) + '</h3>' : '<div style="height:10px"></div>') +
-        '<div class="pm-body">' + fillNames(next.html) + '</div><div class="pm-sign">– Amanyu</div><button type="button" class="pm-btn">Thank you</button></div>';
-      document.body.appendChild(wrap);
+      const wrap = document.createElement('div'), card = document.createElement('div');
+      wrap.className = 'pm-backdrop'; card.className = 'pm-card letter has-x';
+      wrap.appendChild(card); document.body.appendChild(wrap);
       buzz([10, 50, 10]); sfx('msg');
-      wrap.querySelector('.pm-btn').onclick = () => {
-        lsAdd('flap_msgs_seen', next.id); reportSeen(next.id);
-        wrap.remove(); popupOpen = false;
-        setTimeout(queuePopups, 400);
+      const collect = !!next.collect && next.style !== 'reply';
+      const steps = next.style === 'reply' ? [] : messageSteps(next);
+      let answered = false, resultsAsk = null, myChoice = '', ended = false;
+      // the message is finished: never shown again on this device, and "seen" is reported
+      const finish = () => { if (ended) return; ended = true; lsAdd('flap_msgs_seen', next.id); reportSeen(next.id); wrap.remove(); popupOpen = false; setTimeout(queuePopups, 400); };
+      const close = () => { buzz(6); if (collect && !answered) sendAnswer({ id: next.id, q: steps[0].qText, b: '(closed)', t: '' }); finish(); };
+      const head = '<button type="button" class="pm-x" aria-label="Close">✕</button><div class="pm-kicker">' +
+        (next.style === 'reply' ? 'Amanyu replied' : next.style === 'question' ? 'A question from Amanyu' : 'A message from Amanyu') + '</div>';
+      if (next.style === 'reply') {
+        card.innerHTML = head + (next.title ? '<h3>' + escapeAttr(next.title) + '</h3>' : '<div style="height:10px"></div>') +
+          (next.yours ? '<div class="pm-yours"><span>You answered' + (next.q ? ': “' + escapeAttr(next.q) + '”' : '') + '</span>' + escapeAttr(next.yours) + '</div>' : '') +
+          '<div class="pm-body">' + fillNames(next.html) + '</div><div class="pm-sign">– Amanyu</div><button type="button" class="pm-btn">Thank you</button>';
+        card.querySelector('.pm-x').onclick = () => { buzz(6); finish(); };
+        card.querySelector('.pm-btn').onclick = finish;
+        return;
+      }
+      function show(i, fb) {
+        const s = steps[i], last = i === steps.length - 1;
+        const dots = steps.length > 1 ? '<div class="pm-dots">' + steps.map((x, k) => '<i class="' + (k < i ? 'done' : k === i ? 'on' : '') + '"></i>').join('') + '</div>' : '';
+        let body, btns;
+        if (fb) {                                         // the box that opens after a button with an arrow
+          body = '<div class="pm-body pm-q">' + fillNames(escapeAttr(fb.follow)) + '</div><textarea class="pm-text" maxlength="4000" placeholder="Type here (optional)"></textarea>';
+          btns = [{ label: last ? 'Send' : 'Next', plain: true }];
+        } else {
+          body = (s.main ? (s.title ? '<h3>' + fillNames(escapeAttr(s.title)) + '</h3>' : '<div style="height:10px"></div>') : '') +
+            '<div class="pm-body' + (s.main ? '' : ' pm-q') + '">' + s.html + '</div>' +
+            (s.text ? '<textarea class="pm-text" maxlength="4000" placeholder="Type your answer here (optional)"></textarea>' : '');
+          btns = s.buttons.length ? s.buttons : [{ label: s.text ? (last ? 'Send' : 'Next') : 'Thank you', plain: true }];
+        }
+        card.innerHTML = head + dots + body + (s.main && !fb && !s.text ? '<div class="pm-sign">– Amanyu</div>' : '') +
+          '<div class="pm-btns' + (btns.length === 2 ? ' two' : btns.length > 2 ? ' many' : '') + '">' +
+          btns.map((b, k) => '<button type="button" class="pm-btn" data-k="' + k + '">' + escapeAttr(b.label) + '</button>').join('') + '</div>';
+        card.querySelector('.pm-x').onclick = close;
+        card.scrollTop = 0;
+        const ta = card.querySelector('.pm-text');
+        card.querySelectorAll('.pm-btns .pm-btn').forEach(el => el.onclick = () => {
+          const b = btns[+el.dataset.k], typed = ta ? ta.value.trim() : '';
+          buzz(8);
+          if (!collect) { if (last) finish(); else show(i + 1); return; }      // nothing is recorded: the buttons just move on
+          if (!fb && b.follow) { show(i, { label: b.label, follow: b.follow, typed: typed }); return; }
+          const label = fb ? fb.label : (b.plain && s.text ? '' : b.label);
+          const text = [fb && fb.typed, typed].filter(Boolean).join('\n');
+          answered = true;
+          const sent = sendAnswer({ id: next.id, q: s.qText, b: label || (text ? '' : '(skipped)'), t: text });
+          if (i === 0 && next.results && label) { resultsAsk = sent; myChoice = label; }
+          if (!last) show(i + 1); else thanks();
+        });
+        if (ta && !fb && s.text && !s.main) setTimeout(() => { try { ta.focus({ preventScroll: true }); } catch (e) {} }, 350);
+      }
+      function thanks() {
+        if (!collect) { finish(); return; }
+        card.innerHTML = head + '<div class="pm-thanks"><div class="pm-tick">✓</div>Thank you – your answer has reached Amanyu.</div>';
+        card.querySelector('.pm-x').onclick = finish;
+        if (!resultsAsk) { setTimeout(finish, 1800); return; }
+        let shown = false;
+        const giveUp = setTimeout(() => { if (!shown) finish(); }, 7000);
+        resultsAsk.then(res => {
+          if (ended) return;
+          if (!res || !res.results || !res.results.total) { clearTimeout(giveUp); setTimeout(finish, 1200); return; }
+          shown = true; clearTimeout(giveUp); showResults(res.results);
+        }).catch(() => {});
+      }
+      function showResults(r) {
+        const labels = steps[0].buttons.map(b => b.label);
+        Object.keys(r.counts).forEach(l => { if (labels.indexOf(l) === -1) labels.push(l); });
+        card.innerHTML = head + '<h3>So far…</h3><div class="pm-results">' + labels.map(l => {
+          const n = r.counts[l] || 0, pct = Math.round(100 * n / r.total);
+          return '<div class="pm-res' + (l === myChoice ? ' mine' : '') + '"><div class="rl"><span>' + escapeAttr(l) + (l === myChoice ? ' · you' : '') + '</span><span>' + pct + '%</span></div><div class="rb"><i data-w="' + pct + '"></i></div></div>';
+        }).join('') + '</div><div class="pm-res-note">' + r.total + (r.total === 1 ? ' answer' : ' answers') + ' so far</div><button type="button" class="pm-btn">Close</button>';
+        card.querySelector('.pm-x').onclick = finish; card.querySelector('.pm-btn').onclick = finish;
+        requestAnimationFrame(() => requestAnimationFrame(() => card.querySelectorAll('.rb i').forEach(i => { i.style.width = i.dataset.w + '%'; })));
+      }
+      show(0);
+    }
+    // Answers wait on the device until they reach the server (so nothing is lost offline); one is sent at a time
+    function sendAnswer(a) {
+      a.at = Date.now() + Math.random();
+      const q = lsList('flap_answers_q'); q.push(a);
+      try { localStorage.setItem('flap_answers_q', JSON.stringify(q.slice(-200))); } catch (e) {}
+      return flushAnswers(a.at);
+    }
+    var answersFlushing = Promise.resolve();
+    function flushAnswers(want) {
+      const run = () => {
+        const email = localStorage.getItem('flap_email'), token = localStorage.getItem('flap_token');
+        const queue = lsList('flap_answers_q');
+        if (!email || !token || !queue.length) return Promise.resolve(null);
+        let result = null;
+        const one = a => fetch(API_URL, { method: 'POST', body: JSON.stringify(Object.assign({ action: 'answer', email: email, token: token }, a)) })
+          .then(r => r.json()).then(res => {
+            if (!res || !res.saved) return;
+            const left = lsList('flap_answers_q').filter(x => x.at !== a.at);
+            try { localStorage.setItem('flap_answers_q', JSON.stringify(left)); } catch (e) {}
+            if (a.at === want) result = res;
+          });
+        return queue.reduce((pr, a) => pr.then(() => one(a)), Promise.resolve()).then(() => result, () => result);
+      };
+      answersFlushing = answersFlushing.then(run, run);
+      return answersFlushing;
+    }
+    window.addEventListener('online', () => flushAnswers());
+
+    // ---- the inbox (only for users ticked in the Users tab's "Inbox" column): answers and typed replies ----
+    var inboxInfo = (function () { try { return JSON.parse(localStorage.getItem('flap_inbox') || 'null'); } catch (e) { return null; } })();
+    function paintInbox() {
+      const menu = document.getElementById('system-menu');
+      let el = document.getElementById('inbox-item');
+      if (!inboxInfo) { if (el) el.remove(); return; }
+      if (!menu || !menu.children.length) return;
+      if (!el) {
+        el = document.createElement('div'); el.id = 'inbox-item'; el.className = 'menu-item inbox-item';
+        el.onclick = () => { closeSidebarDrawer(); openInbox(); };
+        const guide = menu.querySelector('.guide-item');
+        if (guide) guide.after(el); else menu.appendChild(el);
+      }
+      el.innerHTML = 'Inbox' + (inboxInfo.unread ? '<span class="inbox-badge">' + inboxInfo.unread + '</span>' : '');
+    }
+    function inboxCall(body) {
+      const email = localStorage.getItem('flap_email'), token = localStorage.getItem('flap_token');
+      return fetch(API_URL, { method: 'POST', body: JSON.stringify(Object.assign({ email: email, token: token }, body)) }).then(r => r.json());
+    }
+    function openInbox() {
+      if (document.getElementById('inbox-backdrop')) return;
+      const wrap = document.createElement('div'); wrap.className = 'pm-backdrop'; wrap.id = 'inbox-backdrop';
+      wrap.innerHTML = '<div class="pm-card inbox-card has-x"><button type="button" class="pm-x" aria-label="Close">✕</button><div class="pm-kicker">Answers to your messages</div><h3>Inbox</h3><div class="ib-list"><div class="ib-empty">Loading…</div></div></div>';
+      document.body.appendChild(wrap);
+      wrap.querySelector('.pm-x').onclick = () => { buzz(6); wrap.remove(); };
+      const list = wrap.querySelector('.ib-list');
+      inboxCall({ action: 'inbox' }).then(res => {
+        if (!res || !res.items) throw new Error(res && res.error);
+        inboxInfo = { unread: 0 }; try { localStorage.setItem('flap_inbox', JSON.stringify(inboxInfo)); } catch (e) {}
+        paintInbox();
+        if (!res.items.length) { list.innerHTML = '<div class="ib-empty">No answers yet. Answers to messages with “Notify me” ticked, and every typed reply, will appear here.</div>'; }
+        else list.innerHTML = res.items.map((it, k) => '<div class="ib-item' + (it.isNew ? ' new' : '') + '" data-k="' + k + '">' +
+          '<div class="ib-top"><b>' + escapeAttr(it.anon ? 'Anonymous' : (it.name || 'Someone')) + '</b><span>' + escapeAttr(it.time) + '</span></div>' +
+          '<div class="ib-msg">' + escapeAttr(it.msg) + '</div>' + (it.q && it.q !== it.msg ? '<div class="ib-q">' + escapeAttr(it.q) + '</div>' : '') +
+          '<div class="ib-ans">' + (it.b && it.b !== '(skipped)' ? '<span class="ib-chip">' + escapeAttr(it.b === '(closed)' ? 'Closed without answering' : it.b) + '</span>' : '') + escapeAttr(it.t || '') + '</div>' +
+          '<div class="ib-replybox">' + replyHtml(it) + '</div></div>').join('');
+        if (res.url) list.insertAdjacentHTML('beforeend', '<a class="ib-sheet" href="' + escapeAttr(res.url) + '" target="_blank" rel="noopener">Open the Answers spreadsheet (all answers and statistics)</a>');
+        list.querySelectorAll('.ib-item').forEach(el => wireReply(el, res.items[+el.dataset.k]));
+      }).catch(() => { list.innerHTML = '<div class="ib-empty">The inbox could not be loaded. Please check the connection and try again.</div>'; });
+    }
+    function replyHtml(it) {
+      if (it.reply) return '<div class="ib-replied">' + escapeAttr(it.reply) + '<small>Your reply' + (it.repliedAt ? ' · ' + escapeAttr(it.repliedAt) : '') + (it.replySeen ? ' · seen ✓' : '') + '</small></div>';
+      return it.anon ? '' : '<button type="button" class="ib-act">Reply</button>';
+    }
+    function wireReply(el, it) {
+      const btn = el.querySelector('.ib-act');
+      if (!btn) return;
+      btn.onclick = () => {
+        const box = el.querySelector('.ib-replybox');
+        box.innerHTML = '<textarea maxlength="4000" placeholder="Your reply – it will appear in their app"></textarea><div class="pm-btns two"><button type="button" class="pm-btn">Send</button><button type="button" class="pm-btn" style="background:transparent;color:var(--accent-blue);border:1.5px solid var(--accent-blue)">Cancel</button></div>';
+        const ta = box.querySelector('textarea'), [send, cancel] = box.querySelectorAll('.pm-btn');
+        setTimeout(() => ta.focus(), 50);
+        cancel.onclick = () => { box.innerHTML = replyHtml(it); wireReply(el, it); };
+        send.onclick = () => {
+          const text = ta.value.trim(); if (!text) { ta.focus(); return; }
+          send.disabled = true; send.textContent = 'Sending…';
+          inboxCall({ action: 'reply', key: it.key, text: text }).then(res => {
+            if (!res || !res.saved) throw new Error(res && res.error);
+            it.reply = text; it.repliedAt = res.repliedAt; it.replySeen = false;
+            box.innerHTML = replyHtml(it); buzz(10); showToast('Reply sent');
+          }).catch(err => { send.disabled = false; send.textContent = 'Send'; showToast(err && err.message ? err.message : 'Could not send – please try again'); });
+        };
       };
     }
     function reportSeen(id) {
@@ -4827,7 +5109,9 @@
     // ---- the version running on this device (from the service worker), shown in the side panel and on About ----
     let appVersionText = 'Version …';
     function showAppVersion(v) {
-      appVersionText = 'Version of ' + v.built + ' · ' + String(v.version).slice(0, 6);
+      // a release number, a build fingerprint and a coded build stamp – meaningful to the developer only
+      const h = String(v.version || '').toUpperCase();
+      appVersionText = 'v' + (v.release || '1.0') + ' · build ' + h.slice(0, 4) + '-' + h.slice(4, 8) + (v.code ? ' · ' + v.code : '');
       document.querySelectorAll('.app-version').forEach(el => { el.textContent = appVersionText; });
     }
     if ('serviceWorker' in navigator) {
@@ -4856,6 +5140,7 @@
       });
     })();
 
+    window.checkForUpdates = () => showToast('You have the latest version');
     // ---- OFFLINE + UPDATES ----
     // A service worker keeps the app on the device. When a newer version has been downloaded, a bar offers to switch.
     if ('serviceWorker' in navigator && location.protocol === 'https:' || location.hostname === 'localhost') {
@@ -4864,11 +5149,34 @@
         let updating = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => { if (updating) location.reload(); });
         navigator.serviceWorker.register('sw.js').then(reg => {
+          const apply = () => { if (!reg.waiting) return; updating = true; saveState(); showToast('Updating…'); reg.waiting.postMessage('skipWaiting'); };
+          const mark = () => {
+            const ready = !!(reg.waiting && navigator.serviceWorker.controller);
+            document.querySelectorAll('.update-check').forEach(b => { if (b.disabled) return; b.classList.toggle('ready', ready); b.textContent = ready ? 'Update now' : 'Check for updates'; });
+            const hb = document.querySelector('.hamburger-btn'); if (hb) hb.classList.toggle('has-update', ready);
+          };
           const offer = () => {
             if (!reg.waiting || !navigator.serviceWorker.controller) return;
             const bar = document.getElementById('update-bar');
-            document.getElementById('update-go').onclick = () => { updating = true; saveState(); reg.waiting.postMessage('skipWaiting'); };
+            document.getElementById('update-go').onclick = apply;
             bar.classList.add('show');
+            mark();
+          };
+          // the side panel and About page: check now; if a new version is waiting, switch to it straight away
+          window.checkForUpdates = btn => {
+            if (reg.waiting && navigator.serviceWorker.controller) { apply(); return; }
+            if (!navigator.onLine) { showToast('You are offline – connect to check for updates'); return; }
+            let finished = false;
+            const finish = msg => { if (finished) return; finished = true; if (btn) { btn.disabled = false; } mark(); if (msg) showToast(msg); };
+            if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+            reg.update().then(() => {
+              const w = reg.installing || reg.waiting;
+              if (!w) { finish('You have the latest version'); return; }
+              if (w.state === 'installed') { finish(); apply(); return; }
+              if (btn) btn.textContent = 'Downloading…';
+              w.addEventListener('statechange', () => { if (w.state === 'installed') { finish(); apply(); } else if (w.state === 'redundant') finish('The update could not be downloaded – please try again'); });
+              setTimeout(() => finish('Still downloading – the Update bar will appear when it is ready'), 25000);
+            }).catch(() => finish('Could not check – please check the connection'));
           };
           offer();
           reg.addEventListener('updatefound', () => {

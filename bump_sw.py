@@ -15,5 +15,14 @@ new = re.sub(r"const VERSION = '[^']*';", f"const VERSION = '{version}';", sw)
 import datetime
 built = datetime.datetime.now().strftime('%d %b %Y, %I:%M %p').lstrip('0').replace(' 0', ' ')
 new = re.sub(r"const BUILT = '[^']*';", f"const BUILT = '{built}';", new)
+# the release number shown in the app = number of commits so far + 1 (this one); the code = R + yy + month letter + dd
+import subprocess
+try:
+    n = int(subprocess.run(['git', 'rev-list', '--count', 'HEAD'], cwd=root, capture_output=True, text=True).stdout.strip() or 0) + 1
+except Exception:
+    n = 0
+now = datetime.datetime.now()
+new = re.sub(r"const RELEASE = '[^']*';", f"const RELEASE = '1.0.{n}';", new)
+new = re.sub(r"const CODE = '[^']*';", f"const CODE = 'R{now:%y}{'ABCDEFGHIJKL'[now.month - 1]}{now:%d}';", new)
 (root / 'sw.js').write_bytes(new.replace('\r\n', '\n').replace('\n', '\r\n').encode('utf-8'))
 print('sw.js version', version)
